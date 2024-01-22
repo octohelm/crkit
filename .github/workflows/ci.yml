@@ -1,0 +1,25 @@
+name: ci
+
+on:
+  push:
+    branches:
+      - "*"
+    tags:
+      - 'v*'
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    env:
+      GH_USERNAME: ${{ github.actor }}
+      GH_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - uses: docker/setup-qemu-action@v2
+      - run: curl -sSLf https://raw.githubusercontent.com/octohelm/wagon/main/install.sh | sudo sh
+
+      - run: make ship
