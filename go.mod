@@ -8,7 +8,7 @@ require (
 	github.com/go-courier/logr v0.3.0
 	github.com/google/uuid v1.5.0
 	github.com/innoai-tech/infra v0.0.0-20240104042319-9fd26ead5fce
-	github.com/klauspost/compress v1.17.4
+	github.com/klauspost/compress v1.17.5
 	github.com/octohelm/courier v0.0.0-20240118025048-7d236083586b
 	github.com/octohelm/gengo v0.0.0-20240116032423-048028ecb7bb
 	github.com/octohelm/storage v0.0.0-20240110105112-64398426f19b
