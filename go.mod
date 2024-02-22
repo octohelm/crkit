@@ -8,7 +8,7 @@ require (
 	github.com/go-courier/logr v0.3.0
 	github.com/google/uuid v1.6.0
 	github.com/innoai-tech/infra v0.0.0-20240123073205-8d9b32ddacc6
-	github.com/klauspost/compress v1.17.6
+	github.com/klauspost/compress v1.17.7
 	github.com/octohelm/courier v0.0.0-20240219082005-f8da35768ce5
 	github.com/octohelm/gengo v0.0.0-20240116032423-048028ecb7bb
 	github.com/octohelm/storage v0.0.0-20240125075455-2c26e507e753
@@ -58,7 +58,6 @@ require (
 	github.com/jpillora/backoff v1.0.0 // indirect
 	github.com/julienschmidt/httprouter v1.3.0 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
-	github.com/matttproud/golang_protobuf_extensions/v2 v2.0.0 // indirect
 	github.com/mpvl/unique v0.0.0-20150818121801-cbe035fff7de // indirect
 	github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f // indirect
 	github.com/octohelm/x v0.0.0-20240219080259-91528f21e203 // indirect
