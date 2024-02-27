@@ -28,7 +28,7 @@ import (
 
 			ports: http: _ | *5000
 
-			env: CRKIT_REGISTRY_ADDR: _ | *":\(ports."http")"
+			env: CRKIT_ADDR: _ | *":\(ports."http")"
 
 			readinessProbe: {
 				httpGet: {

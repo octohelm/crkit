@@ -8,19 +8,19 @@ export BUILDKIT_HOST =
 
 CRKIT = go run ./internal/cmd/crkit
 
-dump.k8s:
-	$(CRKIT) serve registry --dump-k8s
-
 serve.registry:
 	$(CRKIT) serve registry \
 		--storage-root=.tmp/container-registry \
-		--remote-registry-endpoint=https://${CONTAINER_REGISTRY} \
-		--remote-registry-username=${CONTAINER_REGISTRY_USERNAME} \
-		--remote-registry-password=${CONTAINER_REGISTRY_PASSWORD} \
 		--addr=:5050
+
+dump.k8s:
+	$(CRKIT) serve registry --dump-k8s
 
 gen:
 	go run ./internal/cmd/tool gen ./internal/cmd/crkit
+
+dep:
+	go get -u ./...
 
 test:
 	go test -v -failfast ./...
