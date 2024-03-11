@@ -25,6 +25,9 @@ dep:
 test:
 	go test -v -failfast ./...
 
+archive:
+	$(WAGON) do go archive --output=.wagon/build
+
 ship:
 	$(WAGON) do go ship pushx
 
@@ -33,3 +36,4 @@ debug.pull:
 
 debug.push:
 	crane push --insecure .tmp/nginx.tar 0.0.0.0:5050/docker.io/library/nginx:latest
+

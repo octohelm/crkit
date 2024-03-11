@@ -5,7 +5,7 @@ import (
 )
 
 #Storage: kubepkg.#Volume & {
-	mountPath: "/etc/registry"
+	mountPath: "/etc/container-registry"
 
 	type: "PersistentVolumeClaim"
 	opt: claimName: "container-registry-storage"

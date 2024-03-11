@@ -40,7 +40,7 @@ actions: go: golang.#Project & {
 
 	version: pkg.version.output
 
-	goos: ["linux"]
+	goos: ["linux", "darwin"]
 	goarch: ["amd64", "arm64"]
 	main: "./internal/cmd/crkit"
 	ldflags: [
@@ -53,6 +53,8 @@ actions: go: golang.#Project & {
 			"go mod download",
 		]
 	}
+
+	archive: archive: true
 
 	ship: {
 		name: "\(strings.Replace(go.module, "github.com/", "ghcr.io/", -1))"
