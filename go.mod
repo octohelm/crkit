@@ -4,7 +4,7 @@ go 1.22
 
 require (
 	github.com/distribution/distribution/v3 v3.0.0-alpha.1
-	github.com/distribution/reference v0.5.0
+	github.com/distribution/reference v0.6.0
 	github.com/go-courier/logr v0.3.0
 	github.com/google/uuid v1.6.0
 	github.com/innoai-tech/infra v0.0.0-20240304023514-48eaf27b837d
