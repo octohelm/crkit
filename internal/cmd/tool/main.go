@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/innoai-tech/infra/pkg/otel"
 	"os"
 
 	"github.com/innoai-tech/infra/devpkg/gengo"
@@ -20,6 +21,7 @@ var App = cli.NewApp("gengo", "dev")
 func init() {
 	cli.AddTo(App, &struct {
 		cli.C `name:"gen"`
+		otel.Otel
 		gengo.Gengo
 	}{})
 }

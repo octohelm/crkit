@@ -14,13 +14,17 @@ import (
 			spec: replicas: _ | *1
 		}
 
-		config: CRKIT_LOG_LEVEL:                string | *"info"
-		config: CRKIT_LOG_FILTER:               string | *"Always"
-		config: CRKIT_TRACE_COLLECTOR_ENDPOINT: string | *""
-		config: CRKIT_STORAGE_ROOT:             string | *"/etc/container-registry"
-		config: CRKIT_REMOTE_REGISTRY_ENDPOINT: string | *""
-		config: CRKIT_REMOTE_REGISTRY_USERNAME: string | *""
-		config: CRKIT_REMOTE_REGISTRY_PASSWORD: string | *""
+		config: CRKIT_LOG_LEVEL:                       string | *"info"
+		config: CRKIT_TRACE_COLLECTOR_ENDPOINT:        string | *""
+		config: CRKIT_METRIC_COLLECTOR_ENDPOINT:       string | *""
+		config: CRKIT_METRIC_COLLECT_INTERVAL_SECONDS: string | *"0"
+		config: CRKIT_STORAGE_ROOT:                    string | *"/etc/container-registry"
+		config: CRKIT_REMOTE_REGISTRY_ENDPOINT:        string | *""
+		config: CRKIT_REMOTE_REGISTRY_USERNAME:        string | *""
+		config: CRKIT_REMOTE_REGISTRY_PASSWORD:        string | *""
+		config: CRKIT_PUBLIC_IP:                       string | *""
+		config: CRKIT_CERTS_CONFIG_PATH:               string | *"/etc/containerd/certs.d"
+		config: CRKIT_CERTS_HOSTS:                     string | *"_default"
 
 		services: "#": ports: containers."container-registry".ports
 

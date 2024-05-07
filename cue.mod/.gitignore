@@ -1,3 +1,4 @@
 gen/
 pkg/
+target/
 module.sum

@@ -13,6 +13,6 @@ func init() {
 // Container Registry
 type Registry struct {
 	cli.C `component:"container-registry"`
-	otel.OtelWithBatchLog
+	otel.Otel
 	registry.Server
 }

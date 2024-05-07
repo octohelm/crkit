@@ -2,9 +2,7 @@ package registry
 
 import (
 	"context"
-	"net/http"
-	"runtime"
-
+	"fmt"
 	"github.com/distribution/distribution/v3"
 	"github.com/distribution/distribution/v3/configuration"
 	"github.com/distribution/distribution/v3/registry/handlers"
@@ -15,6 +13,10 @@ import (
 	"github.com/innoai-tech/infra/pkg/http/middleware"
 	"github.com/octohelm/courier/pkg/courierhttp/handler"
 	"github.com/octohelm/crkit/pkg/client/auth"
+	"github.com/octohelm/crkit/pkg/containerdutil"
+	"net/http"
+	"runtime"
+	"strings"
 )
 
 type RemoteRegistry = auth.RemoteRegistry
@@ -27,6 +29,9 @@ type Server struct {
 	// The address the server endpoint binds to
 	Addr string `flag:",omitempty,expose=http"`
 
+	PublicIP string `flag:",omitempty"`
+	Certs    containerdutil.CertsDumper
+
 	s *http.Server
 }
 
@@ -34,6 +39,8 @@ func (s *Server) SetDefaults() {
 	if s.Addr == "" {
 		s.Addr = ":5000"
 	}
+
+	s.Certs.SetDefaults()
 }
 
 func (s *Server) Init(ctx context.Context) error {
@@ -85,6 +92,18 @@ func (s *Server) Init(ctx context.Context) error {
 	)(app)
 
 	s.s = svc
+
+	return nil
+}
+
+func (s *Server) Run(ctx context.Context) error {
+	if s.PublicIP != "" {
+		i := strings.Index(s.Addr, ":")
+		if i >= 0 {
+			mirror := fmt.Sprintf("http://%s:%s", s.PublicIP, s.Addr[i+1:])
+			return s.Certs.Dump(mirror)
+		}
+	}
 
 	return nil
 }

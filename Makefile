@@ -1,10 +1,8 @@
-WAGON = wagon -p wagon.cue
+PIPER = piper -p piper.cue
 DEBUG = 0
 ifeq ($(DEBUG),1)
-	WAGON := $(WAGON) --log-level=debug
+	PIPER := $(PIPER) --log-level=debug
 endif
-
-export BUILDKIT_HOST =
 
 CRKIT = go run ./internal/cmd/crkit
 
@@ -25,11 +23,8 @@ dep:
 test:
 	go test -v -failfast ./...
 
-archive:
-	$(WAGON) do go archive --output=.wagon/build
-
 ship:
-	$(WAGON) do go ship pushx
+	$(PIPER) do ship
 
 debug.pull:
 	crane pull --insecure 0.0.0.0:5050/docker.io/library/nginx:latest .tmp/nginx.tar

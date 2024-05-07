@@ -9,10 +9,6 @@ on:
 
 jobs:
   release:
-    strategy:
-      matrix:
-        target: [ ship, archive ]
-
     runs-on: ubuntu-latest
 
     env:
@@ -25,18 +21,6 @@ jobs:
           fetch-depth: 0
 
       - uses: docker/setup-qemu-action@v2
-      - run: curl -sSLf https://raw.githubusercontent.com/octohelm/wagon/main/install.sh | sudo sh
+      - run: curl -sSLf https://raw.githubusercontent.com/octohelm/piper/main/install.sh | sudo sh
 
       - run: make ship
-
-      - if: ${{ matrix.target == 'archive' || github.ref == 'refs/heads/main' }}
-        run: make archive
-
-      - if: ${{ matrix.target == 'archive' && github.ref == 'refs/heads/main' }}
-        uses: "marvinpinto/action-automatic-releases@latest"
-        with:
-          automatic_release_tag: "latest"
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          prerelease: true
-          files: |
-            .wagon/build/*.tar.gz
