@@ -47,31 +47,28 @@ func (c *Configuration) MustStorage() driver.StorageDriver {
 	return d
 }
 
-func (c *Configuration) New(ctx context.Context) (distribution.Namespace, error) {
+func (c *Configuration) New(ctx context.Context) (distribution.Namespace, distribution.Namespace, error) {
 	ds := c.MustStorage()
 
-	registryBaseHost := c.RegistryBaseHost
-
-	if registryBaseHost == "" && c.Proxy != nil {
+	if c.RegistryBaseHost == "" && c.Proxy != nil {
 		u, _ := url.Parse(c.Proxy.RemoteURL)
-		registryBaseHost = u.Host
+		c.RegistryBaseHost = u.Host
 	}
 
-	r, err := storage.NewRegistry(ctx, ds)
+	local, err := storage.NewRegistry(ctx, ds)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	if c.Proxy != nil {
-		pr, err := proxy.NewProxyFallbackRegistry(ctx, r, ds, *c.Proxy)
+		pr, err := proxy.NewProxyFallbackRegistry(ctx, local, ds, *c.Proxy)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
-
-		return &namespace{baseHost: registryBaseHost, Namespace: pr}, nil
+		return &namespace{baseHost: BaseHost(c.RegistryBaseHost), Namespace: pr}, local, nil
 	}
 
-	return &namespace{baseHost: registryBaseHost, Namespace: r}, nil
+	return &namespace{baseHost: BaseHost(c.RegistryBaseHost), Namespace: local}, local, nil
 }
 
 func (c Configuration) WithoutProxy() *Configuration {

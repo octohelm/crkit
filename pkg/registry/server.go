@@ -2,7 +2,11 @@ package registry
 
 import (
 	"context"
-	"fmt"
+	"golang.org/x/sync/errgroup"
+	"net/http"
+	"os"
+	"runtime"
+
 	"github.com/distribution/distribution/v3"
 	"github.com/distribution/distribution/v3/configuration"
 	"github.com/distribution/distribution/v3/registry/handlers"
@@ -13,24 +17,19 @@ import (
 	"github.com/innoai-tech/infra/pkg/http/middleware"
 	"github.com/octohelm/courier/pkg/courierhttp/handler"
 	"github.com/octohelm/crkit/pkg/client/auth"
-	"github.com/octohelm/crkit/pkg/containerdutil"
-	"net/http"
-	"runtime"
-	"strings"
 )
 
 type RemoteRegistry = auth.RemoteRegistry
 
 type Server struct {
-	Storage Storage
-
+	Storage        Storage
 	RemoteRegistry RemoteRegistry
 
 	// The address the server endpoint binds to
 	Addr string `flag:",omitempty,expose=http"`
 
-	PublicIP string `flag:",omitempty"`
-	Certs    containerdutil.CertsDumper
+	Cleaner Cleaner
+	Publisher
 
 	s *http.Server
 }
@@ -40,17 +39,19 @@ func (s *Server) SetDefaults() {
 		s.Addr = ":5000"
 	}
 
-	s.Certs.SetDefaults()
+	s.Cleaner.SetDefaults()
+	s.Publisher.SetDefaults()
 }
 
 func (s *Server) Init(ctx context.Context) error {
-	if s.s != nil {
-		return nil
-	}
-
 	c := &Configuration{}
 
 	c.StorageRoot = s.Storage.Root
+
+	if err := os.MkdirAll(c.StorageRoot, os.ModePerm); err != nil {
+		return err
+	}
+
 	c.RegistryAddr = s.Addr
 
 	if s.RemoteRegistry.Endpoint != "" {
@@ -61,19 +62,21 @@ func (s *Server) Init(ctx context.Context) error {
 		}
 	}
 
-	cr, err := c.New(ctx)
+	reg, localReg, err := c.New(ctx)
 	if err != nil {
 		return err
 	}
 
 	_ = regsitrymiddleware.Register("custom", func(ctx context.Context, registry distribution.Namespace, driver driver.StorageDriver, options map[string]interface{}) (distribution.Namespace, error) {
-		return cr, nil
+		return reg, nil
 	})
 
 	app := handlers.NewApp(ctx, &configuration.Configuration{
-		Storage: configuration.Storage{"filesystem": map[string]any{
-			"rootdirectory": c.StorageRoot,
-		}},
+		Storage: configuration.Storage{
+			"filesystem": map[string]any{
+				"rootdirectory": c.StorageRoot,
+			},
+		},
 		Middleware: map[string][]configuration.Middleware{
 			"registry": {
 				{Name: "custom"},
@@ -93,34 +96,65 @@ func (s *Server) Init(ctx context.Context) error {
 
 	s.s = svc
 
-	return nil
+	s.Cleaner.ApplyRegistry(localReg, c.MustStorage(), BaseHost(c.RegistryBaseHost))
+
+	if err := s.Cleaner.Init(ctx); err != nil {
+		return err
+	}
+
+	return s.Publisher.InitWith(s.Addr)
 }
 
 func (s *Server) Run(ctx context.Context) error {
-	if s.PublicIP != "" {
-		i := strings.Index(s.Addr, ":")
-		if i >= 0 {
-			mirror := fmt.Sprintf("http://%s:%s", s.PublicIP, s.Addr[i+1:])
-			return s.Certs.Dump(mirror)
-		}
-	}
+	g, c := errgroup.WithContext(ctx)
 
-	return nil
+	g.Go(func() error {
+		return s.Publisher.Run(c)
+	})
+
+	g.Go(func() error {
+		return s.Cleaner.Run(c)
+	})
+
+	return g.Wait()
 }
 
 func (s *Server) Serve(ctx context.Context) error {
-	if s.s == nil {
-		return nil
-	}
-	l := logr.FromContext(ctx)
+	g, c := errgroup.WithContext(ctx)
+	if s.s != nil {
+		g.Go(func() error {
+			l := logr.FromContext(c)
 
-	l.Info("container registry serve on %s (%s/%s)", s.s.Addr, runtime.GOOS, runtime.GOARCH)
-	if s.RemoteRegistry.Endpoint != "" {
-		l.Info("proxy fallback %s enabled", s.RemoteRegistry.Endpoint)
+			l.Info("container registry serve on %s (%s/%s)", s.s.Addr, runtime.GOOS, runtime.GOARCH)
+
+			if s.RemoteRegistry.Endpoint != "" {
+				l.Info("proxy fallback %s enabled", s.RemoteRegistry.Endpoint)
+			}
+
+			return s.s.ListenAndServe()
+		})
 	}
-	return s.s.ListenAndServe()
+
+	g.Go(func() error {
+		return s.Cleaner.Serve(c)
+	})
+
+	return g.Wait()
+
 }
 
 func (s *Server) Shutdown(ctx context.Context) error {
-	return s.s.Shutdown(ctx)
+	g, c := errgroup.WithContext(ctx)
+
+	if s.s != nil {
+		g.Go(func() error {
+			return s.s.Shutdown(c)
+		})
+	}
+
+	g.Go(func() error {
+		return s.Cleaner.Shutdown(c)
+	})
+
+	return g.Wait()
 }

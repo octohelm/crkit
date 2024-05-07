@@ -2,25 +2,15 @@ package registry
 
 import (
 	"context"
-	"strings"
-
 	"github.com/distribution/distribution/v3"
 	"github.com/distribution/reference"
 )
 
 type namespace struct {
 	distribution.Namespace
-	baseHost string
+	baseHost BaseHost
 }
 
-func (n namespace) Repository(ctx context.Context, named reference.Named) (distribution.Repository, error) {
-	if n.baseHost != "" {
-		if name := named.Name(); strings.HasPrefix(name, n.baseHost) {
-			// <baseHost>/xxx/yyy => xxx/yyy
-			fixedNamed, _ := reference.WithName(name[len(n.baseHost)+1:])
-			return n.Namespace.Repository(ctx, fixedNamed)
-		}
-	}
-
-	return n.Namespace.Repository(ctx, named)
+func (n *namespace) Repository(ctx context.Context, named reference.Named) (distribution.Repository, error) {
+	return n.Namespace.Repository(ctx, n.baseHost.TrimNamed(named))
 }

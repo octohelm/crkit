@@ -15,3 +15,30 @@ import (
 		storageClassName: "local-path"
 	}
 }
+
+#ContainerRegistryServiceAccount: kubepkg.#ServiceAccount & {
+	scope: "Namespace"
+	rules: [
+		{
+			apiGroups: [""]
+			resources: ["configmaps"]
+			verbs: ["*"]
+		},
+		{
+			apiGroups: [""]
+			resources: ["nodes"]
+			verbs: ["get"]
+		},
+	]
+}
+
+#ContainerdOperatorServiceAccount: kubepkg.#ServiceAccount & {
+	scope: "Namespace"
+	rules: [
+		{
+			apiGroups: [""]
+			resources: ["configmaps"]
+			verbs: ["*"]
+		},
+	]
+}

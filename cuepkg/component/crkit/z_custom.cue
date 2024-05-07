@@ -1,11 +1,13 @@
 package crkit
 
 #ContainerRegistry: spec: {
-	volumes: "~container-registry-storage": #Storage
-	services: "#": {
-		clusterIP: *"10.68.0.255" | string
-	}
+	serviceAccount: #ContainerRegistryServiceAccount
 	deploy: spec: template: spec: #DefaultNodeSelector
+	volumes: "~container-registry-storage": #Storage
+}
+
+#ContainerdOperator: spec: {
+	serviceAccount: #ContainerdOperatorServiceAccount
 }
 
 #DefaultNodeSelector: {

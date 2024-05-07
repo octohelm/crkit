@@ -6,13 +6,24 @@ endif
 
 CRKIT = go run ./internal/cmd/crkit
 
+export KUBECONFIG = ${HOME}/.kube_config/config--algo-staging.yaml
+
 serve.registry:
 	$(CRKIT) serve registry \
+		--kubeconfig=${KUBECONFIG} \
+		--public-ip=10.244.0.175 \
 		--storage-root=.tmp/container-registry \
 		--addr=:5050
 
+serve.operator:
+	$(CRKIT) serve operator -c \
+		--containerd-host-config-path=target/containerd/certs.d/ \
+		--kubeconfig=${KUBECONFIG} \
+		--watch-namespace=kube-system
+
 dump.k8s:
 	$(CRKIT) serve registry --dump-k8s
+	$(CRKIT) serve operator --dump-k8s
 
 gen:
 	go run ./internal/cmd/tool gen ./internal/cmd/crkit
