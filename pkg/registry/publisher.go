@@ -27,9 +27,11 @@ func (s *Publisher) SetDefaults() {
 }
 
 func (s *Publisher) InitWith(addr string) error {
-	i := strings.Index(addr, ":")
-	if i >= 0 {
-		s.mirror = fmt.Sprintf("http://%s:%s", s.PublicIP, addr[i+1:])
+	if s.PublicIP != "" {
+		i := strings.Index(addr, ":")
+		if i >= 0 {
+			s.mirror = fmt.Sprintf("http://%s:%s", s.PublicIP, addr[i+1:])
+		}
 	}
 	return nil
 }
