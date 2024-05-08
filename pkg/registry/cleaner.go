@@ -6,7 +6,7 @@ import (
 	"github.com/distribution/distribution/v3/registry/storage"
 	"github.com/distribution/reference"
 	"github.com/go-courier/logr"
-	"github.com/octohelm/crkit/pkg/cron"
+	"github.com/innoai-tech/infra/pkg/cron"
 	"github.com/octohelm/kubekit/pkg/kubeclient"
 	corev1 "k8s.io/api/core/v1"
 	"strings"
