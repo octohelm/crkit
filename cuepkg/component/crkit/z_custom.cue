@@ -3,7 +3,6 @@ package crkit
 #ContainerRegistry: spec: {
 	serviceAccount: #ContainerRegistryServiceAccount
 	deploy: spec: template: spec: #DefaultNodeSelector
-	volumes: "~container-registry-storage": #Storage
 }
 
 #ContainerdOperator: spec: {
