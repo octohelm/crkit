@@ -2,12 +2,15 @@ package controller
 
 import (
 	"context"
-	"github.com/octohelm/kubekit/pkg/operator"
-	"github.com/pkg/errors"
 	"io/fs"
-	"k8s.io/apimachinery/pkg/runtime"
 	"os"
 	"path"
+
+	"github.com/octohelm/kubekit/pkg/operator"
+	"github.com/pkg/errors"
+
+	"k8s.io/apimachinery/pkg/runtime"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	corev1 "k8s.io/api/core/v1"

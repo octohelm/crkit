@@ -34,6 +34,9 @@ dep:
 test:
 	go test -v -failfast ./...
 
+fmt:
+	gofumpt -w -l .
+
 ship:
 	$(PIPER) do ship
 

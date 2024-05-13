@@ -2,16 +2,16 @@ package registry
 
 import (
 	"context"
+	"strings"
+
 	"github.com/distribution/distribution/v3"
 	"github.com/distribution/distribution/v3/registry/storage"
+	"github.com/distribution/distribution/v3/registry/storage/driver"
 	"github.com/distribution/reference"
 	"github.com/go-courier/logr"
 	"github.com/innoai-tech/infra/pkg/cron"
 	"github.com/octohelm/kubekit/pkg/kubeclient"
 	corev1 "k8s.io/api/core/v1"
-	"strings"
-
-	"github.com/distribution/distribution/v3/registry/storage/driver"
 )
 
 type Cleaner struct {

@@ -4,10 +4,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/octohelm/crkit/pkg/client/auth/challenge"
 	"io"
 	"mime"
 	"net/http"
+
+	"github.com/octohelm/crkit/pkg/client/auth/challenge"
 
 	"github.com/distribution/distribution/v3/registry/api/errcode"
 )

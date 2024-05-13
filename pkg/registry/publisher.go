@@ -3,14 +3,16 @@ package registry
 import (
 	"context"
 	"fmt"
+	"log/slog"
+	"strings"
+
 	"github.com/go-courier/logr"
-	"github.com/octohelm/crkit/pkg/containerdhost"
-	containerdhostcontroller "github.com/octohelm/crkit/pkg/containerdhost/controller"
 	"github.com/octohelm/kubekit/pkg/kubeclient"
 	corev1 "k8s.io/api/core/v1"
-	"log/slog"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strings"
+
+	"github.com/octohelm/crkit/pkg/containerdhost"
+	containerdhostcontroller "github.com/octohelm/crkit/pkg/containerdhost/controller"
 )
 
 type Publisher struct {

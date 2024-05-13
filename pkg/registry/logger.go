@@ -12,8 +12,7 @@ func init() {
 	logrus.SetFormatter(&formatter{})
 }
 
-type formatter struct {
-}
+type formatter struct{}
 
 func (f formatter) Format(entry *logrus.Entry) ([]byte, error) {
 	ctx := entry.Context

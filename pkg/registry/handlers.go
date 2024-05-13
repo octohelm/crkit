@@ -40,8 +40,7 @@ func enableMirrors(nextHandler http.Handler) http.Handler {
 
 type App = handlers.App
 
-type registryAppContext struct {
-}
+type registryAppContext struct{}
 
 func ContextWithRegistryApp(ctx context.Context, app *App) context.Context {
 	return context.WithValue(ctx, registryAppContext{}, app)

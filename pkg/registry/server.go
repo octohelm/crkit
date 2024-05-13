@@ -2,10 +2,11 @@ package registry
 
 import (
 	"context"
-	"golang.org/x/sync/errgroup"
 	"net/http"
 	"os"
 	"runtime"
+
+	"golang.org/x/sync/errgroup"
 
 	"github.com/distribution/distribution/v3"
 	"github.com/distribution/distribution/v3/configuration"
@@ -140,7 +141,6 @@ func (s *Server) Serve(ctx context.Context) error {
 	})
 
 	return g.Wait()
-
 }
 
 func (s *Server) Shutdown(ctx context.Context) error {

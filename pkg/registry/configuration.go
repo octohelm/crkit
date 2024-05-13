@@ -39,7 +39,6 @@ func (c *Configuration) MustStorage() driver.StorageDriver {
 	d, err := factory.Create(context.Background(), "filesystem", map[string]interface{}{
 		"rootdirectory": c.StorageRoot,
 	})
-
 	if err != nil {
 		panic(err)
 	}

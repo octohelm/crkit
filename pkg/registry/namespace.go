@@ -2,6 +2,7 @@ package registry
 
 import (
 	"context"
+
 	"github.com/distribution/distribution/v3"
 	"github.com/distribution/reference"
 )

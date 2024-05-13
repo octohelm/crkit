@@ -5,12 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/octohelm/crkit/pkg/client"
 	"net/http"
 	"net/url"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/octohelm/crkit/pkg/client"
 
 	"github.com/octohelm/crkit/pkg/client/auth/challenge"
 	"github.com/octohelm/crkit/pkg/client/transport"

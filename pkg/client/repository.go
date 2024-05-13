@@ -89,7 +89,6 @@ type registry struct {
 // of the slice, starting at the value provided in 'last'.  The number of entries will be returned along with io.EOF if there
 // are no more entries
 func (r *registry) Repositories(ctx context.Context, entries []string, last string) (int, error) {
-
 	values := buildCatalogValues(len(entries), last)
 	u, err := r.ub.BuildCatalogURL(values)
 	if err != nil {

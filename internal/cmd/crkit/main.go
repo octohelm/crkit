@@ -2,8 +2,9 @@ package main
 
 import (
 	"context"
-	"github.com/octohelm/crkit/internal/version"
 	"os"
+
+	"github.com/octohelm/crkit/internal/version"
 
 	"github.com/innoai-tech/infra/pkg/cli"
 )

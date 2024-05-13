@@ -6,8 +6,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type FilterHostConfig struct {
-}
+type FilterHostConfig struct{}
 
 func (f *FilterHostConfig) ApplyToList(c *client.ListOptions) {
 	ls := c.LabelSelector

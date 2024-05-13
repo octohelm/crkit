@@ -2,10 +2,11 @@ package registry
 
 import (
 	"context"
-	"github.com/octohelm/crkit/pkg/client/auth"
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/octohelm/crkit/pkg/client/auth"
 
 	"github.com/distribution/distribution/v3"
 	"github.com/distribution/reference"
