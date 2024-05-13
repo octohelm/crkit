@@ -9,7 +9,6 @@ import (
 
 	"github.com/distribution/distribution/v3"
 	"github.com/distribution/reference"
-	"github.com/octohelm/crkit/pkg/client/auth"
 	"github.com/opencontainers/go-digest"
 	"github.com/pkg/errors"
 )
@@ -18,12 +17,11 @@ type proxyBlobStore struct {
 	localStore     distribution.BlobStore
 	remoteStore    distribution.BlobService
 	repositoryName reference.Named
-	authChallenger auth.Challenger
 }
 
 var _ distribution.BlobStore = &proxyBlobStore{}
 
-func SetResponseHeaders(w http.ResponseWriter, descriptor distribution.Descriptor) {
+func setResponseHeaders(w http.ResponseWriter, descriptor distribution.Descriptor) {
 	w.Header().Set("Content-Length", strconv.FormatInt(descriptor.Size, 10))
 	w.Header().Set("Content-Type", descriptor.MediaType)
 	w.Header().Set("Docker-Content-Digest", descriptor.Digest.String())
@@ -36,7 +34,7 @@ func (pbs *proxyBlobStore) ServeBlob(ctx context.Context, w http.ResponseWriter,
 		return err
 	}
 
-	SetResponseHeaders(w, d)
+	setResponseHeaders(w, d)
 
 	blobReader, err := pbs.Open(ctx, dgst)
 	if err != nil {
@@ -75,10 +73,6 @@ func (pbs *proxyBlobStore) Stat(ctx context.Context, dgst digest.Digest) (distri
 	}
 
 	if !errors.Is(err, distribution.ErrBlobUnknown) {
-		return distribution.Descriptor{}, err
-	}
-
-	if err := pbs.authChallenger.TryEstablishChallenges(ctx); err != nil {
 		return distribution.Descriptor{}, err
 	}
 
@@ -128,10 +122,6 @@ func (pbs *proxyBlobStore) Open(ctx context.Context, dgst digest.Digest) (io.Rea
 	blob, err := pbs.localStore.Open(ctx, dgst)
 	if err == nil {
 		return blob, nil
-	}
-
-	if err := pbs.authChallenger.TryEstablishChallenges(ctx); err != nil {
-		return nil, err
 	}
 
 	blob, err = pbs.remoteStore.Open(ctx, dgst)

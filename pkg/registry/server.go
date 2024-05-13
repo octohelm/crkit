@@ -17,14 +17,12 @@ import (
 	infraconfiguration "github.com/innoai-tech/infra/pkg/configuration"
 	"github.com/innoai-tech/infra/pkg/http/middleware"
 	"github.com/octohelm/courier/pkg/courierhttp/handler"
-	"github.com/octohelm/crkit/pkg/client/auth"
+	"github.com/octohelm/crkit/pkg/registry/remote"
 )
-
-type RemoteRegistry = auth.RemoteRegistry
 
 type Server struct {
 	Storage        Storage
-	RemoteRegistry RemoteRegistry
+	RemoteRegistry remote.RegistryConfig
 
 	// The address the server endpoint binds to
 	Addr string `flag:",omitempty,expose=http"`

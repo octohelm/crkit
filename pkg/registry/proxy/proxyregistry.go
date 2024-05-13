@@ -2,26 +2,21 @@ package proxy
 
 import (
 	"context"
-	"net/http"
+	"github.com/google/go-containerregistry/pkg/authn"
+	"github.com/octohelm/crkit/pkg/registry/remote"
 	"net/url"
-
-	"github.com/octohelm/crkit/pkg/client/auth"
 
 	"github.com/distribution/distribution/v3"
 	"github.com/distribution/distribution/v3/configuration"
 	"github.com/distribution/distribution/v3/registry/storage"
 	"github.com/distribution/distribution/v3/registry/storage/driver"
 	"github.com/distribution/reference"
-
-	"github.com/octohelm/crkit/pkg/client"
-	"github.com/octohelm/crkit/pkg/client/transport"
 )
 
-// proxyingRegistry fetches content from a remote registry and caches it locally
-type proxyingRegistry struct {
-	embedded       distribution.Namespace // provides local registry functionality
-	remoteURL      url.URL
-	authChallenger auth.Challenger
+// namespace fetches content from a remote registry and caches it locally
+type namespace struct {
+	embedded distribution.Namespace // provides local registry functionality
+	remote   distribution.Namespace
 }
 
 func NewProxyFallbackRegistry(ctx context.Context, registry distribution.Namespace, driver driver.StorageDriver, config configuration.Proxy) (distribution.Namespace, error) {
@@ -30,33 +25,30 @@ func NewProxyFallbackRegistry(ctx context.Context, registry distribution.Namespa
 		return nil, err
 	}
 
-	authC, err := auth.NewAuthChallenger(remoteURL, config.Username, config.Password)
+	r, err := remote.New(remoteURL.String(), authn.FromConfig(authn.AuthConfig{
+		Username: config.Username,
+		Password: config.Password,
+	}))
 	if err != nil {
 		return nil, err
 	}
 
-	return &proxyingRegistry{
-		embedded:       registry,
-		remoteURL:      *remoteURL,
-		authChallenger: authC,
+	return &namespace{
+		embedded: registry,
+		remote:   r,
 	}, nil
 }
 
-func (pr *proxyingRegistry) Scope() distribution.Scope {
+func (n *namespace) Scope() distribution.Scope {
 	return distribution.GlobalScope
 }
 
-func (pr *proxyingRegistry) Repositories(ctx context.Context, repos []string, last string) (n int, err error) {
-	return pr.embedded.Repositories(ctx, repos, last)
+func (n *namespace) Repositories(ctx context.Context, repos []string, last string) (int, error) {
+	return n.embedded.Repositories(ctx, repos, last)
 }
 
-func (pr *proxyingRegistry) Repository(ctx context.Context, name reference.Named) (distribution.Repository, error) {
-	tr := transport.NewTransport(
-		http.DefaultTransport,
-		auth.NewAuthorizerFromChallenger(ctx, pr.authChallenger, name, []string{"pull"}),
-	)
-
-	localRepo, err := pr.embedded.Repository(ctx, name)
+func (n *namespace) Repository(ctx context.Context, name reference.Named) (distribution.Repository, error) {
+	localRepo, err := n.embedded.Repository(ctx, name)
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +58,7 @@ func (pr *proxyingRegistry) Repository(ctx context.Context, name reference.Named
 		return nil, err
 	}
 
-	remoteRepo, err := client.NewRepository(name, pr.remoteURL.String(), client.WithLogger()(tr))
+	remoteRepo, err := n.remote.Repository(ctx, name)
 	if err != nil {
 		return nil, err
 	}
@@ -76,58 +68,52 @@ func (pr *proxyingRegistry) Repository(ctx context.Context, name reference.Named
 		return nil, err
 	}
 
-	return &proxiedRepository{
+	return &repository{
 		blobStore: &proxyBlobStore{
+			repositoryName: name,
 			localStore:     localRepo.Blobs(ctx),
 			remoteStore:    remoteRepo.Blobs(ctx),
-			repositoryName: name,
-			authChallenger: pr.authChallenger,
 		},
-		manifests: &proxyManifestStore{
+		manifests: &proxyManifestService{
 			repositoryName:  name,
-			localManifests:  localManifests, // Options?
 			remoteManifests: remoteManifests,
-			authChallenger:  pr.authChallenger,
+			localManifests:  localManifests,
 		},
 		name: name,
 		tags: &proxyTagService{
-			localTags:      localRepo.Tags(ctx),
-			remoteTags:     remoteRepo.Tags(ctx),
-			authChallenger: pr.authChallenger,
+			remoteTags: remoteRepo.Tags(ctx),
+			localTags:  localRepo.Tags(ctx),
 		},
 	}, nil
 }
 
-func (pr *proxyingRegistry) Blobs() distribution.BlobEnumerator {
-	return pr.embedded.Blobs()
+func (n *namespace) Blobs() distribution.BlobEnumerator {
+	return n.embedded.Blobs()
 }
 
-func (pr *proxyingRegistry) BlobStatter() distribution.BlobStatter {
-	return pr.embedded.BlobStatter()
+func (n *namespace) BlobStatter() distribution.BlobStatter {
+	return n.embedded.BlobStatter()
 }
 
-// proxiedRepository uses proxying blob and manifest services to serve content
-// locally, or pulling it through from a remote and caching it locally if it doesn't
-// already exist
-type proxiedRepository struct {
+type repository struct {
 	blobStore distribution.BlobStore
 	manifests distribution.ManifestService
 	name      reference.Named
 	tags      distribution.TagService
 }
 
-func (pr *proxiedRepository) Manifests(ctx context.Context, options ...distribution.ManifestServiceOption) (distribution.ManifestService, error) {
+func (pr *repository) Manifests(ctx context.Context, options ...distribution.ManifestServiceOption) (distribution.ManifestService, error) {
 	return pr.manifests, nil
 }
 
-func (pr *proxiedRepository) Blobs(ctx context.Context) distribution.BlobStore {
+func (pr *repository) Blobs(ctx context.Context) distribution.BlobStore {
 	return pr.blobStore
 }
 
-func (pr *proxiedRepository) Named() reference.Named {
+func (pr *repository) Named() reference.Named {
 	return pr.name
 }
 
-func (pr *proxiedRepository) Tags(ctx context.Context) distribution.TagService {
+func (pr *repository) Tags(ctx context.Context) distribution.TagService {
 	return pr.tags
 }
