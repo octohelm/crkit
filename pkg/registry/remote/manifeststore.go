@@ -2,6 +2,7 @@ package remote
 
 import (
 	"context"
+
 	"github.com/distribution/distribution/v3"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/opencontainers/go-digest"

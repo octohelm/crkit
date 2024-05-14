@@ -2,12 +2,13 @@ package remote
 
 import (
 	"context"
-	"github.com/distribution/reference"
-	"github.com/google/go-containerregistry/pkg/name"
-	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"net/url"
 	"path"
 	"strings"
+
+	"github.com/distribution/reference"
+	"github.com/google/go-containerregistry/pkg/name"
+	"github.com/google/go-containerregistry/pkg/v1/remote"
 
 	"github.com/distribution/distribution/v3"
 	"github.com/google/go-containerregistry/pkg/authn"

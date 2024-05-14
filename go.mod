@@ -3,17 +3,20 @@ module github.com/octohelm/crkit
 go 1.22.2
 
 require (
+	github.com/containerd/containerd v1.7.16
 	github.com/distribution/distribution/v3 v3.0.0-alpha.1
 	github.com/distribution/reference v0.6.0
 	github.com/go-courier/logr v0.3.0
 	github.com/google/go-containerregistry v0.19.1
 	github.com/innoai-tech/infra v0.0.0-20240508041032-12069adfe35c
-	github.com/octohelm/courier v0.0.0-20240506093745-6b6f6acaf660
-	github.com/octohelm/gengo v0.0.0-20240409082121-aeffa5400f19
+	github.com/octohelm/courier v0.0.0-20240510063732-a8aa1af87601
+	github.com/octohelm/gengo v0.0.0-20240510051519-974fb897453b
 	github.com/octohelm/kubekit v0.0.0-20240508035712-15cb61729772
+	github.com/octohelm/kubepkgspec v0.0.0-20240514102555-08917801bb86
 	github.com/octohelm/storage v0.0.0-20240430010427-f412a0c84f3b
 	github.com/octohelm/x v0.0.0-20240513022938-1bd86d96adef
 	github.com/opencontainers/go-digest v1.0.0
+	github.com/opencontainers/image-spec v1.1.0
 	github.com/pelletier/go-toml/v2 v2.2.2
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.9.3
@@ -25,11 +28,13 @@ require (
 
 require (
 	cuelang.org/go v0.8.2 // indirect
+	github.com/Microsoft/hcsshim v0.11.4 // indirect
 	github.com/andybalholm/brotli v1.1.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cockroachdb/apd/v3 v3.2.1 // indirect
+	github.com/containerd/log v0.1.0 // indirect
 	github.com/containerd/stargz-snapshotter/estargz v0.14.3 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
@@ -76,7 +81,6 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/onsi/gomega v1.33.1 // indirect
-	github.com/opencontainers/image-spec v1.1.0 // indirect
 	github.com/prometheus/client_golang v1.19.0 // indirect
 	github.com/prometheus/client_model v0.6.1 // indirect
 	github.com/prometheus/common v0.53.0 // indirect

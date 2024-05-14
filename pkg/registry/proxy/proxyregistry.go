@@ -2,9 +2,10 @@ package proxy
 
 import (
 	"context"
+	"net/url"
+
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/octohelm/crkit/pkg/registry/remote"
-	"net/url"
 
 	"github.com/distribution/distribution/v3"
 	"github.com/distribution/distribution/v3/configuration"
