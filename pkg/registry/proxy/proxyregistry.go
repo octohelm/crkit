@@ -2,9 +2,9 @@ package proxy
 
 import (
 	"context"
+	"github.com/google/go-containerregistry/pkg/authn"
 	"net/url"
 
-	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/octohelm/crkit/pkg/registry/remote"
 
 	"github.com/distribution/distribution/v3"
@@ -26,10 +26,10 @@ func NewProxyFallbackRegistry(ctx context.Context, registry distribution.Namespa
 		return nil, err
 	}
 
-	r, err := remote.New(remoteURL.String(), authn.FromConfig(authn.AuthConfig{
+	r, err := remote.New(remoteURL.String(), remote.WithAuth(authn.FromConfig(authn.AuthConfig{
 		Username: config.Username,
 		Password: config.Password,
-	}))
+	})))
 	if err != nil {
 		return nil, err
 	}

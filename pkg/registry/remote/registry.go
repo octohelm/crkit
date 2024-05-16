@@ -2,6 +2,7 @@ package remote
 
 import (
 	"context"
+	"net/http"
 	"net/url"
 	"path"
 	"strings"
@@ -23,21 +24,48 @@ type RegistryConfig struct {
 	Password string `flag:",omitempty,secret"`
 }
 
-func New(endpoint string, auth authn.Authenticator) (distribution.Namespace, error) {
+type Option = func(n *namespace)
+
+func WithAuth(auth authn.Authenticator) Option {
+	return func(n *namespace) {
+		n.auth = auth
+	}
+}
+
+type RoundTripperWrapper = func(next http.RoundTripper) http.RoundTripper
+
+func WithRoundTripperWrappers(wrappers ...RoundTripperWrapper) Option {
+	return func(n *namespace) {
+		transport := n.transport
+		for _, b := range wrappers {
+			transport = b(transport)
+		}
+		n.transport = transport
+	}
+}
+
+func New(endpoint string, options ...Option) (distribution.Namespace, error) {
 	u, err := url.Parse(endpoint)
 	if err != nil {
 		return nil, err
 	}
 
-	return &namespace{
-		endpoint: u,
-		auth:     auth,
-	}, nil
+	n := &namespace{
+		endpoint:  u,
+		transport: remote.DefaultTransport,
+	}
+
+	for _, opt := range options {
+		opt(n)
+	}
+
+	return n, nil
 }
 
 type namespace struct {
-	endpoint *url.URL
-	auth     authn.Authenticator
+	endpoint  *url.URL
+	auth      authn.Authenticator
+	transport http.RoundTripper
 }
 
 func (_ *namespace) Repositories(ctx context.Context, repos []string, last string) (n int, err error) {
@@ -59,11 +87,11 @@ func (n *namespace) Repository(ctx context.Context, named reference.Named) (dist
 		return nil, err
 	}
 
-	pusher, err := remote.NewPusher(remote.WithAuth(n.auth))
+	pusher, err := remote.NewPusher(remote.WithAuth(n.auth), remote.WithTransport(n.transport))
 	if err != nil {
 		return nil, err
 	}
-	puller, err := remote.NewPuller(remote.WithAuth(n.auth))
+	puller, err := remote.NewPuller(remote.WithAuth(n.auth), remote.WithTransport(n.transport))
 	if err != nil {
 		return nil, err
 	}

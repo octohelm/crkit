@@ -20,7 +20,7 @@ import (
 func TestNamespace(t *testing.T) {
 	s := httptest.NewServer(registry.New())
 
-	r, err := New(s.URL, nil)
+	r, err := New(s.URL)
 	testingx.Expect(t, err, testingx.BeNil[error]())
 
 	named, _ := reference.Parse("test/test")
