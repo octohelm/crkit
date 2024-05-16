@@ -3,6 +3,7 @@ package remote
 import (
 	"context"
 	"fmt"
+	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
 	"io"
 	"net/http"
 	"strconv"
@@ -21,6 +22,16 @@ type blobStore struct {
 	*repository
 }
 
+func (b *blobStore) normalizeError(err error) error {
+	terr := &transport.Error{}
+	if errors.As(err, &terr) {
+		if terr.StatusCode == http.StatusNotFound {
+			return distribution.ErrBlobUnknown
+		}
+	}
+	return nil
+}
+
 func (b *blobStore) Resume(ctx context.Context, id string) (distribution.BlobWriter, error) {
 	return nil, errors.New("not supported")
 }
@@ -32,7 +43,7 @@ func (b *blobStore) Delete(ctx context.Context, dgst digest.Digest) error {
 func (b *blobStore) Stat(ctx context.Context, dgst digest.Digest) (distribution.Descriptor, error) {
 	d, err := b.puller.Get(ctx, b.repo.Digest(dgst.String()))
 	if err != nil {
-		return distribution.Descriptor{}, err
+		return distribution.Descriptor{}, b.normalizeError(err)
 	}
 
 	return distribution.Descriptor{
@@ -46,13 +57,10 @@ func (b *blobStore) Stat(ctx context.Context, dgst digest.Digest) (distribution.
 func (b *blobStore) Open(ctx context.Context, dgst digest.Digest) (io.ReadSeekCloser, error) {
 	d, err := b.puller.Layer(ctx, b.repo.Digest(dgst.String()))
 	if err != nil {
-		return nil, err
+		return nil, b.normalizeError(err)
 	}
 
 	r, err := d.Compressed()
-	if err != nil {
-		return nil, err
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +79,7 @@ func (nopSeeker) Seek(offset int64, whence int) (int64, error) {
 func (b *blobStore) Get(ctx context.Context, dgst digest.Digest) ([]byte, error) {
 	r, err := b.Open(ctx, dgst)
 	if err != nil {
-		return nil, err
+		return nil, b.normalizeError(err)
 	}
 	defer r.Close()
 	return io.ReadAll(r)

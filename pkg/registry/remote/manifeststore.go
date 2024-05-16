@@ -2,6 +2,9 @@ package remote
 
 import (
 	"context"
+	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
+	"github.com/pkg/errors"
+	"net/http"
 
 	"github.com/distribution/distribution/v3"
 	"github.com/google/go-containerregistry/pkg/name"
@@ -17,6 +20,18 @@ type manifestService struct {
 }
 
 var _ distribution.ManifestService = &manifestService{}
+
+func (b *manifestService) normalizeError(dgst digest.Digest, err error) error {
+	terr := &transport.Error{}
+	if errors.As(err, &terr) {
+		if terr.StatusCode == http.StatusNotFound {
+			return distribution.ErrManifestBlobUnknown{
+				Digest: dgst,
+			}
+		}
+	}
+	return nil
+}
 
 func (ms *manifestService) Delete(ctx context.Context, dgst digest.Digest) error {
 	return ms.pusher.Delete(ctx, ms.repo.Digest(dgst.String()))
@@ -49,7 +64,7 @@ func (ms *manifestService) Put(ctx context.Context, m distribution.Manifest, opt
 func (ms *manifestService) Exists(ctx context.Context, dgst digest.Digest) (bool, error) {
 	_, err := ms.puller.Head(ctx, ms.repo.Digest(dgst.String()))
 	if err != nil {
-		return false, err
+		return false, ms.normalizeError(dgst, err)
 	}
 	return true, nil
 }
@@ -57,11 +72,12 @@ func (ms *manifestService) Exists(ctx context.Context, dgst digest.Digest) (bool
 func (ms *manifestService) Get(ctx context.Context, dgst digest.Digest, options ...distribution.ManifestServiceOption) (distribution.Manifest, error) {
 	d, err := ms.puller.Get(ctx, ms.repo.Digest(dgst.String()))
 	if err != nil {
-		return nil, err
+		return nil, ms.normalizeError(dgst, err)
 	}
+
 	m, _, err := distribution.UnmarshalManifest(string(d.MediaType), d.Manifest)
 	if err != nil {
-		return nil, err
+		return nil, &distribution.ErrManifestUnverified{}
 	}
 	return m, nil
 }

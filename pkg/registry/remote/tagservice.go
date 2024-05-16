@@ -2,6 +2,9 @@ package remote
 
 import (
 	"context"
+	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
+	"github.com/pkg/errors"
+	"net/http"
 
 	"github.com/opencontainers/go-digest"
 
@@ -14,10 +17,23 @@ type tagService struct {
 
 var _ distribution.TagService = &tagService{}
 
+func (b *tagService) normalizeError(tag string, err error) error {
+	terr := &transport.Error{}
+	if errors.As(err, &terr) {
+		if terr.StatusCode == http.StatusNotFound {
+			return distribution.ErrManifestUnknown{
+				Name: b.named.Name(),
+				Tag:  tag,
+			}
+		}
+	}
+	return nil
+}
+
 func (pt *tagService) Get(ctx context.Context, tag string) (distribution.Descriptor, error) {
 	d, err := pt.puller.Get(ctx, pt.repo.Tag(tag))
 	if err != nil {
-		return distribution.Descriptor{}, err
+		return distribution.Descriptor{}, pt.normalizeError(tag, err)
 	}
 	return distribution.Descriptor{
 		MediaType:   string(d.MediaType),
