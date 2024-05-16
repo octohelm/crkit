@@ -10,6 +10,7 @@ import (
 	"github.com/distribution/distribution/v3/registry/storage/driver"
 	"github.com/distribution/distribution/v3/registry/storage/driver/factory"
 	_ "github.com/distribution/distribution/v3/registry/storage/driver/filesystem"
+
 	"github.com/octohelm/crkit/pkg/registry/proxy"
 )
 

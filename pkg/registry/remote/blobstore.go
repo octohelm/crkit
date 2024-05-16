@@ -9,6 +9,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/go-containerregistry/pkg/v1/partial"
+	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
+
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/types"
 
@@ -21,6 +24,16 @@ type blobStore struct {
 	*repository
 }
 
+func (b *blobStore) normalizeError(err error) error {
+	terr := &transport.Error{}
+	if errors.As(err, &terr) {
+		if terr.StatusCode == http.StatusNotFound {
+			return distribution.ErrBlobUnknown
+		}
+	}
+	return nil
+}
+
 func (b *blobStore) Resume(ctx context.Context, id string) (distribution.BlobWriter, error) {
 	return nil, errors.New("not supported")
 }
@@ -30,9 +43,14 @@ func (b *blobStore) Delete(ctx context.Context, dgst digest.Digest) error {
 }
 
 func (b *blobStore) Stat(ctx context.Context, dgst digest.Digest) (distribution.Descriptor, error) {
-	d, err := b.puller.Get(ctx, b.repo.Digest(dgst.String()))
+	dd, err := b.puller.Layer(ctx, b.repo.Digest(dgst.String()))
 	if err != nil {
-		return distribution.Descriptor{}, err
+		return distribution.Descriptor{}, b.normalizeError(err)
+	}
+
+	d, err := partial.Descriptor(dd)
+	if err != nil {
+		return distribution.Descriptor{}, b.normalizeError(err)
 	}
 
 	return distribution.Descriptor{
@@ -46,13 +64,10 @@ func (b *blobStore) Stat(ctx context.Context, dgst digest.Digest) (distribution.
 func (b *blobStore) Open(ctx context.Context, dgst digest.Digest) (io.ReadSeekCloser, error) {
 	d, err := b.puller.Layer(ctx, b.repo.Digest(dgst.String()))
 	if err != nil {
-		return nil, err
+		return nil, b.normalizeError(err)
 	}
 
 	r, err := d.Compressed()
-	if err != nil {
-		return nil, err
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +86,7 @@ func (nopSeeker) Seek(offset int64, whence int) (int64, error) {
 func (b *blobStore) Get(ctx context.Context, dgst digest.Digest) ([]byte, error) {
 	r, err := b.Open(ctx, dgst)
 	if err != nil {
-		return nil, err
+		return nil, b.normalizeError(err)
 	}
 	defer r.Close()
 	return io.ReadAll(r)
@@ -214,26 +229,26 @@ func (b *blobWriter) Commit(ctx context.Context, provisional distribution.Descri
 		return distribution.Descriptor{}, err
 	}
 
-	if provisional.Size > 0 {
-		size := b.Size()
+	d := distribution.Descriptor{}
+	d.Size = b.Size()
+	d.Digest = b.Digest()
 
-		if size != provisional.Size {
-			return distribution.Descriptor{}, errors.Wrapf(distribution.ErrBlobInvalidLength, "expect %d, but got %d", provisional.Size, size)
+	if provisional.Size > 0 {
+		if d.Size != provisional.Size {
+			return distribution.Descriptor{}, errors.Wrapf(distribution.ErrBlobInvalidLength, "expect %d, but got %d", provisional.Size, d.Size)
 		}
 	}
 
 	if provisional.Digest != "" {
-		dgst := b.Digest()
-
-		if dgst != provisional.Digest {
+		if d.Digest != provisional.Digest {
 			return distribution.Descriptor{}, distribution.ErrBlobInvalidDigest{
-				Digest: dgst,
+				Digest: d.Digest,
 				Reason: fmt.Errorf("not match %s", provisional.Digest),
 			}
 		}
 	}
 
-	return distribution.Descriptor{}, nil
+	return d, nil
 }
 
 func (b *blobWriter) Cancel(ctx context.Context) error {

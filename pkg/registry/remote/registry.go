@@ -82,16 +82,23 @@ func (n *namespace) Repository(ctx context.Context, named reference.Named) (dist
 		repoName = path.Join(n.endpoint.Host, repoName)
 	}
 
-	repo, err := name.NewRepository(repoName)
+	opts := make([]name.Option, 0)
+
+	if n.endpoint.Scheme == "http" {
+		opts = append(opts, name.Insecure)
+	}
+
+	repo, err := name.NewRepository(repoName, opts...)
 	if err != nil {
 		return nil, err
 	}
 
-	pusher, err := remote.NewPusher(remote.WithAuth(n.auth), remote.WithTransport(n.transport))
+	pusher, err := remote.NewPusher(remote.WithAuth(n.auth), remote.WithTransport(n.transport), remote.WithJobs(1))
 	if err != nil {
 		return nil, err
 	}
-	puller, err := remote.NewPuller(remote.WithAuth(n.auth), remote.WithTransport(n.transport))
+
+	puller, err := remote.NewPuller(remote.WithAuth(n.auth), remote.WithTransport(n.transport), remote.WithJobs(1))
 	if err != nil {
 		return nil, err
 	}

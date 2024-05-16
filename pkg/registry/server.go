@@ -6,8 +6,6 @@ import (
 	"os"
 	"runtime"
 
-	"golang.org/x/sync/errgroup"
-
 	"github.com/distribution/distribution/v3"
 	"github.com/distribution/distribution/v3/configuration"
 	"github.com/distribution/distribution/v3/registry/handlers"
@@ -18,6 +16,11 @@ import (
 	"github.com/innoai-tech/infra/pkg/http/middleware"
 	"github.com/octohelm/courier/pkg/courierhttp/handler"
 	"github.com/octohelm/crkit/pkg/registry/remote"
+	"golang.org/x/sync/errgroup"
+
+	_ "github.com/distribution/distribution/v3/manifest/manifestlist"
+	_ "github.com/distribution/distribution/v3/manifest/ocischema"
+	_ "github.com/distribution/distribution/v3/manifest/schema2"
 )
 
 type Server struct {
