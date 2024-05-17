@@ -3,7 +3,7 @@ module github.com/octohelm/crkit
 go 1.22.2
 
 require (
-	github.com/containerd/containerd v1.7.16
+	github.com/containerd/containerd v1.7.17
 	github.com/distribution/distribution/v3 v3.0.0-alpha.1
 	github.com/distribution/reference v0.6.0
 	github.com/go-courier/logr v0.3.0
@@ -28,7 +28,7 @@ require (
 
 require (
 	cuelang.org/go v0.8.2 // indirect
-	github.com/Microsoft/hcsshim v0.11.4 // indirect
+	github.com/Microsoft/hcsshim v0.11.5 // indirect
 	github.com/andybalholm/brotli v1.1.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
