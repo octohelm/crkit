@@ -15,6 +15,13 @@ type Update struct {
 	Complete   int64
 }
 
+func (u *Update) String() string {
+	if repoName := u.Repository.String(); repoName != "" {
+		return repoName + "@" + u.Digest.String()
+	}
+	return u.Digest.String()
+}
+
 type progress struct {
 	updates chan<- Update
 }
@@ -38,9 +45,10 @@ func (r *progressReader) Read(b []byte) (int, error) {
 		return n, err
 	}
 	r.progress.complete(Update{
-		Digest:   r.digest,
-		Total:    r.total,
-		Complete: atomic.AddInt64(r.count, int64(n)),
+		Repository: r.repository,
+		Digest:     r.digest,
+		Total:      r.total,
+		Complete:   atomic.AddInt64(r.count, int64(n)),
 	})
 	return n, nil
 }

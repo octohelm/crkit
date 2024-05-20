@@ -26,6 +26,10 @@ type artifactImage struct {
 	m atomic.Pointer[specv1.Manifest]
 }
 
+func (img *artifactImage) ArtifactType() (string, error) {
+	return img.config.ArtifactType()
+}
+
 func (img *artifactImage) MediaType() (types.MediaType, error) {
 	return types.OCIManifestSchema1, nil
 }

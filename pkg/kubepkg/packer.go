@@ -194,6 +194,16 @@ func (p *Packer) PackAsKubePkgImage(ctx context.Context, kpkg *kubepkgv1alpha1.K
 		}
 	})
 
+	if len(p.Platforms) == 0 {
+		for image := range workloadImages {
+			if len(p.Platforms) == 0 {
+				p.Platforms = image.Platforms
+			} else if len(image.Platforms) > 0 {
+				p.Platforms = intersection(p.Platforms, image.Platforms)
+			}
+		}
+	}
+
 	var kubepkgImage v1.Image = empty.Image
 
 	for image := range workloadImages {
@@ -305,4 +315,22 @@ func (p *Packer) ImageName(repoName name.Repository) (name string) {
 		return "docker.io/" + repoName.RepositoryStr()
 	}
 	return repoName.String()
+}
+
+func intersection[E comparable](a []E, b []E) (c []E) {
+	includes := map[E]bool{}
+	for i := range a {
+		includes[a[i]] = true
+	}
+
+	c = make([]E, 0, len(a)+len(b))
+	for i := range b {
+		x := b[i]
+
+		if _, ok := includes[x]; ok {
+			c = append(c, x)
+		}
+	}
+
+	return
 }

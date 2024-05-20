@@ -4,14 +4,17 @@ import (
 	"archive/tar"
 	"bytes"
 	"fmt"
+	"github.com/google/go-containerregistry/pkg/name"
 	"io"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/octohelm/x/ptr"
 
 	"github.com/pkg/errors"
 
+	"github.com/containerd/containerd/images"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/partial"
 )
@@ -53,7 +56,7 @@ func WithProgress(updates chan<- Update) Option {
 }
 
 func (w *ociTarWriter) writeRootIndex(idx v1.ImageIndex) error {
-	if err := w.writeDeps(idx); err != nil {
+	if err := w.writeDeps(idx, nil); err != nil {
 		return errors.Wrap(err, "write deps failed")
 	}
 
@@ -85,7 +88,7 @@ type manifest interface {
 	RawManifest() ([]byte, error)
 }
 
-func (w *ociTarWriter) writeToTarWithDigest(dgst v1.Hash, size int64, r io.Reader) error {
+func (w *ociTarWriter) writeToTarWithDigest(dgst v1.Hash, size int64, r io.Reader, scope *v1.Descriptor) error {
 	// avoid dup blob write
 	if _, ok := w.blobs.Load(dgst); ok {
 		return nil
@@ -96,13 +99,21 @@ func (w *ociTarWriter) writeToTarWithDigest(dgst v1.Hash, size int64, r io.Reade
 	}()
 
 	if w.progress != nil {
-		r = &progressReader{
+		pr := &progressReader{
 			r:        r,
 			digest:   dgst,
 			total:    size,
 			count:    ptr.Ptr(int64(0)),
 			progress: w.progress,
 		}
+
+		if scope != nil && scope.Annotations != nil {
+			if imageName, ok := scope.Annotations[images.AnnotationImageName]; ok {
+				pr.repository, _ = name.NewRepository(strings.Split(imageName, ":")[0])
+			}
+		}
+
+		r = pr
 	}
 
 	return w.writeToTar(tar.Header{
@@ -123,51 +134,65 @@ func (w *ociTarWriter) writeToTar(header tar.Header, r io.Reader) error {
 	return nil
 }
 
-func (w *ociTarWriter) writeDeps(m manifest) error {
+func (w *ociTarWriter) writeDeps(m manifest, scope *v1.Descriptor) error {
 	switch x := m.(type) {
 	case v1.ImageIndex:
-		return w.writeChildren(x)
+		return w.writeChildren(x, scope)
 	case v1.Image:
-		return w.writeLayers(x)
+		return w.writeLayers(x, scope)
 	}
 	return nil
 }
 
-func (w *ociTarWriter) writeChildren(idx v1.ImageIndex) error {
+func (w *ociTarWriter) writeChildren(idx v1.ImageIndex, scope *v1.Descriptor) error {
 	children, err := partial.Manifests(idx)
 	if err != nil {
 		return errors.Wrapf(err, "resolve manifests failed, %T", idx)
 	}
-	for _, child := range children {
-		if err := w.writeChild(child); err != nil {
+
+	index, err := idx.IndexManifest()
+	if err != nil {
+		return errors.Wrapf(err, "resolve index manifests failed, %T", idx)
+	}
+
+	for i, child := range children {
+		if i <= len(index.Manifests) {
+			s := index.Manifests[i]
+			if s.Annotations != nil {
+				if _, ok := s.Annotations[images.AnnotationImageName]; ok {
+					scope = &s
+				}
+			}
+		}
+		if err := w.writeChild(child, scope); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (w *ociTarWriter) writeChild(child partial.Describable) error {
+func (w *ociTarWriter) writeChild(child partial.Describable, scope *v1.Descriptor) error {
 	switch child := child.(type) {
 	case v1.ImageIndex:
-		return w.writeManifest(child)
+		return w.writeManifest(child, scope)
 	case v1.Image:
-		return w.writeManifest(child)
+		return w.writeManifest(child, scope)
 	case v1.Layer:
-		return w.writeLayer(child)
+		return w.writeLayer(child, scope)
 	default:
 		// This can't happen.
 		return fmt.Errorf("encountered unknown child: %T", child)
 	}
 }
 
-func (w *ociTarWriter) writeLayers(img v1.Image) error {
+func (w *ociTarWriter) writeLayers(img v1.Image, scope *v1.Descriptor) error {
 	ls, err := img.Layers()
 	if err != nil {
 		return errors.Wrap(err, "resolve layers failed")
 	}
 
 	for _, l := range ls {
-		if err := w.writeLayer(l); err != nil {
+		if err := w.writeLayer(l, scope); err != nil {
 			return err
 		}
 	}
@@ -175,11 +200,11 @@ func (w *ociTarWriter) writeLayers(img v1.Image) error {
 	if err != nil {
 		return errors.Wrap(err, "resolve config failed")
 	}
-	return w.writeLayer(cl)
+	return w.writeLayer(cl, scope)
 }
 
-func (w *ociTarWriter) writeManifest(m manifest) error {
-	if err := w.writeDeps(m); err != nil {
+func (w *ociTarWriter) writeManifest(m manifest, scope *v1.Descriptor) error {
+	if err := w.writeDeps(m, scope); err != nil {
 		return err
 	}
 
@@ -199,7 +224,7 @@ func (w *ociTarWriter) writeManifest(m manifest) error {
 	}, bytes.NewReader(raw))
 }
 
-func (w *ociTarWriter) writeLayer(layer v1.Layer) error {
+func (w *ociTarWriter) writeLayer(layer v1.Layer, scope *v1.Descriptor) error {
 	dgst, err := layer.Digest()
 	if err != nil {
 		return errors.Wrap(err, "read layer digest failed")
@@ -219,8 +244,8 @@ func (w *ociTarWriter) writeLayer(layer v1.Layer) error {
 		_ = r.Close()
 	}()
 
-	if err := w.writeToTarWithDigest(dgst, size, r); err != nil {
-		return errors.Wrap(err, "copy layer failed")
+	if err := w.writeToTarWithDigest(dgst, size, r, scope); err != nil {
+		return errors.Wrapf(err, "copy %s failed", dgst)
 	}
 
 	return nil

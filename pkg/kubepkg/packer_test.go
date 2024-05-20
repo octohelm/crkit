@@ -21,7 +21,7 @@ import (
 var kubepkgExample []byte
 
 func TestPacker(t *testing.T) {
-	t.Skip()
+	//t.Skip()
 
 	registry, _ := name.NewRegistry(os.Getenv("CONTAINER_REGISTRY"))
 
