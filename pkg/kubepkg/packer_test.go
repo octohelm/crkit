@@ -5,12 +5,12 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
+	"github.com/octohelm/crkit/pkg/kubepkg/cache"
 	"os"
 	"testing"
 
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
-	"github.com/google/go-containerregistry/pkg/v1/cache"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/octohelm/crkit/pkg/ocitar"
 	kubepkgv1alpha1 "github.com/octohelm/kubepkgspec/pkg/apis/kubepkg/v1alpha1"

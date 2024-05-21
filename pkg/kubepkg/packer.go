@@ -2,6 +2,7 @@ package kubepkg
 
 import (
 	"context"
+	"github.com/octohelm/kubepkgspec/pkg/kubepkg"
 	"iter"
 	"sort"
 	"strings"
@@ -19,7 +20,6 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/octohelm/crkit/pkg/artifact"
 	kubepkgv1alpha1 "github.com/octohelm/kubepkgspec/pkg/apis/kubepkg/v1alpha1"
-	"github.com/octohelm/kubepkgspec/pkg/object"
 	"github.com/octohelm/kubepkgspec/pkg/workload"
 	specv1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
@@ -188,11 +188,12 @@ func (p *Packer) PackAsIndex(ctx context.Context, kpkg *kubepkgv1alpha1.KubePkg)
 }
 
 func (p *Packer) PackAsKubePkgImage(ctx context.Context, kpkg *kubepkgv1alpha1.KubePkg) (v1.Image, error) {
-	workloadImages := workload.Images(func(yield func(object.Object) bool) {
-		if !yield(kpkg) {
-			return
-		}
-	})
+	manifests, err := kubepkg.Convert(kpkg)
+	if err != nil {
+		return nil, err
+	}
+
+	workloadImages := workload.Images(manifests)
 
 	if len(p.Platforms) == 0 {
 		for image := range workloadImages {
@@ -231,7 +232,12 @@ func (p *Packer) PackAsKubePkgImage(ctx context.Context, kpkg *kubepkgv1alpha1.K
 				return nil, err
 			}
 
-			kubepkgImage, err = p.appendArtifactLayer(kubepkgImage, p.Image(img), image)
+			d, err := partial.Descriptor(img)
+			if err != nil {
+				return nil, err
+			}
+
+			kubepkgImage, err = p.appendArtifactLayer(kubepkgImage, p.Image(img), *d, image)
 			if err != nil {
 				return nil, err
 			}
@@ -241,19 +247,13 @@ func (p *Packer) PackAsKubePkgImage(ctx context.Context, kpkg *kubepkgv1alpha1.K
 	return artifact.Artifact(kubepkgImage, &Config{KubePkg: kpkg})
 }
 
-func (p *Packer) appendArtifactLayer(kubepkgImage v1.Image, src v1.Image, img *kubepkgv1alpha1.Image) (v1.Image, error) {
-	d, err := partial.Descriptor(src)
-	if err != nil {
-		return nil, err
-	}
-
+func (p *Packer) appendArtifactLayer(kubepkgImage v1.Image, src v1.Image, d v1.Descriptor, img *kubepkgv1alpha1.Image) (v1.Image, error) {
 	if d.Annotations == nil {
 		d.Annotations = map[string]string{}
 	}
 
 	d.Annotations[specv1.AnnotationBaseImageName] = img.Name
 	d.Annotations[AnnotationSourceBaseImageName] = p.SourceImageName(img.Name)
-
 	d.Annotations[specv1.AnnotationRefName] = img.Tag
 	d.Annotations[images.AnnotationImageName] = img.FullName()
 
@@ -267,7 +267,15 @@ func (p *Packer) appendArtifactLayer(kubepkgImage v1.Image, src v1.Image, img *k
 		return nil, err
 	}
 
-	return mutate.AppendLayers(kubepkgImage, artifact.WithDescriptor(layer, *d))
+	dgst, err := layer.Digest()
+	if err == nil {
+		// skip already exists layer
+		if _, err = kubepkgImage.LayerByDigest(dgst); err == nil {
+			return kubepkgImage, nil
+		}
+	}
+
+	return mutate.AppendLayers(kubepkgImage, artifact.WithDescriptor(layer, d))
 }
 
 func (p *Packer) appendManifests(idx v1.ImageIndex, source partial.Describable, desc *v1.Descriptor, image *kubepkgv1alpha1.Image) (v1.ImageIndex, error) {
