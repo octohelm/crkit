@@ -3,6 +3,7 @@ package artifact
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/octohelm/crkit/pkg/ociutil"
 	"sync/atomic"
 
 	v1 "github.com/google/go-containerregistry/pkg/v1"
@@ -12,49 +13,44 @@ import (
 	specv1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
-func Artifact(img v1.Image, c Config) (v1.Image, error) {
-	return &artifactImage{
+func WithAnnotations(annotations map[string]string) Option {
+	return func(i *artifactImage) {
+		i.annotations = annotations
+	}
+}
+
+type Option = func(i *artifactImage)
+
+func Artifact(img v1.Image, c Config, optFns ...Option) (v1.Image, error) {
+	i := &artifactImage{
 		Image:  img,
 		config: c,
-	}, nil
+	}
+
+	for _, optFn := range optFns {
+		optFn(i)
+	}
+
+	return ociutil.FromRaw(i), nil
 }
 
 type artifactImage struct {
 	v1.Image
-	config Config
-
-	m atomic.Pointer[specv1.Manifest]
-}
-
-func (img *artifactImage) ArtifactType() (string, error) {
-	return img.config.ArtifactType()
+	config      Config
+	annotations map[string]string
+	m           atomic.Pointer[specv1.Manifest]
 }
 
 func (img *artifactImage) MediaType() (types.MediaType, error) {
 	return types.OCIManifestSchema1, nil
 }
 
-func (i *artifactImage) ConfigName() (v1.Hash, error) {
-	return partial.ConfigName(i)
+func (img *artifactImage) ArtifactType() (string, error) {
+	return img.config.ArtifactType()
 }
 
 func (img *artifactImage) RawConfigFile() ([]byte, error) {
 	return img.config.RawConfigFile()
-}
-
-func (img *artifactImage) Manifest() (*v1.Manifest, error) {
-	raw, err := img.RawManifest()
-	if err != nil {
-		return nil, err
-	}
-
-	m := &v1.Manifest{}
-
-	if err := json.Unmarshal(raw, m); err != nil {
-		return nil, err
-	}
-
-	return m, nil
 }
 
 func (img *artifactImage) RawManifest() ([]byte, error) {
@@ -103,6 +99,7 @@ func (img *artifactImage) OCIManifest() (*specv1.Manifest, error) {
 			Size:      cfgSize,
 			Digest:    digest.Digest(cfgHash.String()),
 		},
+		Annotations: img.annotations,
 	}
 	m.SchemaVersion = 2
 
@@ -141,12 +138,4 @@ func (img *artifactImage) OCIManifest() (*specv1.Manifest, error) {
 	img.m.Store(m)
 
 	return m, nil
-}
-
-func (img *artifactImage) Size() (int64, error) {
-	return partial.Size(img)
-}
-
-func (img *artifactImage) Digest() (v1.Hash, error) {
-	return partial.Digest(img)
 }

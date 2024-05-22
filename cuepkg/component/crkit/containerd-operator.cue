@@ -1,7 +1,7 @@
 package crkit
 
 import (
-	kubepkg "github.com/octohelm/kubepkg/cuepkg/kubepkg"
+	kubepkg "github.com/octohelm/kubepkgspec/cuepkg/kubepkg"
 )
 
 #ContainerdOperator: kubepkg.#KubePkg & {

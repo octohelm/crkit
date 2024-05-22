@@ -3,32 +3,27 @@ package ocitar
 import (
 	"archive/tar"
 	"bytes"
+	"encoding/json"
 	"fmt"
-	"github.com/google/go-containerregistry/pkg/name"
 	"io"
 	"path/filepath"
-	"strings"
 	"sync"
-
-	"github.com/octohelm/x/ptr"
-
-	"github.com/pkg/errors"
 
 	"github.com/containerd/containerd/images"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/partial"
+	"github.com/pkg/errors"
 )
 
 var ociLayoutRaw = []byte(`{"imageLayoutVersion":"1.0.0"}`)
 
-func Write(w io.Writer, idx v1.ImageIndex, options ...Option) error {
+func Write(w io.Writer, idx v1.ImageIndex) error {
 	tw := tar.NewWriter(w)
 	defer func() {
 		_ = tw.Close()
 	}()
 
 	ww := &ociTarWriter{Writer: tw}
-	ww.Build(options...)
 
 	return ww.writeRootIndex(idx)
 }
@@ -37,22 +32,6 @@ type ociTarWriter struct {
 	*tar.Writer
 
 	blobs sync.Map
-
-	progress *progress
-}
-
-func (w *ociTarWriter) Build(options ...Option) {
-	for _, o := range options {
-		o(w)
-	}
-}
-
-type Option = func(*ociTarWriter)
-
-func WithProgress(updates chan<- Update) Option {
-	return func(w *ociTarWriter) {
-		w.progress = &progress{updates: updates}
-	}
 }
 
 func (w *ociTarWriter) writeRootIndex(idx v1.ImageIndex) error {
@@ -65,10 +44,15 @@ func (w *ociTarWriter) writeRootIndex(idx v1.ImageIndex) error {
 		return err
 	}
 
+	b := &bytes.Buffer{}
+	if err := json.Indent(b, raw, "", "  "); err != nil {
+		return err
+	}
+
 	if err := w.writeToTar(tar.Header{
 		Name: "index.json",
-		Size: int64(len(raw)),
-	}, bytes.NewBuffer(raw)); err != nil {
+		Size: int64(b.Len()),
+	}, b); err != nil {
 		return err
 	}
 
@@ -97,24 +81,6 @@ func (w *ociTarWriter) writeToTarWithDigest(dgst v1.Hash, size int64, r io.Reade
 	defer func() {
 		w.blobs.Store(dgst, true)
 	}()
-
-	if w.progress != nil {
-		pr := &progressReader{
-			r:        r,
-			digest:   dgst,
-			total:    size,
-			count:    ptr.Ptr(int64(0)),
-			progress: w.progress,
-		}
-
-		if scope != nil && scope.Annotations != nil {
-			if imageName, ok := scope.Annotations[images.AnnotationImageName]; ok {
-				pr.repository, _ = name.NewRepository(strings.Split(imageName, ":")[0])
-			}
-		}
-
-		r = pr
-	}
 
 	return w.writeToTar(tar.Header{
 		Name: filepath.Join("blobs", dgst.Algorithm, dgst.Hex),

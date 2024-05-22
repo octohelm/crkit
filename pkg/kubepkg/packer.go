@@ -2,6 +2,7 @@ package kubepkg
 
 import (
 	"context"
+	"fmt"
 	"github.com/octohelm/kubepkgspec/pkg/kubepkg"
 	"iter"
 	"sort"
@@ -29,12 +30,13 @@ const (
 )
 
 type Packer struct {
-	CreatePuller func(repo name.Repository, options ...remote.Option) (*remote.Puller, error)
-	Cache        cache.Cache
-	Registry     *name.Registry
-	Platforms    []string
-	Renamer      Renamer
+	Registry Registry
+	Renamer  Renamer
 
+	CreatePuller func(ref name.Reference, options ...remote.Option) (*remote.Puller, error)
+
+	Cache        cache.Cache
+	Platforms    []string
 	sourceImages sync.Map
 }
 
@@ -78,17 +80,13 @@ func (p *Packer) SupportedPlatforms(supportedPlatform []string) iter.Seq[v1.Plat
 
 func (p *Packer) Repository(repoName string) (name.Repository, error) {
 	if registry := p.Registry; registry != nil {
-		registryName := registry.Name()
-		if strings.HasPrefix(repoName, registryName) {
-			return registry.Repo(repoName[len(registryName)+1:]), nil
-		}
 		return registry.Repo(repoName), nil
 	}
 	return name.NewRepository(repoName)
 }
 
-func (p *Packer) Puller(repo name.Repository, options ...remote.Option) (*remote.Puller, error) {
-	puller, err := p.CreatePuller(repo, options...)
+func (p *Packer) Puller(ref name.Reference, options ...remote.Option) (*remote.Puller, error) {
+	puller, err := p.CreatePuller(ref, options...)
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +108,20 @@ func (p *Packer) PackAsIndex(ctx context.Context, kpkg *kubepkgv1alpha1.KubePkg)
 
 	var finalIndex v1.ImageIndex = empty.Index
 
-	finalIndex, err = p.appendManifests(finalIndex, kubePkgImage, nil, nil)
+	namespace := kpkg.Namespace
+	if namespace == "" {
+		namespace = "default"
+	}
+
+	r, err := p.Repository(fmt.Sprintf("%s/artifact-kubepkg-%s", namespace, kpkg.Name))
+	if err != nil {
+		return nil, err
+	}
+
+	finalIndex, err = p.appendManifests(finalIndex, kubePkgImage, nil, &kubepkgv1alpha1.Image{
+		Name: p.ImageName(r),
+		Tag:  kpkg.Spec.Version,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -143,7 +154,7 @@ func (p *Packer) PackAsIndex(ctx context.Context, kpkg *kubepkgv1alpha1.KubePkg)
 				imageIndexes[imageName] = empty.Index
 			}
 
-			puller, err := p.Puller(repo)
+			puller, err := p.Puller(repo.Digest(desc.Digest.String()))
 			if err != nil {
 				return nil, err
 			}
@@ -217,7 +228,7 @@ func (p *Packer) PackAsKubePkgImage(ctx context.Context, kpkg *kubepkgv1alpha1.K
 		image.Digest = ""
 
 		for platform := range p.SupportedPlatforms(image.Platforms) {
-			puller, err := p.CreatePuller(repo, remote.WithPlatform(platform))
+			puller, err := p.CreatePuller(repo.Tag(image.Tag), remote.WithPlatform(platform))
 			if err != nil {
 				return nil, err
 			}
@@ -244,7 +255,9 @@ func (p *Packer) PackAsKubePkgImage(ctx context.Context, kpkg *kubepkgv1alpha1.K
 		}
 	}
 
-	return artifact.Artifact(kubepkgImage, &Config{KubePkg: kpkg})
+	return artifact.Artifact(kubepkgImage, &Config{KubePkg: kpkg}, artifact.WithAnnotations(map[string]string{
+		specv1.AnnotationRefName: kpkg.Spec.Version,
+	}))
 }
 
 func (p *Packer) appendArtifactLayer(kubepkgImage v1.Image, src v1.Image, d v1.Descriptor, img *kubepkgv1alpha1.Image) (v1.Image, error) {
@@ -296,9 +309,18 @@ func (p *Packer) appendManifests(idx v1.ImageIndex, source partial.Describable, 
 		if add.Annotations == nil {
 			add.Annotations = map[string]string{}
 		}
-		add.Annotations[specv1.AnnotationBaseImageName] = image.Name
-		add.Annotations[specv1.AnnotationRefName] = image.Tag
-		add.Annotations[images.AnnotationImageName] = image.FullName()
+
+		if image.Name != "" {
+			add.Annotations[specv1.AnnotationBaseImageName] = image.Name
+
+			if add.ArtifactType == "" {
+				add.Annotations[images.AnnotationImageName] = image.FullName()
+			}
+		}
+
+		if image.Tag != "" {
+			add.Annotations[specv1.AnnotationRefName] = image.Tag
+		}
 	}
 
 	return mutate.AppendManifests(idx, add), nil

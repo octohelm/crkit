@@ -1,4 +1,4 @@
-PIPER = piper -p piper.cue
+PIPER = TTY=0 piper -p piper.cue
 DEBUG = 0
 ifeq ($(DEBUG),1)
 	PIPER := $(PIPER) --log-level=debug
