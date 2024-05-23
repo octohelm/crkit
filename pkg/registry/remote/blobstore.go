@@ -31,7 +31,7 @@ func (b *blobStore) normalizeError(err error) error {
 			return distribution.ErrBlobUnknown
 		}
 	}
-	return nil
+	return err
 }
 
 func (b *blobStore) Resume(ctx context.Context, id string) (distribution.BlobWriter, error) {
@@ -69,7 +69,7 @@ func (b *blobStore) Open(ctx context.Context, dgst digest.Digest) (io.ReadSeekCl
 
 	r, err := d.Compressed()
 	if err != nil {
-		return nil, err
+		return nil, b.normalizeError(err)
 	}
 
 	return &nopSeeker{ReadCloser: r}, nil
@@ -170,14 +170,18 @@ func (b *blobWriter) Close() error {
 }
 
 func (b *blobWriter) Size() int64 {
+	b.initIfNeed()
+
 	return b.sizedDigestWriter.written
 }
 
 func (b *blobWriter) Digest() digest.Digest {
+	b.initIfNeed()
+
 	return b.sizedDigestWriter.Digest()
 }
 
-func (b *blobWriter) init() {
+func (b *blobWriter) initIfNeed() {
 	b.once.Do(func() {
 		b.sizedDigestWriter = &sizedDigestWriter{
 			Digester: digest.SHA256.Digester(),
@@ -199,13 +203,13 @@ func (b *blobWriter) init() {
 }
 
 func (b *blobWriter) ReadFrom(r io.Reader) (n int64, err error) {
-	b.init()
+	b.initIfNeed()
 
 	return io.Copy(b.sizedDigestWriter, r)
 }
 
 func (b *blobWriter) Write(p []byte) (int, error) {
-	b.init()
+	b.initIfNeed()
 
 	return b.sizedDigestWriter.Write(p)
 }

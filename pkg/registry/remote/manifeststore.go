@@ -26,13 +26,13 @@ var _ distribution.ManifestService = &manifestService{}
 func (b *manifestService) normalizeError(dgst digest.Digest, err error) error {
 	terr := &transport.Error{}
 	if errors.As(err, &terr) {
-		if terr.StatusCode == http.StatusNotFound {
+		if terr.StatusCode == http.StatusBadRequest || terr.StatusCode == http.StatusNotFound {
 			return distribution.ErrManifestBlobUnknown{
 				Digest: dgst,
 			}
 		}
 	}
-	return nil
+	return err
 }
 
 func (ms *manifestService) Delete(ctx context.Context, dgst digest.Digest) error {
@@ -57,7 +57,7 @@ func (ms *manifestService) Put(ctx context.Context, m distribution.Manifest, opt
 	}
 
 	if err := ms.pusher.Push(ctx, ref, &manifest{mediaType, raw}); err != nil {
-		return "", err
+		return "", ms.normalizeError(dgst, err)
 	}
 
 	return dgst, nil
