@@ -93,12 +93,20 @@ func (n *namespace) Repository(ctx context.Context, named reference.Named) (dist
 		return nil, err
 	}
 
-	pusher, err := remote.NewPusher(remote.WithAuth(n.auth), remote.WithTransport(n.transport), remote.WithJobs(1))
+	pusher, err := remote.NewPusher(
+		remote.WithContext(ctx),
+		remote.WithAuth(n.auth),
+		remote.WithTransport(n.transport),
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	puller, err := remote.NewPuller(remote.WithAuth(n.auth), remote.WithTransport(n.transport), remote.WithJobs(1))
+	puller, err := remote.NewPuller(
+		remote.WithContext(ctx),
+		remote.WithAuth(n.auth),
+		remote.WithTransport(n.transport),
+	)
 	if err != nil {
 		return nil, err
 	}
