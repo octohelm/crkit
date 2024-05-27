@@ -7,12 +7,11 @@ import (
 	"strings"
 
 	"github.com/go-courier/logr"
+	"github.com/octohelm/crkit/pkg/containerdhost"
+	containerdhostcontroller "github.com/octohelm/crkit/pkg/containerdhost/controller"
 	"github.com/octohelm/kubekit/pkg/kubeclient"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	"github.com/octohelm/crkit/pkg/containerdhost"
-	containerdhostcontroller "github.com/octohelm/crkit/pkg/containerdhost/controller"
 )
 
 type Publisher struct {
@@ -43,6 +42,10 @@ func (s *Publisher) Run(ctx context.Context) error {
 		c, ok := kubeclient.Context.MayFrom(ctx)
 		if !ok {
 			return nil
+		}
+
+		if err := corev1.AddToScheme(c.Scheme()); err != nil {
+			return err
 		}
 
 		data, err := containerdhost.MirrorAsHostToml(s.mirror)

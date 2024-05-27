@@ -63,7 +63,7 @@ func (c *Cleaner) Run(ctx context.Context) error {
 }
 
 func (c *Cleaner) remoteUntaggedBlobs(ctx context.Context) error {
-	return storage.MarkAndSweep(ctx, c.driver, c.registry, storage.GCOpts{
+	return MarkAndSweep(ctx, c.driver, c.registry, storage.GCOpts{
 		DryRun:         false,
 		RemoveUntagged: true,
 	})

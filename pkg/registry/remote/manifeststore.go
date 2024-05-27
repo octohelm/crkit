@@ -36,7 +36,8 @@ func (b *manifestService) normalizeError(dgst digest.Digest, err error) error {
 }
 
 func (ms *manifestService) Delete(ctx context.Context, dgst digest.Digest) error {
-	return ms.pusher.Delete(ctx, ms.repo.Digest(dgst.String()))
+	err := ms.pusher.Delete(ctx, ms.repo.Digest(dgst.String()))
+	return ms.normalizeError(dgst, err)
 }
 
 func (ms *manifestService) Put(ctx context.Context, m distribution.Manifest, options ...distribution.ManifestServiceOption) (digest.Digest, error) {
