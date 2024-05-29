@@ -118,14 +118,6 @@ func (p *Packer) PackAsIndex(ctx context.Context, kpkg *kubepkgv1alpha1.KubePkg)
 		return nil, err
 	}
 
-	finalIndex, err = p.appendManifests(finalIndex, kubePkgImage, nil, &kubepkgv1alpha1.Image{
-		Name: p.ImageName(r),
-		Tag:  kpkg.Spec.Version,
-	})
-	if err != nil {
-		return nil, err
-	}
-
 	layers, err := kubePkgImage.Layers()
 	if err != nil {
 		return nil, err
@@ -193,6 +185,14 @@ func (p *Packer) PackAsIndex(ctx context.Context, kpkg *kubepkgv1alpha1.KubePkg)
 		if err != nil {
 			return nil, err
 		}
+	}
+
+	finalIndex, err = p.appendManifests(finalIndex, kubePkgImage, nil, &kubepkgv1alpha1.Image{
+		Name: p.ImageName(r),
+		Tag:  kpkg.Spec.Version,
+	})
+	if err != nil {
+		return nil, err
 	}
 
 	return finalIndex, nil
