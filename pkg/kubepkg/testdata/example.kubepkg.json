@@ -5,6 +5,7 @@
     "name": "demo",
     "namespace": "default",
     "annotations": {
+      "kubernetes.io/description": "demo",
       "ingress.octohelm.tech/gateway": "public+https://{{ .Name }}---{{ .Namespace }}.public,internal+https://{{ .Name }}---{{ .Namespace }}.internal?always=true"
     }
   },

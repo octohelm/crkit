@@ -7,6 +7,7 @@ require (
 	github.com/distribution/distribution/v3 v3.0.0-alpha.1
 	github.com/distribution/reference v0.6.0
 	github.com/go-courier/logr v0.3.0
+	github.com/gobwas/glob v0.2.3
 	github.com/google/go-containerregistry v0.19.1
 	github.com/innoai-tech/infra v0.0.0-20240523040540-feecd286e824
 	github.com/octohelm/courier v0.0.0-20240516021431-5cf7af6666a1

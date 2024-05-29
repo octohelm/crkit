@@ -30,8 +30,9 @@ const (
 )
 
 type Packer struct {
-	Registry Registry
-	Renamer  Renamer
+	Registry        Registry
+	Renamer         Renamer
+	WithAnnotations []string
 
 	CreatePuller func(ref name.Reference, options ...remote.Option) (*remote.Puller, error)
 
@@ -198,7 +199,31 @@ func (p *Packer) PackAsIndex(ctx context.Context, kpkg *kubepkgv1alpha1.KubePkg)
 	return finalIndex, nil
 }
 
+func (p *Packer) pickAnnotations(annotations map[string]string) (map[string]string, error) {
+	picked := map[string]string{}
+
+	if len(annotations) > 0 && len(p.WithAnnotations) > 0 {
+		glob, err := Compile(p.WithAnnotations)
+		if err != nil {
+			return nil, err
+		}
+
+		for k, v := range annotations {
+			if glob.Match(k) {
+				picked[k] = v
+			}
+		}
+
+	}
+	return picked, nil
+}
+
 func (p *Packer) PackAsKubePkgImage(ctx context.Context, kpkg *kubepkgv1alpha1.KubePkg) (v1.Image, error) {
+	ann, err := p.pickAnnotations(kpkg.Annotations)
+	if err != nil {
+		return nil, err
+	}
+
 	manifests, err := kubepkg.Convert(kpkg)
 	if err != nil {
 		return nil, err
@@ -255,9 +280,9 @@ func (p *Packer) PackAsKubePkgImage(ctx context.Context, kpkg *kubepkgv1alpha1.K
 		}
 	}
 
-	return artifact.Artifact(kubepkgImage, &Config{KubePkg: kpkg}, artifact.WithAnnotations(map[string]string{
-		specv1.AnnotationRefName: kpkg.Spec.Version,
-	}))
+	ann[specv1.AnnotationRefName] = kpkg.Spec.Version
+
+	return artifact.Artifact(kubepkgImage, &Config{KubePkg: kpkg}, artifact.WithAnnotations(ann))
 }
 
 func (p *Packer) appendArtifactLayer(kubepkgImage v1.Image, src v1.Image, d v1.Descriptor, img *kubepkgv1alpha1.Image) (v1.Image, error) {

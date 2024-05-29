@@ -145,6 +145,9 @@ func Test(t *testing.T) {
 				"linux/arm64",
 			},
 			Renamer: renamer,
+			WithAnnotations: []string{
+				"kubernetes.io/*",
+			},
 		}
 
 		t.Run("should pack as kubepkg image", func(t *testing.T) {
