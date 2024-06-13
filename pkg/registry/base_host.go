@@ -14,7 +14,9 @@ func (host BaseHost) TrimNamed(named reference.Named) reference.Named {
 		if name := named.Name(); strings.HasPrefix(name, string(host)) {
 			// <baseHost>/xxx/yyy => xxx/yyy
 			fixedNamed, _ := reference.ParseNamed(named.String()[len(host)+1:])
-			return fixedNamed
+			if fixedNamed != nil {
+				return fixedNamed
+			}
 		}
 	}
 
@@ -24,7 +26,9 @@ func (host BaseHost) TrimNamed(named reference.Named) reference.Named {
 func (host BaseHost) CompletedNamed(named reference.Named) reference.Named {
 	if host != "" {
 		fixedNamed, _ := reference.ParseNamed(path.Join(string(host), named.String()))
-		return fixedNamed
+		if fixedNamed != nil {
+			return fixedNamed
+		}
 	}
 
 	return named

@@ -89,7 +89,7 @@ func (s *Server) Init(ctx context.Context) error {
 	svc := &http.Server{}
 
 	svc.Addr = c.RegistryAddr
-	svc.Handler = handler.ApplyHandlerMiddlewares(
+	svc.Handler = handler.ApplyMiddlewares(
 		middleware.HealthCheckHandler(),
 		middleware.ContextInjectorMiddleware(infraconfiguration.ContextInjectorFromContext(ctx)),
 		middleware.LogAndMetricHandler(),

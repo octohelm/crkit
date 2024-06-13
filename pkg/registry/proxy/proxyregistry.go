@@ -4,15 +4,13 @@ import (
 	"context"
 	"net/url"
 
-	"github.com/google/go-containerregistry/pkg/authn"
-
-	"github.com/octohelm/crkit/pkg/registry/remote"
-
 	"github.com/distribution/distribution/v3"
 	"github.com/distribution/distribution/v3/configuration"
 	"github.com/distribution/distribution/v3/registry/storage"
 	"github.com/distribution/distribution/v3/registry/storage/driver"
 	"github.com/distribution/reference"
+	"github.com/google/go-containerregistry/pkg/authn"
+	"github.com/octohelm/crkit/pkg/registry/remote"
 )
 
 // namespace fetches content from a remote registry and caches it locally

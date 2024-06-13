@@ -5,6 +5,6 @@ deps: {
 	}
 	"github.com/octohelm/piper@v0": {
 		path: "github.com/octohelm/piper"
-		v:    "v0.0.0-20240427003204-9004d473b957"
+		v:    "v0.0.0-20240612072825-3e6e200ba813"
 	}
 }

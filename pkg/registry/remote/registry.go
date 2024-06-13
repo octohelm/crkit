@@ -2,6 +2,7 @@ package remote
 
 import (
 	"context"
+	"github.com/innoai-tech/infra/pkg/http/middleware"
 	"net/http"
 	"net/url"
 	"path"
@@ -51,7 +52,7 @@ func New(endpoint string, options ...Option) (distribution.Namespace, error) {
 
 	n := &namespace{
 		endpoint:  u,
-		transport: remote.DefaultTransport,
+		transport: middleware.NewLogRoundTripper()(remote.DefaultTransport),
 	}
 
 	for _, opt := range options {

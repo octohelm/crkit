@@ -14,6 +14,12 @@ func TestBaseHost(t *testing.T) {
 		testingx.Expect(t, trimed.String(), testingx.Be("docker.io/library/nginx:latest"))
 	})
 
+	t.Run("should trim normal", func(t *testing.T) {
+		n, _ := reference.ParseNamed("x.io/library/nginx:latest")
+		trimed := BaseHost("x.io").TrimNamed(n)
+		testingx.Expect(t, trimed.String(), testingx.Be("x.io/library/nginx:latest"))
+	})
+
 	t.Run("should complete", func(t *testing.T) {
 		n, _ := reference.ParseNamed("docker.io/library/nginx:latest")
 		trimed := BaseHost("x.io").CompletedNamed(n)
