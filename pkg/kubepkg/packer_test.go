@@ -57,7 +57,10 @@ func Test(t *testing.T) {
 	r, err := NewRegistry(s.URL)
 	testingx.Expect(t, err, testingx.BeNil[error]())
 
-	err = remote.Put(r.Repo("docker.io/library/nginx").Tag("1.25.0-alpine"), imageIndex)
+	err = remote.Put(
+		r.Repo("docker.io/library/nginx").Tag("1.25.0-alpine"),
+		imageIndex,
+	)
 	testingx.Expect(t, err, testingx.BeNil[error]())
 
 	// {{registry}}/{{namespace}}/{{name}}

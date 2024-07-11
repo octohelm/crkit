@@ -12,7 +12,6 @@ export PIPER_BUILDER_HOST =
 serve.registry:
 	$(CRKIT) serve registry \
 		--kubeconfig=${KUBECONFIG} \
-		--public-ip=10.244.0.175 \
 		--storage-root=.tmp/container-registry \
 		--addr=:5050
 
