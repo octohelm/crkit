@@ -8,7 +8,7 @@ require (
 	github.com/distribution/reference v0.6.0
 	github.com/go-courier/logr v0.3.0
 	github.com/gobwas/glob v0.2.3
-	github.com/google/go-containerregistry v0.19.2
+	github.com/google/go-containerregistry v0.20.1
 	github.com/innoai-tech/infra v0.0.0-20240628125259-5dad47544c26
 	github.com/octohelm/courier v0.0.0-20240704050034-47f5b1ea1eb8
 	github.com/octohelm/gengo v0.0.0-20240622092313-cc61f99ecd84
