@@ -3,7 +3,7 @@ module github.com/octohelm/crkit
 go 1.22.5
 
 require (
-	github.com/containerd/containerd v1.7.19
+	github.com/containerd/containerd v1.7.20
 	github.com/distribution/distribution/v3 v3.0.0-beta.1
 	github.com/distribution/reference v0.6.0
 	github.com/go-courier/logr v0.3.0
