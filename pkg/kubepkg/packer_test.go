@@ -1,11 +1,11 @@
 package kubepkg
 
 import (
-	_ "embed"
-
 	"context"
+	_ "embed"
 	"encoding/json"
 	"io"
+	"net/http/httptest"
 	"os"
 	"testing"
 
@@ -20,20 +20,16 @@ import (
 	"github.com/octohelm/crkit/pkg/ocitar"
 	kubepkgv1alpha1 "github.com/octohelm/kubepkgspec/pkg/apis/kubepkg/v1alpha1"
 	testingx "github.com/octohelm/x/testing"
-	"net/http/httptest"
 )
 
 //go:embed testdata/example.kubepkg.json
 var kubepkgExample []byte
 
 func Test(t *testing.T) {
-	kpkg := &kubepkgv1alpha1.KubePkg{}
-	_ = json.Unmarshal(kubepkgExample, kpkg)
-
 	imageIndex := mutate.AppendManifests(
 		empty.Index,
 		mutate.IndexAddendum{
-			Add: must(random.Image(10, 3)),
+			Add: must(random.Image(10, 1)),
 			Descriptor: v1.Descriptor{
 				Platform: &v1.Platform{
 					OS:           "linux",
@@ -42,7 +38,7 @@ func Test(t *testing.T) {
 			},
 		},
 		mutate.IndexAddendum{
-			Add: must(random.Image(10, 3)),
+			Add: must(random.Image(10, 1)),
 			Descriptor: v1.Descriptor{
 				Platform: &v1.Platform{
 					OS:           "linux",
@@ -57,7 +53,7 @@ func Test(t *testing.T) {
 	r, err := NewRegistry(s.URL)
 	testingx.Expect(t, err, testingx.BeNil[error]())
 
-	err = remote.Put(
+	err = remote.Push(
 		r.Repo("docker.io/library/nginx").Tag("1.25.0-alpine"),
 		imageIndex,
 	)
@@ -74,6 +70,9 @@ func Test(t *testing.T) {
 	c := cache.NewFilesystemCache("testdata/.tmp/cache")
 
 	t.Run("with single arch", func(t *testing.T) {
+		kpkg := &kubepkgv1alpha1.KubePkg{}
+		_ = json.Unmarshal(kubepkgExample, kpkg)
+
 		p := &Packer{
 			Cache: c,
 			CreatePuller: func(ref name.Reference, options ...remote.Option) (*remote.Puller, error) {
@@ -94,6 +93,7 @@ func Test(t *testing.T) {
 
 			i, err := p.PackAsKubePkgImage(ctx, kpkg)
 			testingx.Expect(t, err, testingx.BeNil[error]())
+			testingx.Expect(t, kpkg.Spec.Containers["web"].Image.Name, testingx.Be("docker.io/x/nginx"))
 
 			layers, err := i.Layers()
 			testingx.Expect(t, err, testingx.BeNil[error]())
@@ -167,23 +167,29 @@ func Test(t *testing.T) {
 			testingx.Expect(t, len(layers), testingx.Be(2))
 		})
 
+		filename := "testdata/.tmp/example.kubepkg.tar"
+
 		t.Run("should pack as index", func(t *testing.T) {
+			kpkg := &kubepkgv1alpha1.KubePkg{}
+			_ = json.Unmarshal(kubepkgExample, kpkg)
+
 			ctx := context.Background()
 
 			idx, err := p.PackAsIndex(ctx, kpkg)
 			testingx.Expect(t, err, testingx.BeNil[error]())
 
-			err = writeAsOciTar("testdata/.tmp/example.kubepkg.tar", idx)
+			err = writeAsOciTar(filename, idx)
 			testingx.Expect(t, err, testingx.BeNil[error]())
 		})
 
 		t.Run("should pack as index", func(t *testing.T) {
+			kpkg := &kubepkgv1alpha1.KubePkg{}
+			_ = json.Unmarshal(kubepkgExample, kpkg)
+
 			ctx := context.Background()
 
 			idx, err := p.PackAsIndex(ctx, kpkg)
 			testingx.Expect(t, err, testingx.BeNil[error]())
-
-			filename := "testdata/.tmp/example.kubepkg.amd64.tar"
 
 			err = writeAsOciTar(filename, idx)
 			testingx.Expect(t, err, testingx.BeNil[error]())

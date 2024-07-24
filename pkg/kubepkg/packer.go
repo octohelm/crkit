@@ -3,13 +3,11 @@ package kubepkg
 import (
 	"context"
 	"fmt"
-	"github.com/octohelm/kubepkgspec/pkg/kubepkg"
+	"github.com/octohelm/kubepkgspec/pkg/object"
 	"iter"
 	"sort"
 	"strings"
 	"sync"
-
-	"github.com/pkg/errors"
 
 	"github.com/containerd/containerd/images"
 	"github.com/google/go-containerregistry/pkg/name"
@@ -23,6 +21,7 @@ import (
 	kubepkgv1alpha1 "github.com/octohelm/kubepkgspec/pkg/apis/kubepkg/v1alpha1"
 	"github.com/octohelm/kubepkgspec/pkg/workload"
 	specv1 "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -224,12 +223,11 @@ func (p *Packer) PackAsKubePkgImage(ctx context.Context, kpkg *kubepkgv1alpha1.K
 		return nil, err
 	}
 
-	manifests, err := kubepkg.Convert(kpkg)
-	if err != nil {
-		return nil, err
-	}
-
-	workloadImages := workload.Images(manifests)
+	workloadImages := workload.Images(func(yield func(object.Object) bool) {
+		if !yield(kpkg) {
+			return
+		}
+	})
 
 	if len(p.Platforms) == 0 {
 		for image := range workloadImages {
