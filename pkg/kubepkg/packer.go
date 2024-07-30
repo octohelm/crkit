@@ -32,6 +32,7 @@ type Packer struct {
 	Registry        Registry
 	Renamer         Renamer
 	WithAnnotations []string
+	ImageOnly       bool
 
 	CreatePuller func(ref name.Reference, options ...remote.Option) (*remote.Puller, error)
 
@@ -178,6 +179,14 @@ func (p *Packer) PackAsIndex(ctx context.Context, kpkg *kubepkgv1alpha1.KubePkg)
 			return nil, errors.Errorf("invalid image name %s", nameAndTag)
 		}
 
+		if p.ImageOnly && len(imageNames) == 1 {
+			ann, err := p.pickAnnotations(kpkg.Annotations)
+			if err != nil {
+				return nil, err
+			}
+			index = mutate.Annotations(index, ann).(v1.ImageIndex)
+		}
+
 		finalIndex, err = p.appendManifests(finalIndex, index, nil, &kubepkgv1alpha1.Image{
 			Name: nameAndTag[0],
 			Tag:  nameAndTag[1],
@@ -187,12 +196,14 @@ func (p *Packer) PackAsIndex(ctx context.Context, kpkg *kubepkgv1alpha1.KubePkg)
 		}
 	}
 
-	finalIndex, err = p.appendManifests(finalIndex, kubePkgImage, nil, &kubepkgv1alpha1.Image{
-		Name: p.ImageName(r),
-		Tag:  kpkg.Spec.Version,
-	})
-	if err != nil {
-		return nil, err
+	if !p.ImageOnly {
+		finalIndex, err = p.appendManifests(finalIndex, kubePkgImage, nil, &kubepkgv1alpha1.Image{
+			Name: p.ImageName(r),
+			Tag:  kpkg.Spec.Version,
+		})
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return finalIndex, nil
