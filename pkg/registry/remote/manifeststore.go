@@ -26,7 +26,7 @@ var _ distribution.ManifestService = &manifestService{}
 func (b *manifestService) normalizeError(dgst digest.Digest, err error) error {
 	terr := &transport.Error{}
 	if errors.As(err, &terr) {
-		if terr.StatusCode == http.StatusBadRequest || terr.StatusCode == http.StatusNotFound {
+		if terr.StatusCode == http.StatusNotFound {
 			return distribution.ErrManifestBlobUnknown{
 				Digest: dgst,
 			}
@@ -67,7 +67,11 @@ func (ms *manifestService) Put(ctx context.Context, m distribution.Manifest, opt
 func (ms *manifestService) Exists(ctx context.Context, dgst digest.Digest) (bool, error) {
 	_, err := ms.puller.Head(ctx, ms.repo.Digest(dgst.String()))
 	if err != nil {
-		return false, ms.normalizeError(dgst, err)
+		err := ms.normalizeError(dgst, err)
+		if errors.As(err, &distribution.ErrManifestBlobUnknown{}) {
+			return false, nil
+		}
+		return false, err
 	}
 	return true, nil
 }

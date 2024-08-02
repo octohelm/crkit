@@ -92,15 +92,45 @@ func (b *blobStore) Get(ctx context.Context, dgst digest.Digest) ([]byte, error)
 	return io.ReadAll(r)
 }
 
-func (b *blobStore) Put(ctx context.Context, mediaType string, p []byte) (distribution.Descriptor, error) {
-	r, err := b.Create(ctx)
-	if err != nil {
-		return distribution.Descriptor{}, nil
-	}
-	if _, err := r.Write(p); err != nil {
+var _ partial.Describable = &rawManifest{}
+
+type rawManifest struct {
+	distribution.Descriptor
+	Raw []byte
+}
+
+func (r *rawManifest) Digest() (v1.Hash, error) {
+	return v1.Hash{
+		Algorithm: r.Descriptor.Digest.Algorithm().String(),
+		Hex:       r.Descriptor.Digest.Hex(),
+	}, nil
+}
+
+func (r *rawManifest) MediaType() (types.MediaType, error) {
+	return types.MediaType(r.Descriptor.MediaType), nil
+}
+
+func (r *rawManifest) Size() (int64, error) {
+	return r.Descriptor.Size, nil
+}
+
+func (r *rawManifest) RawManifest() ([]byte, error) {
+	return r.Raw, nil
+}
+
+func (b *blobStore) Put(ctx context.Context, mediaType string, raw []byte) (distribution.Descriptor, error) {
+	m := &rawManifest{}
+
+	m.Descriptor.MediaType = mediaType
+	m.Descriptor.Digest = digest.FromBytes(raw)
+	m.Descriptor.Size = int64(len(raw))
+	m.Raw = raw
+
+	if err := b.pusher.Put(ctx, b.repo.Digest(m.Descriptor.Digest.String()), m); err != nil {
 		return distribution.Descriptor{}, err
 	}
-	return r.Commit(ctx, distribution.Descriptor{})
+
+	return m.Descriptor, nil
 }
 
 func (b blobStore) ServeBlob(ctx context.Context, w http.ResponseWriter, r *http.Request, dgst digest.Digest) error {
