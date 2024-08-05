@@ -21,7 +21,7 @@ require (
 	github.com/pelletier/go-toml/v2 v2.2.2
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.9.3
-	golang.org/x/sync v0.7.0
+	golang.org/x/sync v0.8.0
 	k8s.io/api v0.30.3
 	k8s.io/apimachinery v0.30.3
 	sigs.k8s.io/controller-runtime v0.18.4
