@@ -282,6 +282,10 @@ func (p *Packer) PackAsKubePkgImage(ctx context.Context, kpkg *kubepkgv1alpha1.K
 				return nil, err
 			}
 
+			if d.Platform == nil {
+				d.Platform = &platform
+			}
+
 			kubepkgImage, err = p.appendArtifactLayer(kubepkgImage, p.Image(img), *d, image)
 			if err != nil {
 				return nil, err
