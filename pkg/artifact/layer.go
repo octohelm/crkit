@@ -3,12 +3,10 @@ package artifact
 import (
 	"bytes"
 	"fmt"
-	"io"
-	"sync"
-
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/partial"
 	"github.com/google/go-containerregistry/pkg/v1/types"
+	"io"
 )
 
 type Layer = v1.Layer
@@ -45,18 +43,16 @@ func (a *artifact) Uncompressed() (io.ReadCloser, error) {
 	return a.uncompressed()
 }
 
-func Gzipped(l Layer) Layer {
-	return &compressed{
-		Layer: l,
-		compressedLayer: sync.OnceValues(func() (v1.Layer, error) {
-			return partial.UncompressedToLayer(l)
-		}),
+func Gzipped(l Layer) (Layer, error) {
+	gziped, err := partial.UncompressedToLayer(l)
+	if err != nil {
+		return gziped, nil
 	}
+	return &compressed{Layer: l}, nil
 }
 
 type compressed struct {
 	Layer
-	compressedLayer func() (v1.Layer, error)
 }
 
 func (a *compressed) MediaType() (types.MediaType, error) {
@@ -65,22 +61,6 @@ func (a *compressed) MediaType() (types.MediaType, error) {
 		return "", err
 	}
 	return types.MediaType(fmt.Sprintf("%s+gzip", m)), nil
-}
-
-func (a *compressed) Compressed() (io.ReadCloser, error) {
-	l, err := a.compressedLayer()
-	if err != nil {
-		return nil, err
-	}
-	return l.Compressed()
-}
-
-func (a *compressed) Digest() (v1.Hash, error) {
-	l, err := a.compressedLayer()
-	if err != nil {
-		return v1.Hash{}, err
-	}
-	return l.Digest()
 }
 
 func WithDescriptor(l Layer, descriptor v1.Descriptor) Layer {

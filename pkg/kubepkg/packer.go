@@ -3,7 +3,6 @@ package kubepkg
 import (
 	"context"
 	"fmt"
-	"github.com/octohelm/kubepkgspec/pkg/object"
 	"iter"
 	"sort"
 	"strings"
@@ -19,6 +18,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/octohelm/crkit/pkg/artifact"
 	kubepkgv1alpha1 "github.com/octohelm/kubepkgspec/pkg/apis/kubepkg/v1alpha1"
+	"github.com/octohelm/kubepkgspec/pkg/object"
 	"github.com/octohelm/kubepkgspec/pkg/workload"
 	specv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
