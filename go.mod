@@ -4,6 +4,7 @@ go 1.22.5
 
 require (
 	github.com/containerd/containerd v1.7.20
+	github.com/containerd/platforms v0.2.1
 	github.com/distribution/distribution/v3 v3.0.0-beta.1
 	github.com/distribution/reference v0.6.0
 	github.com/go-courier/logr v0.3.0
@@ -24,7 +25,7 @@ require (
 	golang.org/x/sync v0.7.0
 	k8s.io/api v0.30.3
 	k8s.io/apimachinery v0.30.3
-	sigs.k8s.io/controller-runtime v0.18.4
+	sigs.k8s.io/controller-runtime v0.18.5
 )
 
 require (
@@ -36,7 +37,6 @@ require (
 	github.com/cockroachdb/apd/v3 v3.2.1 // indirect
 	github.com/containerd/errdefs v0.1.0 // indirect
 	github.com/containerd/log v0.1.0 // indirect
-	github.com/containerd/platforms v0.2.1 // indirect
 	github.com/containerd/stargz-snapshotter/estargz v0.15.1 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
