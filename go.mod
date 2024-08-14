@@ -4,6 +4,7 @@ go 1.22.5
 
 require (
 	github.com/containerd/containerd v1.7.20
+	github.com/containerd/platforms v0.2.1
 	github.com/distribution/distribution/v3 v3.0.0-beta.1
 	github.com/distribution/reference v0.6.0
 	github.com/go-courier/logr v0.3.0
@@ -22,8 +23,8 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.9.3
 	golang.org/x/sync v0.7.0
-	k8s.io/api v0.30.3
-	k8s.io/apimachinery v0.30.3
+	k8s.io/api v0.31.0
+	k8s.io/apimachinery v0.31.0
 	sigs.k8s.io/controller-runtime v0.18.4
 )
 
@@ -36,7 +37,6 @@ require (
 	github.com/cockroachdb/apd/v3 v3.2.1 // indirect
 	github.com/containerd/errdefs v0.1.0 // indirect
 	github.com/containerd/log v0.1.0 // indirect
-	github.com/containerd/platforms v0.2.1 // indirect
 	github.com/containerd/stargz-snapshotter/estargz v0.15.1 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
@@ -50,6 +50,7 @@ require (
 	github.com/fatih/color v1.17.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
+	github.com/fxamacker/cbor/v2 v2.7.0 // indirect
 	github.com/go-json-experiment/json v0.0.0-20240524174822-2d9f40f7385b // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
@@ -93,6 +94,7 @@ require (
 	github.com/spf13/cobra v1.8.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/vbatts/tar-split v0.11.5 // indirect
+	github.com/x448/float16 v0.8.4 // indirect
 	go.opentelemetry.io/contrib/bridges/prometheus v0.53.0 // indirect
 	go.opentelemetry.io/contrib/exporters/autoexport v0.53.0 // indirect
 	go.opentelemetry.io/contrib/propagators/b3 v1.28.0 // indirect
