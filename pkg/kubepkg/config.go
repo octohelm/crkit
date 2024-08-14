@@ -9,8 +9,9 @@ import (
 )
 
 const (
-	ConfigMediaType = "application/vnd.kubepkg.config.v1+json"
-	ArtifactType    = "application/vnd.kubepkg+type"
+	IndexArtifactType = "application/vnd.kubepkg+index"
+	ArtifactType      = "application/vnd.kubepkg+type"
+	ConfigMediaType   = "application/vnd.kubepkg.config.v1+json"
 )
 
 var _ artifact.Config = &Config{}

@@ -102,7 +102,7 @@ func (p *Packer) Image(i v1.Image) v1.Image {
 }
 
 func (p *Packer) PackAsIndex(ctx context.Context, kpkg *kubepkgv1alpha1.KubePkg) (v1.ImageIndex, error) {
-	kubePkgImage, err := p.PackAsKubePkgImage(ctx, kpkg)
+	kubePkgIndex, err := p.PackAsKubePkgIndex(ctx, kpkg)
 	if err != nil {
 		return nil, err
 	}
@@ -119,7 +119,7 @@ func (p *Packer) PackAsIndex(ctx context.Context, kpkg *kubepkgv1alpha1.KubePkg)
 		return nil, err
 	}
 
-	layers, err := kubePkgImage.Layers()
+	idx, err := kubePkgIndex.IndexManifest()
 	if err != nil {
 		return nil, err
 	}
@@ -127,10 +127,9 @@ func (p *Packer) PackAsIndex(ctx context.Context, kpkg *kubepkgv1alpha1.KubePkg)
 	imageNames := make([]string, 0)
 	imageIndexes := make(map[string]v1.ImageIndex)
 
-	for _, l := range layers {
-		desc, err := partial.Descriptor(l)
-		if err != nil {
-			return nil, err
+	for _, desc := range idx.Manifests {
+		if desc.ArtifactType == ArtifactType {
+			continue
 		}
 
 		if desc.MediaType.IsImage() && len(desc.Annotations) > 0 {
@@ -162,7 +161,7 @@ func (p *Packer) PackAsIndex(ctx context.Context, kpkg *kubepkgv1alpha1.KubePkg)
 				return nil, err
 			}
 
-			imageIndexes[imageName], err = p.appendManifests(imageIndexes[imageName], p.Image(img), desc, nil)
+			imageIndexes[imageName], err = p.appendManifests(imageIndexes[imageName], p.Image(img), &desc, nil)
 			if err != nil {
 				return nil, err
 			}
@@ -197,7 +196,7 @@ func (p *Packer) PackAsIndex(ctx context.Context, kpkg *kubepkgv1alpha1.KubePkg)
 	}
 
 	if !p.ImageOnly {
-		finalIndex, err = p.appendManifests(finalIndex, kubePkgImage, nil, &kubepkgv1alpha1.Image{
+		finalIndex, err = p.appendManifests(finalIndex, kubePkgIndex, nil, &kubepkgv1alpha1.Image{
 			Name: p.ImageName(r),
 			Tag:  kpkg.Spec.Version,
 		})
@@ -228,11 +227,13 @@ func (p *Packer) pickAnnotations(annotations map[string]string) (map[string]stri
 	return picked, nil
 }
 
-func (p *Packer) PackAsKubePkgImage(ctx context.Context, kpkg *kubepkgv1alpha1.KubePkg) (v1.Image, error) {
+func (p *Packer) PackAsKubePkgIndex(ctx context.Context, kpkg *kubepkgv1alpha1.KubePkg) (v1.ImageIndex, error) {
 	ann, err := p.pickAnnotations(kpkg.Annotations)
 	if err != nil {
 		return nil, err
 	}
+
+	ann[specv1.AnnotationRefName] = kpkg.Spec.Version
 
 	workloadImages := workload.Images(func(yield func(object.Object) bool) {
 		if !yield(kpkg) {
@@ -250,7 +251,7 @@ func (p *Packer) PackAsKubePkgImage(ctx context.Context, kpkg *kubepkgv1alpha1.K
 		}
 	}
 
-	var kubepkgImage v1.Image = empty.Image
+	var kubepkgIdx v1.ImageIndex = empty.Index
 
 	for image := range workloadImages {
 		repo, err := p.Repository(image.Name)
@@ -286,47 +287,30 @@ func (p *Packer) PackAsKubePkgImage(ctx context.Context, kpkg *kubepkgv1alpha1.K
 				d.Platform = &platform
 			}
 
-			kubepkgImage, err = p.appendArtifactLayer(kubepkgImage, p.Image(img), *d, image)
+			if d.Annotations == nil {
+				d.Annotations = map[string]string{}
+			}
+
+			d.Annotations[AnnotationSourceBaseImageName] = p.SourceImageName(image.Name)
+
+			kubepkgIdx, err = p.appendManifests(kubepkgIdx, p.Image(img), d, image)
 			if err != nil {
 				return nil, err
 			}
 		}
 	}
 
-	ann[specv1.AnnotationRefName] = kpkg.Spec.Version
-
-	return artifact.Artifact(kubepkgImage, &Config{KubePkg: kpkg}, artifact.WithAnnotations(ann))
-}
-
-func (p *Packer) appendArtifactLayer(kubepkgImage v1.Image, src v1.Image, d v1.Descriptor, img *kubepkgv1alpha1.Image) (v1.Image, error) {
-	if d.Annotations == nil {
-		d.Annotations = map[string]string{}
-	}
-
-	d.Annotations[specv1.AnnotationBaseImageName] = img.Name
-	d.Annotations[AnnotationSourceBaseImageName] = p.SourceImageName(img.Name)
-	d.Annotations[specv1.AnnotationRefName] = img.Tag
-	d.Annotations[images.AnnotationImageName] = img.FullName()
-
-	raw, err := src.RawManifest()
+	kubepkgArtifact, err := artifact.Artifact(empty.Image, &Config{KubePkg: kpkg}, artifact.WithAnnotations(ann))
 	if err != nil {
 		return nil, err
 	}
 
-	layer, err := artifact.FromBytes(string(d.MediaType), raw)
+	kubepkgIdx, err = p.appendManifests(kubepkgIdx, kubepkgArtifact, nil, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	dgst, err := layer.Digest()
-	if err == nil {
-		// skip already exists layer
-		if _, err = kubepkgImage.LayerByDigest(dgst); err == nil {
-			return kubepkgImage, nil
-		}
-	}
-
-	return mutate.AppendLayers(kubepkgImage, artifact.WithDescriptor(layer, d))
+	return artifact.IndexWithArtifactType(kubepkgIdx, IndexArtifactType)
 }
 
 func (p *Packer) appendManifests(idx v1.ImageIndex, source partial.Describable, desc *v1.Descriptor, image *kubepkgv1alpha1.Image) (v1.ImageIndex, error) {

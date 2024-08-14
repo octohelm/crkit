@@ -14,12 +14,18 @@ import (
 )
 
 func WithAnnotations(annotations map[string]string) Option {
-	return func(i *artifactImage) {
-		i.annotations = annotations
+	return func(i AnnotationSetter) {
+		for k, v := range annotations {
+			i.SetAnnotation(k, v)
+		}
 	}
 }
 
-type Option = func(i *artifactImage)
+type AnnotationSetter interface {
+	SetAnnotation(k string, v string)
+}
+
+type Option = func(i AnnotationSetter)
 
 func Artifact(img v1.Image, c Config, optFns ...Option) (v1.Image, error) {
 	i := &artifactImage{
@@ -31,7 +37,7 @@ func Artifact(img v1.Image, c Config, optFns ...Option) (v1.Image, error) {
 		optFn(i)
 	}
 
-	return ociutil.FromRaw(i), nil
+	return ociutil.Image(i), nil
 }
 
 type artifactImage struct {
@@ -39,6 +45,13 @@ type artifactImage struct {
 	config      Config
 	annotations map[string]string
 	m           atomic.Pointer[specv1.Manifest]
+}
+
+func (img *artifactImage) SetAnnotation(k string, v string) {
+	if img.annotations == nil {
+		img.annotations = map[string]string{}
+	}
+	img.annotations[k] = v
 }
 
 func (img *artifactImage) MediaType() (types.MediaType, error) {

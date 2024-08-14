@@ -17,21 +17,34 @@ func KubePkg(idx v1.ImageIndex) (*kubepkgv1alpha1.KubePkg, error) {
 	}
 
 	for _, m := range indexManifest.Manifests {
-		if m.ArtifactType == ArtifactType {
-			img, err := idx.Image(m.Digest)
+		if m.ArtifactType == IndexArtifactType {
+			kubePkgIndex, err := idx.ImageIndex(m.Digest)
 			if err != nil {
 				return nil, err
 			}
 
-			rawConfig, err := img.RawConfigFile()
+			indexManifest, err := kubePkgIndex.IndexManifest()
 			if err != nil {
 				return nil, err
 			}
-			kpkg := &kubepkgv1alpha1.KubePkg{}
-			if err := json.Unmarshal(rawConfig, kpkg); err != nil {
-				return nil, err
+
+			for _, m := range indexManifest.Manifests {
+				if m.ArtifactType == ArtifactType {
+					img, err := kubePkgIndex.Image(m.Digest)
+					if err != nil {
+						return nil, err
+					}
+					rawConfig, err := img.RawConfigFile()
+					if err != nil {
+						return nil, err
+					}
+					kpkg := &kubepkgv1alpha1.KubePkg{}
+					if err := json.Unmarshal(rawConfig, kpkg); err != nil {
+						return nil, err
+					}
+					return kpkg, nil
+				}
 			}
-			return kpkg, nil
 		}
 	}
 

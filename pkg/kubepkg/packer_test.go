@@ -91,13 +91,13 @@ func Test(t *testing.T) {
 
 			ctx := context.Background()
 
-			i, err := p.PackAsKubePkgImage(ctx, kpkg)
+			i, err := p.PackAsKubePkgIndex(ctx, kpkg)
 			testingx.Expect(t, err, testingx.BeNil[error]())
 			testingx.Expect(t, kpkg.Spec.Containers["web"].Image.Name, testingx.Be("docker.io/x/nginx"))
 
-			layers, err := i.Layers()
+			index, err := i.IndexManifest()
 			testingx.Expect(t, err, testingx.BeNil[error]())
-			testingx.Expect(t, len(layers), testingx.Be(1))
+			testingx.Expect(t, len(index.Manifests), testingx.Be(2))
 		})
 
 		t.Run("should pack as index", func(t *testing.T) {
@@ -159,12 +159,12 @@ func Test(t *testing.T) {
 
 			ctx := context.Background()
 
-			i, err := p.PackAsKubePkgImage(ctx, kpkg)
+			i, err := p.PackAsKubePkgIndex(ctx, kpkg)
 			testingx.Expect(t, err, testingx.BeNil[error]())
 
-			layers, err := i.Layers()
+			idx, err := i.IndexManifest()
 			testingx.Expect(t, err, testingx.BeNil[error]())
-			testingx.Expect(t, len(layers), testingx.Be(2))
+			testingx.Expect(t, len(idx.Manifests), testingx.Be(3))
 		})
 
 		filename := "testdata/.tmp/example.kubepkg.tar"
@@ -203,6 +203,7 @@ func Test(t *testing.T) {
 				found, err := KubePkg(idx)
 				testingx.Expect(t, err, testingx.BeNil[error]())
 				testingx.Expect(t, found.Spec.Version, testingx.Be(kpkg.Spec.Version))
+				testingx.Expect(t, found.Spec.Containers["web"].Image.Name, testingx.Be("docker.io/x/nginx"))
 
 				t.Run("then could push", func(t *testing.T) {
 					pusher := &Pusher{

@@ -5,16 +5,16 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/partial"
 )
 
-func FromRaw(img v1.Image) v1.Image {
+type WithArtifactType interface {
+	ArtifactType() (string, error)
+}
+
+func Image(img v1.Image) v1.Image {
 	return &rawImage{Image: img}
 }
 
 type rawImage struct {
 	v1.Image
-}
-
-type WithArtifactType interface {
-	ArtifactType() (string, error)
 }
 
 func (i *rawImage) ArtifactType() (string, error) {
