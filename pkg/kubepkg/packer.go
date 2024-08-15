@@ -25,6 +25,7 @@ import (
 )
 
 const (
+	AnnotationImageName           = "kubepkg.image.name"
 	AnnotationSourceBaseImageName = "kubepkg.source.image.base.name"
 )
 
@@ -133,9 +134,9 @@ func (p *Packer) PackAsIndex(ctx context.Context, kpkg *kubepkgv1alpha1.KubePkg)
 		}
 
 		if desc.MediaType.IsImage() && len(desc.Annotations) > 0 {
-			imageName := desc.Annotations[images.AnnotationImageName]
-
+			imageName := desc.Annotations[AnnotationImageName]
 			sourceRepo := desc.Annotations[AnnotationSourceBaseImageName]
+
 			repo, err := p.Repository(sourceRepo)
 			if err != nil {
 				return nil, err
@@ -171,12 +172,12 @@ func (p *Packer) PackAsIndex(ctx context.Context, kpkg *kubepkgv1alpha1.KubePkg)
 	sort.Strings(imageNames)
 
 	for _, imageName := range imageNames {
-		index := imageIndexes[imageName]
-
 		nameAndTag := strings.Split(imageName, ":")
 		if len(nameAndTag) != 2 {
 			return nil, errors.Errorf("invalid image name %s", nameAndTag)
 		}
+
+		index := imageIndexes[imageName]
 
 		if p.ImageOnly && len(imageNames) == 1 {
 			ann, err := p.pickAnnotations(kpkg.Annotations)
@@ -334,6 +335,8 @@ func (p *Packer) appendManifests(idx v1.ImageIndex, source partial.Describable, 
 
 		if image.Name != "" {
 			add.Annotations[specv1.AnnotationBaseImageName] = image.Name
+
+			add.Annotations[AnnotationImageName] = image.FullName()
 
 			if add.ArtifactType == "" {
 				add.Annotations[images.AnnotationImageName] = image.FullName()

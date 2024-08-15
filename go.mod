@@ -1,6 +1,6 @@
 module github.com/octohelm/crkit
 
-go 1.22.5
+go 1.23.0
 
 require (
 	github.com/containerd/containerd v1.7.20
