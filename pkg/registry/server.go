@@ -114,10 +114,6 @@ func (s *Server) Run(ctx context.Context) error {
 		return s.Publisher.Run(c)
 	})
 
-	g.Go(func() error {
-		return s.Cleaner.Run(c)
-	})
-
 	return g.Wait()
 }
 

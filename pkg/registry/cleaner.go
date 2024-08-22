@@ -26,7 +26,7 @@ type Cleaner struct {
 
 func (c *Cleaner) Init(ctx context.Context) error {
 	c.ApplyAction("container registry gc", func(ctx context.Context) {
-		if err := c.Run(ctx); err != nil {
+		if err := c.run(ctx); err != nil {
 			logr.FromContext(ctx).Error(err)
 		}
 	})
@@ -40,7 +40,7 @@ func (c *Cleaner) ApplyRegistry(cr distribution.Namespace, storageDriver driver.
 	c.baseHost = baseHost
 }
 
-func (c *Cleaner) Run(ctx context.Context) error {
+func (c *Cleaner) run(ctx context.Context) error {
 	l := logr.FromContext(ctx)
 
 	l.Info("running cleaner")
