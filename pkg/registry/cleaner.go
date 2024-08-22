@@ -26,7 +26,9 @@ type Cleaner struct {
 
 func (c *Cleaner) Init(ctx context.Context) error {
 	c.ApplyAction("container registry gc", func(ctx context.Context) {
-		_ = c.Run(ctx)
+		if err := c.Run(ctx); err != nil {
+			logr.FromContext(ctx).Error(err)
+		}
 	})
 
 	return c.Job.Init(ctx)
@@ -45,8 +47,7 @@ func (c *Cleaner) Run(ctx context.Context) error {
 
 	images, err := c.collectionImages(ctx)
 	if err != nil {
-		l.Error(err)
-		return nil
+		return err
 	}
 
 	// can failed
@@ -55,8 +56,7 @@ func (c *Cleaner) Run(ctx context.Context) error {
 	}
 
 	if err := c.remoteUntaggedBlobs(ctx); err != nil {
-		l.Error(err)
-		return nil
+		return err
 	}
 
 	return nil

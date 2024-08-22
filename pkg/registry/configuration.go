@@ -6,12 +6,14 @@ import (
 
 	"github.com/distribution/distribution/v3"
 	"github.com/distribution/distribution/v3/configuration"
-	"github.com/distribution/distribution/v3/registry/storage"
+	registrystroage "github.com/distribution/distribution/v3/registry/storage"
+	cachememory "github.com/distribution/distribution/v3/registry/storage/cache/memory"
 	"github.com/distribution/distribution/v3/registry/storage/driver"
 	"github.com/distribution/distribution/v3/registry/storage/driver/factory"
-	_ "github.com/distribution/distribution/v3/registry/storage/driver/filesystem"
 
 	"github.com/octohelm/crkit/pkg/registry/proxy"
+
+	_ "github.com/distribution/distribution/v3/registry/storage/driver/filesystem"
 )
 
 type Proxy = configuration.Proxy
@@ -55,7 +57,10 @@ func (c *Configuration) New(ctx context.Context) (distribution.Namespace, distri
 		c.RegistryBaseHost = u.Host
 	}
 
-	local, err := storage.NewRegistry(ctx, ds)
+	local, err := registrystroage.NewRegistry(ctx,
+		ds,
+		registrystroage.BlobDescriptorCacheProvider(cachememory.NewInMemoryBlobDescriptorCacheProvider(cachememory.DefaultSize)),
+	)
 	if err != nil {
 		return nil, nil, err
 	}
