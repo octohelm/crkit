@@ -31,6 +31,7 @@ type Server struct {
 	Addr string `flag:",omitempty,expose=http"`
 
 	Cleaner Cleaner
+
 	Publisher
 
 	s *http.Server

@@ -7,10 +7,10 @@ import (
 	"github.com/distribution/distribution/v3"
 	"github.com/distribution/distribution/v3/configuration"
 	registrystroage "github.com/distribution/distribution/v3/registry/storage"
-	cachememory "github.com/distribution/distribution/v3/registry/storage/cache/memory"
 	"github.com/distribution/distribution/v3/registry/storage/driver"
 	"github.com/distribution/distribution/v3/registry/storage/driver/factory"
 
+	cachememory "github.com/octohelm/crkit/pkg/registry/cache/memory"
 	"github.com/octohelm/crkit/pkg/registry/proxy"
 
 	_ "github.com/distribution/distribution/v3/registry/storage/driver/filesystem"
@@ -57,10 +57,8 @@ func (c *Configuration) New(ctx context.Context) (distribution.Namespace, distri
 		c.RegistryBaseHost = u.Host
 	}
 
-	local, err := registrystroage.NewRegistry(ctx,
-		ds,
-		registrystroage.BlobDescriptorCacheProvider(cachememory.NewInMemoryBlobDescriptorCacheProvider(cachememory.DefaultSize)),
-	)
+	cacheProvider := cachememory.NewInMemoryBlobDescriptorCacheProvider(cachememory.DefaultSize)
+	local, err := registrystroage.NewRegistry(ctx, ds, registrystroage.BlobDescriptorCacheProvider(cacheProvider))
 	if err != nil {
 		return nil, nil, err
 	}

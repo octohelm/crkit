@@ -18,7 +18,6 @@ func init() {
 // Container Registry
 type Registry struct {
 	cli.C `component:"container-registry"`
-
 	otel.Otel
 
 	KubeClient
