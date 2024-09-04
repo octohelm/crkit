@@ -13,7 +13,10 @@ type Renamer interface {
 }
 
 func NewTemplateRenamer(text string) (Renamer, error) {
-	t, err := template.New(text).Parse(text)
+	tpl := template.New(text).Funcs(template.FuncMap{
+		"hasPrefix": strings.HasPrefix,
+	})
+	t, err := tpl.Parse(text)
 	if err != nil {
 		return nil, err
 	}
@@ -37,7 +40,7 @@ func (t *templateRenamer) Rename(repo name.Repository) string {
 	}
 
 	if err := t.Execute(b, ctx); err == nil {
-		return b.String()
+		return strings.TrimSpace(b.String())
 	}
 
 	return repo.String()
