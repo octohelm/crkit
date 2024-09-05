@@ -3,6 +3,7 @@ package kubepkg
 import (
 	"context"
 	"fmt"
+	"github.com/octohelm/crkit/pkg/ociutil"
 	"iter"
 	"sort"
 	"strings"
@@ -162,10 +163,17 @@ func (p *Packer) PackAsIndex(ctx context.Context, kpkg *kubepkgv1alpha1.KubePkg)
 				return nil, err
 			}
 
-			imageIndexes[imageName], err = p.appendManifests(imageIndexes[imageName], p.Image(img), &desc, nil)
+			if artifactType, err := ociutil.ArtifactType(img); err == nil {
+				desc.ArtifactType = artifactType
+				img = ociutil.Artifact(img, artifactType)
+			}
+
+			index, err := p.appendManifests(imageIndexes[imageName], p.Image(img), &desc, nil)
 			if err != nil {
 				return nil, err
 			}
+
+			imageIndexes[imageName] = index
 		}
 	}
 
@@ -282,6 +290,12 @@ func (p *Packer) PackAsKubePkgIndex(ctx context.Context, kpkg *kubepkgv1alpha1.K
 			d, err := partial.Descriptor(img)
 			if err != nil {
 				return nil, err
+			}
+
+			if artifactType, err := ociutil.ArtifactType(img); err == nil {
+				d.ArtifactType = artifactType
+
+				img = ociutil.Artifact(img, artifactType)
 			}
 
 			if d.Platform == nil {

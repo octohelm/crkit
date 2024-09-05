@@ -115,7 +115,6 @@ func (p *Packer) PackAsIndex(ctx context.Context, layers ...LayerWithPlatform) (
 	var index containerregistryv1.ImageIndex = empty.Index
 
 	for _, layer := range layers {
-
 		img, err := p.packAsImage(ctx, layer)
 		if err != nil {
 			return nil, err

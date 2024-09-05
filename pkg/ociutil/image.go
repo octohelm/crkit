@@ -5,10 +5,6 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/partial"
 )
 
-type WithArtifactType interface {
-	ArtifactType() (string, error)
-}
-
 func Image(img v1.Image) v1.Image {
 	return &rawImage{Image: img}
 }
