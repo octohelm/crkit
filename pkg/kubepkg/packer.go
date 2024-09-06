@@ -325,7 +325,7 @@ func (p *Packer) PackAsKubePkgIndex(ctx context.Context, kpkg *kubepkgv1alpha1.K
 		return nil, err
 	}
 
-	return artifact.IndexWithArtifactType(kubepkgIdx, IndexArtifactType)
+	return artifact.IndexWithArtifactType(kubepkgIdx, IndexArtifactType, artifact.WithAnnotations(ann))
 }
 
 func (p *Packer) appendManifests(idx v1.ImageIndex, source partial.Describable, desc *v1.Descriptor, image *kubepkgv1alpha1.Image) (v1.ImageIndex, error) {

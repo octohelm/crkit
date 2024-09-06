@@ -10,17 +10,31 @@ import (
 	specv1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
-func IndexWithArtifactType(base v1.ImageIndex, artifactType string) (v1.ImageIndex, error) {
-	return &indexWithArtifactType{
+func IndexWithArtifactType(base v1.ImageIndex, artifactType string, optFns ...Option) (v1.ImageIndex, error) {
+	idx := &indexWithArtifactType{
 		artifactType: artifactType,
 		base:         base,
-	}, nil
+	}
+
+	for _, optFn := range optFns {
+		optFn(idx)
+	}
+
+	return idx, nil
 }
 
 type indexWithArtifactType struct {
 	base         v1.ImageIndex
 	artifactType string
 	m            atomic.Pointer[specv1.Index]
+	annotations  map[string]string
+}
+
+func (idx *indexWithArtifactType) SetAnnotation(k string, v string) {
+	if idx.annotations == nil {
+		idx.annotations = map[string]string{}
+	}
+	idx.annotations[k] = v
 }
 
 func (idx *indexWithArtifactType) MediaType() (types.MediaType, error) {
@@ -56,7 +70,20 @@ func (idx *indexWithArtifactType) RawManifest() ([]byte, error) {
 }
 
 func (idx *indexWithArtifactType) IndexManifest() (*v1.IndexManifest, error) {
-	return idx.base.IndexManifest()
+	i, err := idx.OCIIndex()
+	if err != nil {
+		return nil, err
+	}
+
+	raw, err := json.Marshal(i)
+	if err != nil {
+		return nil, err
+	}
+	index := &v1.IndexManifest{}
+	if err := json.Unmarshal(raw, index); err != nil {
+		return nil, err
+	}
+	return index, nil
 }
 
 func (idx *indexWithArtifactType) OCIIndex() (*specv1.Index, error) {
@@ -75,6 +102,7 @@ func (idx *indexWithArtifactType) OCIIndex() (*specv1.Index, error) {
 	}
 
 	i.ArtifactType = idx.artifactType
+	i.Annotations = idx.annotations
 
 	idx.m.Store(i)
 	return i, nil

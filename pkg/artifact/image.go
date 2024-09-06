@@ -42,9 +42,10 @@ func Artifact(img v1.Image, c Config, optFns ...Option) (v1.Image, error) {
 
 type artifactImage struct {
 	v1.Image
-	config      Config
+	config Config
+	m      atomic.Pointer[specv1.Manifest]
+
 	annotations map[string]string
-	m           atomic.Pointer[specv1.Manifest]
 }
 
 func (img *artifactImage) SetAnnotation(k string, v string) {

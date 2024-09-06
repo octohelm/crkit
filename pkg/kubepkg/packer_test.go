@@ -165,6 +165,10 @@ func Test(t *testing.T) {
 			idx, err := i.IndexManifest()
 			testingx.Expect(t, err, testingx.BeNil[error]())
 			testingx.Expect(t, len(idx.Manifests), testingx.Be(3))
+			testingx.Expect(t, idx.Annotations, testingx.Equal(map[string]string{
+				"kubernetes.io/description":         "demo",
+				"org.opencontainers.image.ref.name": "v0.0.2",
+			}))
 		})
 
 		filename := "testdata/.tmp/example.kubepkg.tar"
