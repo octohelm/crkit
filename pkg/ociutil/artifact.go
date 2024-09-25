@@ -2,6 +2,7 @@ package ociutil
 
 import (
 	"encoding/json"
+
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/partial"
 )

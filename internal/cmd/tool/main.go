@@ -14,7 +14,6 @@ import (
 	_ "github.com/octohelm/gengo/devpkg/deepcopygen"
 	_ "github.com/octohelm/gengo/devpkg/runtimedocgen"
 	_ "github.com/octohelm/storage/devpkg/enumgen"
-	_ "github.com/octohelm/storage/devpkg/tablegen"
 )
 
 var App = cli.NewApp("gengo", "dev")

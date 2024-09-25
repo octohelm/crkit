@@ -227,7 +227,7 @@ func Test(t *testing.T) {
 }
 
 func writeAsOciTar(filename string, idx v1.ImageIndex) error {
-	f, err := os.OpenFile(filename, os.O_TRUNC|os.O_WRONLY|os.O_CREATE, 0600)
+	f, err := os.OpenFile(filename, os.O_TRUNC|os.O_WRONLY|os.O_CREATE, 0o600)
 	if err != nil {
 		return err
 	}

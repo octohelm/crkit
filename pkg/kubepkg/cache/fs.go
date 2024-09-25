@@ -2,13 +2,14 @@ package cache
 
 import (
 	"errors"
+	"io"
+	"os"
+	"path/filepath"
+
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/cache"
 	"github.com/google/go-containerregistry/pkg/v1/tarball"
 	"github.com/opencontainers/go-digest"
-	"io"
-	"os"
-	"path/filepath"
 )
 
 type fscache struct {
@@ -45,11 +46,11 @@ type layer struct {
 func (l *layer) create(h v1.Hash) (io.WriteCloser, error) {
 	tmpPath := injestpath(l.path, h)
 
-	if err := os.MkdirAll(filepath.Dir(tmpPath), 0700); err != nil {
+	if err := os.MkdirAll(filepath.Dir(tmpPath), 0o700); err != nil {
 		return nil, err
 	}
 
-	f, err := os.OpenFile(tmpPath, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0600)
+	f, err := os.OpenFile(tmpPath, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0o600)
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +88,7 @@ func (w *writer) Close() error {
 		return errors.New("digest not match")
 	}
 
-	if err := os.MkdirAll(filepath.Dir(w.cachePath), 0700); err != nil {
+	if err := os.MkdirAll(filepath.Dir(w.cachePath), 0o700); err != nil {
 		return err
 	}
 

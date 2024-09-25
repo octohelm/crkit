@@ -29,7 +29,7 @@ func TestOciTar(t *testing.T) {
 	filename := filepath.Join(d, "x.tar")
 
 	t.Run("should write", func(t *testing.T) {
-		f, err := os.OpenFile(filename, os.O_TRUNC|os.O_WRONLY|os.O_CREATE, 0600)
+		f, err := os.OpenFile(filename, os.O_TRUNC|os.O_WRONLY|os.O_CREATE, 0o600)
 		testingx.Expect(t, err, testingx.BeNil[error]())
 
 		err = Write(f, index)
@@ -49,5 +49,4 @@ func TestOciTar(t *testing.T) {
 			testingx.Expect(t, len(images), testingx.Be(len(expectImages)))
 		})
 	})
-
 }

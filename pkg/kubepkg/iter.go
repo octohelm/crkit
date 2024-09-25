@@ -2,12 +2,13 @@ package kubepkg
 
 import (
 	"encoding/json"
+	"iter"
+
 	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	kubepkgv1alpha1 "github.com/octohelm/kubepkgspec/pkg/apis/kubepkg/v1alpha1"
 	specv1 "github.com/opencontainers/image-spec/specs-go/v1"
-	"iter"
 )
 
 func KubePkg(idx v1.ImageIndex) (*kubepkgv1alpha1.KubePkg, error) {
@@ -85,7 +86,6 @@ func (r *imageIter) Images() iter.Seq2[name.Reference, remote.Taggable] {
 		r.Done(err)
 
 		return func(yield func(name.Reference, remote.Taggable) bool) {
-
 		}
 	}
 

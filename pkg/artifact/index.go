@@ -2,8 +2,9 @@ package artifact
 
 import (
 	"encoding/json"
-	"github.com/google/go-containerregistry/pkg/v1/types"
 	"sync/atomic"
+
+	"github.com/google/go-containerregistry/pkg/v1/types"
 
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/partial"

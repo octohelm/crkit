@@ -3,8 +3,9 @@ package artifact
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/octohelm/crkit/pkg/ociutil"
 	"sync/atomic"
+
+	"github.com/octohelm/crkit/pkg/ociutil"
 
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/partial"

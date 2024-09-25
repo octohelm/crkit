@@ -3,11 +3,12 @@ package kubepkg
 import (
 	"context"
 	"fmt"
-	"github.com/octohelm/crkit/pkg/ociutil"
 	"iter"
 	"sort"
 	"strings"
 	"sync"
+
+	"github.com/octohelm/crkit/pkg/ociutil"
 
 	"github.com/containerd/containerd/images"
 	"github.com/google/go-containerregistry/pkg/name"

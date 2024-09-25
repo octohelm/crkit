@@ -1,9 +1,10 @@
 package kubepkg
 
 import (
+	"strings"
+
 	"github.com/gobwas/glob"
 	"github.com/pkg/errors"
-	"strings"
 )
 
 func Compile(patterns []string) (glob.Glob, error) {

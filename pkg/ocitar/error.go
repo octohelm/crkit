@@ -2,7 +2,7 @@ package ocitar
 
 import (
 	"fmt"
-	
+
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 )
 

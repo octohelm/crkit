@@ -2,6 +2,8 @@ package executable
 
 import (
 	"context"
+	"io"
+
 	"github.com/containerd/containerd/images"
 	"github.com/containerd/platforms"
 	containerregistryv1 "github.com/google/go-containerregistry/pkg/v1"
@@ -12,11 +14,12 @@ import (
 	kubepkgv1alpha1 "github.com/octohelm/kubepkgspec/pkg/apis/kubepkg/v1alpha1"
 	"github.com/octohelm/kubepkgspec/pkg/workload"
 	specv1 "github.com/opencontainers/image-spec/specs-go/v1"
-	"io"
 )
 
-const ArtifactType = "application/vnd.executable+type"
-const MediaTypeBinaryContent = "application/vnd.executable"
+const (
+	ArtifactType           = "application/vnd.executable+type"
+	MediaTypeBinaryContent = "application/vnd.executable"
+)
 
 func PlatformedBinary(platform string, open func() (io.ReadCloser, error)) (LayerWithPlatform, error) {
 	p, err := platforms.Parse(platform)
@@ -54,8 +57,7 @@ type LayerWithPlatform interface {
 	Platform() *containerregistryv1.Platform
 }
 
-type Packer struct {
-}
+type Packer struct{}
 
 type Option = func(m *mutate.IndexAddendum)
 
@@ -72,7 +74,6 @@ func WithImageName(imageName string) Option {
 		if add.ArtifactType == "" {
 			add.Annotations[images.AnnotationImageName] = image.FullName()
 		}
-
 	}
 }
 

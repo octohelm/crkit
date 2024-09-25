@@ -13,19 +13,31 @@ import (
 
 		deploy: spec: replicas: _ | *1
 
-		config: CRKIT_LOG_LEVEL:                             string | *"info"
-		config: CRKIT_TRACE_COLLECTOR_ENDPOINT:              string | *""
-		config: CRKIT_METRIC_COLLECTOR_ENDPOINT:             string | *""
-		config: CRKIT_METRIC_COLLECT_INTERVAL_SECONDS:       string | *"0"
-		config: CRKIT_KUBECONFIG:                            string | *""
-		config: CRKIT_STORAGE_ROOT:                          string | *"/etc/container-registry"
-		config: CRKIT_REMOTE_REGISTRY_ENDPOINT:              string | *""
-		config: CRKIT_REMOTE_REGISTRY_USERNAME:              string | *""
-		config: CRKIT_REMOTE_REGISTRY_PASSWORD:              string | *""
-		config: CRKIT_CLEANER_CRON:                          string | *"0 0 * * 1"
-		config: CRKIT_CLEANER_UNTAG_WHEN_NOT_EXISTS_IN_KUBE: string | *"false"
-		config: CRKIT_PUBLIC_IP:                             string | *""
-		config: CRKIT_NAMESPACE:                             string | *"kube-system"
+		// Log level 
+		config: CRKIT_LOG_LEVEL: string | *"info"
+
+		// Log format 
+		config: CRKIT_LOG_FORMAT: string | *"json"
+
+		// When set, will collect traces 
+		config: CRKIT_TRACE_COLLECTOR_ENDPOINT: string | *""
+
+		//  
+		config: CRKIT_METRIC_COLLECTOR_ENDPOINT: string | *""
+
+		//  
+		config: CRKIT_METRIC_COLLECT_INTERVAL_SECONDS: string | *"0"
+
+		// cron job 配置
+		// 支持 标准格式
+		// 也支持 @every {duration} 等语义化格式 
+		config: CRKIT_UPLOAD_CACHE_CRON: string | *"@every 1s"
+
+		// 地址
+		config: CRKIT_CONTENT_BACKEND: string
+
+		// Enable debug mode 
+		config: CRKIT_ENABLE_DEBUG: string | *"false"
 
 		services: "#": ports: containers."container-registry".ports
 
