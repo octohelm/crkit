@@ -21,7 +21,7 @@ func (v Registry) RuntimeDoc(names ...string) ([]string, bool) {
 			return []string{}, true
 		case "UploadCache":
 			return []string{}, true
-		case "Content":
+		case "NamespaceProvider":
 			return []string{}, true
 		case "Server":
 			return []string{}, true
@@ -30,13 +30,14 @@ func (v Registry) RuntimeDoc(names ...string) ([]string, bool) {
 		if doc, ok := runtimeDoc(v.Otel, names...); ok {
 			return doc, ok
 		}
+		if doc, ok := runtimeDoc(v.NamespaceProvider, names...); ok {
+			return doc, ok
+		}
 		if doc, ok := runtimeDoc(v.Server, names...); ok {
 			return doc, ok
 		}
 
 		return nil, false
 	}
-	return []string{
-		"Container Registry",
-	}, true
+	return []string{}, true
 }

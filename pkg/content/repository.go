@@ -4,11 +4,9 @@ import (
 	"context"
 
 	"github.com/distribution/reference"
-	contextx "github.com/octohelm/x/context"
 )
 
-var RepositoryContext = contextx.New[Repository]()
-
+// +gengo:injectable:provider
 type Repository interface {
 	Named() reference.Named
 	Manifests(ctx context.Context) (ManifestService, error)

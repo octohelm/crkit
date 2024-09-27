@@ -32,6 +32,32 @@ func (v ErrBlobInvalidDigest) RuntimeDoc(names ...string) ([]string, bool) {
 	return []string{}, true
 }
 
+func (v ErrBlobInvalidLength) RuntimeDoc(names ...string) ([]string, bool) {
+	if len(names) > 0 {
+		switch names[0] {
+		case "Reason":
+			return []string{}, true
+
+		}
+
+		return nil, false
+	}
+	return []string{}, true
+}
+
+func (v ErrBlobUnknown) RuntimeDoc(names ...string) ([]string, bool) {
+	if len(names) > 0 {
+		switch names[0] {
+		case "Digest":
+			return []string{}, true
+
+		}
+
+		return nil, false
+	}
+	return []string{}, true
+}
+
 func (v ErrManifestBlobUnknown) RuntimeDoc(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
@@ -145,6 +171,20 @@ func (v ErrTagUnknown) RuntimeDoc(names ...string) ([]string, bool) {
 func (Name) RuntimeDoc(names ...string) ([]string, bool) {
 	return []string{}, true
 }
-func (TagOrDigest) RuntimeDoc(names ...string) ([]string, bool) {
+func (Reference) RuntimeDoc(names ...string) ([]string, bool) {
+	return []string{}, true
+}
+func (v TagList) RuntimeDoc(names ...string) ([]string, bool) {
+	if len(names) > 0 {
+		switch names[0] {
+		case "Name":
+			return []string{}, true
+		case "Tags":
+			return []string{}, true
+
+		}
+
+		return nil, false
+	}
 	return []string{}, true
 }

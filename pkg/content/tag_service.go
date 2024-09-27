@@ -12,3 +12,12 @@ type TagService interface {
 	Untag(ctx context.Context, tag string) error
 	All(ctx context.Context) ([]string, error)
 }
+
+type TagList struct {
+	Name string   `json:"name"`
+	Tags []string `json:"tags"`
+}
+
+func (TagList) ContentType() string {
+	return "application/json"
+}

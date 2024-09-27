@@ -9,6 +9,7 @@ import (
 
 	courier "github.com/octohelm/courier/pkg/courier"
 	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
+	content "github.com/octohelm/crkit/pkg/content"
 )
 
 func init() {
@@ -22,6 +23,43 @@ func (*BaseURL) ResponseContent() any {
 func (*BaseURL) ResponseData() *map[string]string {
 	return new(map[string]string)
 }
+
+func init() {
+	R.Register(courier.NewRouter(&CancelUploadBlob{}))
+}
+
+func (*CancelUploadBlob) ResponseContent() any {
+	return nil
+}
+
+func (*CancelUploadBlob) ResponseData() *courier.NoContent {
+	return new(courier.NoContent)
+}
+
+func init() {
+	R.Register(courier.NewRouter(&DeleteBlob{}))
+}
+
+func (*DeleteBlob) ResponseContent() any {
+	return nil
+}
+
+func (*DeleteBlob) ResponseData() *courier.NoContent {
+	return new(courier.NoContent)
+}
+
+func init() {
+	R.Register(courier.NewRouter(&DeleteManifest{}))
+}
+
+func (*DeleteManifest) ResponseContent() any {
+	return nil
+}
+
+func (*DeleteManifest) ResponseData() *courier.NoContent {
+	return new(courier.NoContent)
+}
+
 func init() {
 	R.Register(courier.NewRouter(&GetBlob{}))
 }
@@ -33,17 +71,19 @@ func (*GetBlob) ResponseContent() any {
 func (*GetBlob) ResponseData() *io.ReadCloser {
 	return new(io.ReadCloser)
 }
+
 func init() {
 	R.Register(courier.NewRouter(&GetManifest{}))
 }
 
 func (*GetManifest) ResponseContent() any {
-	return new(manifestv1.Manifest)
+	return new(manifestv1.Payload)
 }
 
-func (*GetManifest) ResponseData() *manifestv1.Manifest {
-	return new(manifestv1.Manifest)
+func (*GetManifest) ResponseData() *manifestv1.Payload {
+	return new(manifestv1.Payload)
 }
+
 func init() {
 	R.Register(courier.NewRouter(&HeadBlob{}))
 }
@@ -55,6 +95,7 @@ func (*HeadBlob) ResponseContent() any {
 func (*HeadBlob) ResponseData() *any {
 	return new(any)
 }
+
 func init() {
 	R.Register(courier.NewRouter(&HeadManifest{}))
 }
@@ -66,6 +107,19 @@ func (*HeadManifest) ResponseContent() any {
 func (*HeadManifest) ResponseData() *any {
 	return new(any)
 }
+
+func init() {
+	R.Register(courier.NewRouter(&ListTag{}))
+}
+
+func (*ListTag) ResponseContent() any {
+	return new(content.TagList)
+}
+
+func (*ListTag) ResponseData() *content.TagList {
+	return new(content.TagList)
+}
+
 func init() {
 	R.Register(courier.NewRouter(&PutManifest{}))
 }
@@ -77,6 +131,7 @@ func (*PutManifest) ResponseContent() any {
 func (*PutManifest) ResponseData() *any {
 	return new(any)
 }
+
 func init() {
 	R.Register(courier.NewRouter(&UploadBlob{}))
 }
@@ -88,6 +143,7 @@ func (*UploadBlob) ResponseContent() any {
 func (*UploadBlob) ResponseData() *any {
 	return new(any)
 }
+
 func init() {
 	R.Register(courier.NewRouter(&UploadPatchBlob{}))
 }
@@ -99,6 +155,7 @@ func (*UploadPatchBlob) ResponseContent() any {
 func (*UploadPatchBlob) ResponseData() *any {
 	return new(any)
 }
+
 func init() {
 	R.Register(courier.NewRouter(&UploadPutBlob{}))
 }

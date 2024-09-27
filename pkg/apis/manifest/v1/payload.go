@@ -1,11 +1,13 @@
 package v1
 
 import (
-	"encoding/json"
-	"github.com/octohelm/courier/pkg/openapi/jsonschema/util"
+	"fmt"
+
+	"github.com/octohelm/courier/pkg/validator"
+
+	"github.com/octohelm/courier/pkg/validator/taggedunion"
 	"github.com/opencontainers/go-digest"
 	specv1 "github.com/opencontainers/image-spec/specs-go/v1"
-	"github.com/pkg/errors"
 )
 
 type Payload struct {
@@ -31,7 +33,7 @@ func From(media Manifest) (*Payload, error) {
 		}, nil
 	}
 
-	return nil, errors.Errorf("invalid media %s", media.Type())
+	return nil, fmt.Errorf("invalid media %s", media.Type())
 }
 
 func (Payload) Discriminator() string {
@@ -42,9 +44,8 @@ func (Payload) Mapping() map[string]any {
 	return map[string]any{
 		specv1.MediaTypeImageManifest: Manifest(&OciManifest{}),
 		specv1.MediaTypeImageIndex:    Manifest(&OciIndex{}),
-
-		DockerMediaTypeManifest:     Manifest(&DockerManifest{}),
-		DockerMediaTypeManifestList: Manifest(&DockerManifestList{}),
+		DockerMediaTypeManifest:       Manifest(&DockerManifest{}),
+		DockerMediaTypeManifestList:   Manifest(&DockerManifestList{}),
 	}
 }
 
@@ -57,7 +58,7 @@ func (m *Payload) UnmarshalJSON(data []byte) error {
 		raw:  data,
 		dgst: digest.FromBytes(data),
 	}
-	if err := util.UnmarshalTaggedUnionFromJSON(data, &mm); err != nil {
+	if err := taggedunion.Unmarshal(data, &mm); err != nil {
 		return err
 	}
 	*m = mm
@@ -71,7 +72,7 @@ func (m Payload) MarshalJSON() ([]byte, error) {
 	if m.Manifest == nil {
 		return []byte("{}"), nil
 	}
-	return json.Marshal(m.Manifest)
+	return validator.Marshal(m.Manifest)
 }
 
 func (m *Payload) Payload() ([]byte, digest.Digest, error) {
@@ -84,5 +85,4 @@ func (m *Payload) Payload() ([]byte, digest.Digest, error) {
 		m.dgst = digest.FromBytes(raw)
 	}
 	return m.raw, m.dgst, nil
-
 }

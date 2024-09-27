@@ -5,11 +5,11 @@ import (
 	"net/http"
 	"strings"
 
-	infraconfiguration "github.com/innoai-tech/infra/pkg/configuration"
 	infrahttp "github.com/innoai-tech/infra/pkg/http"
 	"github.com/octohelm/crkit/pkg/registryhttp/apis"
 )
 
+// +gengo:injectable
 type Server struct {
 	infrahttp.Server
 }
@@ -20,7 +20,7 @@ func (s *Server) SetDefaults() {
 	}
 }
 
-func (s *Server) Init(ctx context.Context) error {
+func (s *Server) beforeInit(ctx context.Context) error {
 	s.ApplyRouter(apis.R)
 
 	s.ApplyGlobalHandlers(func(h http.Handler) http.Handler {
@@ -34,9 +34,5 @@ func (s *Server) Init(ctx context.Context) error {
 		})
 	})
 
-	return infraconfiguration.TypedInit(ctx, &s.Server)
-}
-
-func (s *Server) InjectContext(ctx context.Context) context.Context {
-	return infraconfiguration.InjectContext(ctx)
+	return nil
 }

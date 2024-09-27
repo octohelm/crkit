@@ -17,18 +17,3 @@ func runtimeDoc(v any, names ...string) ([]string, bool) {
 func (Layout) RuntimeDoc(names ...string) ([]string, bool) {
 	return []string{}, true
 }
-func (v NamespaceProvider) RuntimeDoc(names ...string) ([]string, bool) {
-	if len(names) > 0 {
-		switch names[0] {
-		case "FileSystemBackend":
-			return []string{}, true
-
-		}
-		if doc, ok := runtimeDoc(v.FileSystemBackend, names...); ok {
-			return doc, ok
-		}
-
-		return nil, false
-	}
-	return []string{}, true
-}

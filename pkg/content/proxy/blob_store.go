@@ -2,13 +2,14 @@ package proxy
 
 import (
 	"context"
+	"errors"
 	"io"
 
 	"github.com/distribution/reference"
 	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
 	"github.com/octohelm/crkit/pkg/content"
+	"github.com/octohelm/x/ptr"
 	"github.com/opencontainers/go-digest"
-	"github.com/pkg/errors"
 )
 
 type proxyBlobStore struct {
@@ -21,7 +22,7 @@ type proxyBlobStore struct {
 var _ content.BlobStore = &proxyBlobStore{}
 
 func (pbs *proxyBlobStore) Writer(ctx context.Context) (content.BlobWriter, error) {
-	return nil, errors.New("not implements")
+	return pbs.remoteStore.Writer(ctx)
 }
 
 func (pbs *proxyBlobStore) Remove(ctx context.Context, dgst digest.Digest) error {
@@ -49,7 +50,7 @@ func (pbs *proxyBlobStore) Open(ctx context.Context, dgst digest.Digest) (io.Rea
 		io.Closer
 	}{
 		Reader: io.TeeReader(blob, bw),
-		Closer: CloserFunc(func() error {
+		Closer: closerFunc(func() error {
 			defer func() {
 				err = blob.Close()
 			}()
@@ -71,13 +72,13 @@ func (pbs *proxyBlobStore) Info(ctx context.Context, dgst digest.Digest) (*manif
 		return desc, err
 	}
 
-	if !errors.Is(err, content.ErrBlobUnknown) {
+	if !errors.As(err, ptr.Ptr(&content.ErrBlobUnknown{})) {
 		return &manifestv1.Descriptor{}, err
 	}
 
 	d, err := pbs.remoteStore.Info(ctx, dgst)
 	if err != nil {
-		if errors.Is(err, content.ErrBlobUnknown) {
+		if errors.As(err, ptr.Ptr(&content.ErrBlobUnknown{})) {
 			// FIXME hack to use open to trigger remote sync
 			// harbor will return 404 when stat, util digest full synced
 			b, err := pbs.remoteStore.Open(ctx, dgst)
@@ -105,7 +106,7 @@ func (pbs *proxyBlobStore) Info(ctx context.Context, dgst digest.Digest) (*manif
 	return d, nil
 }
 
-func CloserFunc(close func() error) io.Closer {
+func closerFunc(close func() error) io.Closer {
 	return &closer{close}
 }
 

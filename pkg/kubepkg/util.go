@@ -1,10 +1,10 @@
 package kubepkg
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/gobwas/glob"
-	"github.com/pkg/errors"
 )
 
 func Compile(patterns []string) (glob.Glob, error) {
@@ -14,7 +14,7 @@ func Compile(patterns []string) (glob.Glob, error) {
 		if strings.HasPrefix(p, "!") {
 			g, err := glob.Compile(p[1:])
 			if err != nil {
-				return nil, errors.Wrapf(err, "compile failed %s", p)
+				return nil, fmt.Errorf("compile failed %s: %w", p, err)
 			}
 			rr = append(rr, rule{
 				glob: g,
@@ -24,7 +24,7 @@ func Compile(patterns []string) (glob.Glob, error) {
 		}
 		g, err := glob.Compile(p)
 		if err != nil {
-			return nil, errors.Wrapf(err, "compile failed %s", p)
+			return nil, fmt.Errorf("compile failed %s: %w", p, err)
 		}
 		rr = append(rr, rule{glob: g})
 	}

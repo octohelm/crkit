@@ -1,4 +1,4 @@
-package fs_test
+package proxy_test
 
 import (
 	"fmt"
@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/google/go-containerregistry/pkg/name"
+	"github.com/google/go-containerregistry/pkg/registry"
 	"github.com/google/go-containerregistry/pkg/v1/random"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/innoai-tech/infra/pkg/configuration"
@@ -24,6 +25,8 @@ import (
 )
 
 func TestNamespace(t *testing.T) {
+	rr := httptest.NewServer(registry.New())
+
 	c := &struct {
 		otel.Otel
 		MemUploadCache uploadcache.MemUploadCache
@@ -37,11 +40,14 @@ func TestNamespace(t *testing.T) {
 
 	endpoint, _ := strfmt.ParseEndpoint("file://" + tmp)
 	c.Content.Backend = *endpoint
+	c.Remote.Endpoint = rr.URL
+
 	ctx := testingutil.NewContext(t, c)
 	i := configuration.ContextInjectorFromContext(ctx)
 
 	h, err := httprouter.New(apis.R, "registry")
 	testingx.Expect(t, err, testingx.BeNil[error]())
+
 	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		if strings.HasSuffix(req.URL.Path, "/") {
 			req.URL.Path = req.URL.Path[0 : len(req.URL.Path)-1]
@@ -56,7 +62,7 @@ func TestNamespace(t *testing.T) {
 	testingx.Expect(t, err, testingx.BeNil[error]())
 
 	t.Run("push manifest", func(t *testing.T) {
-		img, err := random.Image(20480, 5)
+		img, err := random.Image(2048, 5)
 		testingx.Expect(t, err, testingx.BeNil[error]())
 
 		repo := reg.Repo("test", "manifest")
@@ -102,7 +108,7 @@ func TestNamespace(t *testing.T) {
 	})
 
 	t.Run("push index", func(t *testing.T) {
-		index, err := random.Index(20480, 5, 5)
+		index, err := random.Index(2048, 5, 5)
 		testingx.Expect(t, err, testingx.BeNil[error]())
 
 		repo := reg.Repo("test", "index")

@@ -23,7 +23,6 @@ import (
 	"github.com/octohelm/kubepkgspec/pkg/object"
 	"github.com/octohelm/kubepkgspec/pkg/workload"
 	specv1 "github.com/opencontainers/image-spec/specs-go/v1"
-	"github.com/pkg/errors"
 )
 
 const (
@@ -183,7 +182,7 @@ func (p *Packer) PackAsIndex(ctx context.Context, kpkg *kubepkgv1alpha1.KubePkg)
 	for _, imageName := range imageNames {
 		nameAndTag := strings.Split(imageName, ":")
 		if len(nameAndTag) != 2 {
-			return nil, errors.Errorf("invalid image name %s", nameAndTag)
+			return nil, fmt.Errorf("invalid image name %s", nameAndTag)
 		}
 
 		index := imageIndexes[imageName]

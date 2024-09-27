@@ -3,29 +3,25 @@ package registry
 import (
 	"context"
 
-	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
-
-	"github.com/octohelm/courier/pkg/courier"
 	"github.com/octohelm/courier/pkg/courierhttp"
+	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
 	"github.com/octohelm/crkit/pkg/content"
-	registryoperator "github.com/octohelm/crkit/pkg/registryhttp/apis/registry/operator"
 )
 
-func (PutManifest) MiddleOperators() courier.MiddleOperators {
-	return courier.MiddleOperators{
-		&registryoperator.NameScoped{},
-	}
-}
-
 type PutManifest struct {
-	courierhttp.MethodPut `path:"/manifests/{reference}"`
+	courierhttp.MethodPut `path:"/{name...}/manifests/{reference}"`
 
-	Reference content.TagOrDigest `name:"reference" in:"path"`
-	Manifest  manifestv1.Payload  `in:"body"`
+	NameScoped
+
+	Reference content.Reference  `name:"reference" in:"path"`
+	Manifest  manifestv1.Payload `in:"body"`
 }
 
 func (req *PutManifest) Output(ctx context.Context) (any, error) {
-	repo := content.RepositoryContext.From(ctx)
+	repo, err := req.Repository(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	manifests, err := repo.Manifests(ctx)
 	if err != nil {

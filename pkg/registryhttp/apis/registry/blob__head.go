@@ -6,26 +6,23 @@ import (
 
 	"github.com/opencontainers/go-digest"
 
-	"github.com/octohelm/courier/pkg/courier"
 	"github.com/octohelm/courier/pkg/courierhttp"
 	"github.com/octohelm/crkit/pkg/content"
-	registryoperator "github.com/octohelm/crkit/pkg/registryhttp/apis/registry/operator"
 )
 
-func (HeadBlob) MiddleOperators() courier.MiddleOperators {
-	return courier.MiddleOperators{
-		&registryoperator.NameScoped{},
-	}
-}
-
 type HeadBlob struct {
-	courierhttp.MethodHead `path:"/blobs/{digest}"`
+	courierhttp.MethodHead `path:"/{name...}/blobs/{digest}"`
+
+	NameScoped
 
 	Digest content.Digest `name:"digest" in:"path"`
 }
 
 func (req *HeadBlob) Output(ctx context.Context) (any, error) {
-	repo := content.RepositoryContext.From(ctx)
+	repo, err := req.Repository(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	blobs, err := repo.Blobs(ctx)
 	if err != nil {

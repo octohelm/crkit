@@ -4,26 +4,24 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/octohelm/courier/pkg/courier"
 	"github.com/octohelm/courier/pkg/courierhttp"
 	"github.com/octohelm/crkit/pkg/content"
-	registryoperator "github.com/octohelm/crkit/pkg/registryhttp/apis/registry/operator"
 )
 
-func (HeadManifest) MiddleOperators() courier.MiddleOperators {
-	return courier.MiddleOperators{
-		&registryoperator.NameScoped{},
-	}
-}
-
 type HeadManifest struct {
-	courierhttp.MethodHead `path:"/manifests/{reference}"`
+	courierhttp.MethodHead `path:"/{name...}/manifests/{reference}"`
 
-	Reference content.TagOrDigest `name:"reference" in:"path"`
+	NameScoped
+
+	Accept    string            `name:"Accept,omitempty" in:"header"`
+	Reference content.Reference `name:"reference" in:"path"`
 }
 
 func (req *HeadManifest) Output(ctx context.Context) (any, error) {
-	repo := content.RepositoryContext.From(ctx)
+	repo, err := req.Repository(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	dgst, err := req.Reference.Digest()
 	if err != nil {

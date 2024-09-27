@@ -10,6 +10,7 @@ import (
 	"github.com/innoai-tech/infra/pkg/cli"
 
 	_ "github.com/octohelm/courier/devpkg/clientgen"
+	_ "github.com/octohelm/courier/devpkg/injectablegen"
 	_ "github.com/octohelm/courier/devpkg/operatorgen"
 	_ "github.com/octohelm/gengo/devpkg/deepcopygen"
 	_ "github.com/octohelm/gengo/devpkg/runtimedocgen"
@@ -19,11 +20,13 @@ import (
 var App = cli.NewApp("gengo", "dev")
 
 func init() {
-	cli.AddTo(App, &struct {
+	c := &struct {
 		cli.C `name:"gen"`
 		otel.Otel
 		gengo.Gengo
-	}{})
+	}{}
+
+	cli.AddTo(App, c)
 }
 
 func main() {

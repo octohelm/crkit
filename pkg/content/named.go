@@ -1,8 +1,9 @@
 package content
 
 import (
+	"errors"
+
 	"github.com/opencontainers/go-digest"
-	"github.com/pkg/errors"
 )
 
 type Name string
@@ -26,13 +27,13 @@ func (d *Digest) UnmarshalText(t []byte) error {
 	return nil
 }
 
-type TagOrDigest string
+type Reference string
 
-func (tag TagOrDigest) Digest() (digest.Digest, error) {
+func (tag Reference) Digest() (digest.Digest, error) {
 	return digest.Parse(string(tag))
 }
 
-func (tag TagOrDigest) Tag() (string, error) {
+func (tag Reference) Tag() (string, error) {
 	if _, err := tag.Digest(); err != nil {
 		return string(tag), nil
 	}

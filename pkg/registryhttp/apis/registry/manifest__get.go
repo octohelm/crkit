@@ -1,30 +1,26 @@
 package registry
 
 import (
-	"github.com/octohelm/courier/pkg/courier"
-	"github.com/octohelm/courier/pkg/courierhttp"
-	"github.com/octohelm/crkit/pkg/content"
-	registryoperator "github.com/octohelm/crkit/pkg/registryhttp/apis/registry/operator"
-)
-
-import (
 	"context"
-)
 
-func (GetManifest) MiddleOperators() courier.MiddleOperators {
-	return courier.MiddleOperators{
-		&registryoperator.NameScoped{},
-	}
-}
+	"github.com/octohelm/courier/pkg/courierhttp"
+	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
+	"github.com/octohelm/crkit/pkg/content"
+)
 
 type GetManifest struct {
-	courierhttp.MethodGet `path:"/manifests/{reference}"`
+	courierhttp.MethodGet `path:"/{name...}/manifests/{reference}"`
 
-	Reference content.TagOrDigest `name:"reference" in:"path"`
+	NameScoped
+	Accept    string            `name:"Accept,omitempty" in:"header"`
+	Reference content.Reference `name:"reference" in:"path"`
 }
 
 func (req *GetManifest) Output(ctx context.Context) (any, error) {
-	repo := content.RepositoryContext.From(ctx)
+	repo, err := req.Repository(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	dgst, err := req.Reference.Digest()
 	if err != nil {
@@ -50,7 +46,12 @@ func (req *GetManifest) Output(ctx context.Context) (any, error) {
 		return nil, err
 	}
 
-	return courierhttp.Wrap(m,
+	p, err := manifestv1.From(m)
+	if err != nil {
+		return nil, err
+	}
+
+	return courierhttp.Wrap(p,
 		courierhttp.WithMetadata("Docker-Content-Digest", dgst.String()),
 		courierhttp.WithMetadata("Content-Type", m.Type()),
 	), nil

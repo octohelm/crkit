@@ -8,15 +8,15 @@ import (
 	"github.com/opencontainers/go-digest"
 )
 
-type GetBlob struct {
-	courierhttp.MethodGet `path:"/{name...}/blobs/{digest}"`
+type DeleteBlob struct {
+	courierhttp.MethodDelete `path:"/{name...}/blobs/{digest}"`
 
 	NameScoped
 
 	Digest content.Digest `name:"digest" in:"path"`
 }
 
-func (req *GetBlob) Output(ctx context.Context) (any, error) {
+func (req *DeleteBlob) Output(ctx context.Context) (any, error) {
 	repo, err := req.Repository(ctx)
 	if err != nil {
 		return nil, err
@@ -27,13 +27,9 @@ func (req *GetBlob) Output(ctx context.Context) (any, error) {
 		return nil, err
 	}
 
-	b, err := blobs.Open(ctx, digest.Digest(req.Digest))
+	err = blobs.Remove(ctx, digest.Digest(req.Digest))
 	if err != nil {
 		return nil, err
 	}
-
-	return courierhttp.Wrap(
-		b,
-		courierhttp.WithMetadata("Docker-Content-Digest", string(req.Digest)),
-	), nil
+	return nil, nil
 }

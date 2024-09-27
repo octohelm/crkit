@@ -2,10 +2,8 @@ package proxy
 
 import (
 	"context"
-	"net/url"
 
 	"github.com/distribution/reference"
-	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/octohelm/crkit/pkg/content"
 	"github.com/octohelm/crkit/pkg/content/remote"
 )
@@ -16,16 +14,8 @@ type namespace struct {
 	remote   content.Namespace
 }
 
-func NewProxyFallbackRegistry(ctx context.Context, registry content.Namespace, config remote.RegistryConfig) (content.Namespace, error) {
-	remoteURL, err := url.Parse(config.Endpoint)
-	if err != nil {
-		return nil, err
-	}
-
-	r, err := remote.New(remoteURL.String(), remote.WithAuth(authn.FromConfig(authn.AuthConfig{
-		Username: config.Username,
-		Password: config.Password,
-	})))
+func NewProxyFallbackRegistry(ctx context.Context, registry content.Namespace, remoteRegistry remote.Registry) (content.Namespace, error) {
+	r, err := remote.New(ctx, remoteRegistry)
 	if err != nil {
 		return nil, err
 	}

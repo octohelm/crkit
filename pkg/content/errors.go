@@ -5,13 +5,27 @@ import (
 
 	"github.com/octohelm/courier/pkg/statuserror"
 	"github.com/opencontainers/go-digest"
-	"github.com/pkg/errors"
 )
 
-var (
-	ErrBlobUnknown       = errors.New("unknown blob")
-	ErrBlobInvalidLength = errors.New("blob invalid length")
-)
+type ErrBlobUnknown struct {
+	statuserror.NotFound
+
+	Digest digest.Digest
+}
+
+func (err *ErrBlobUnknown) Error() string {
+	return fmt.Sprintf("unknown blob digest=%s", err.Digest)
+}
+
+type ErrBlobInvalidLength struct {
+	statuserror.RequestedRangeNotSatisfiable
+
+	Reason string
+}
+
+func (err *ErrBlobInvalidLength) Error() string {
+	return fmt.Sprintf("blob invalid length: %s", err.Reason)
+}
 
 type ErrTagUnknown struct {
 	statuserror.NotFound

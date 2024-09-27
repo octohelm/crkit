@@ -173,8 +173,6 @@ func (v Payload) RuntimeDoc(names ...string) ([]string, bool) {
 		switch names[0] {
 		case "Manifest":
 			return []string{}, true
-		case "Raw":
-			return []string{}, true
 
 		}
 		if doc, ok := runtimeDoc(v.Manifest, names...); ok {

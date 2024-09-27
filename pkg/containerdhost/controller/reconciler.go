@@ -2,13 +2,12 @@ package controller
 
 import (
 	"context"
+	"fmt"
 	"io/fs"
 	"os"
 	"path"
 
 	"github.com/octohelm/kubekit/pkg/operator"
-	"github.com/pkg/errors"
-
 	"k8s.io/apimachinery/pkg/runtime"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -102,12 +101,12 @@ func (r *Reconciler) sync(ctx context.Context, items []corev1.ConfigMap) error {
 
 func (r *Reconciler) syncByConfigMap(ctx context.Context, cm corev1.ConfigMap) (string, error) {
 	if len(cm.Data) == 0 {
-		return "", errors.Errorf("missing data at %s.%s", cm.Name, cm.Namespace)
+		return "", fmt.Errorf("missing data at %s.%s", cm.Name, cm.Namespace)
 	}
 
 	host := cm.Data["host"]
 	if host == "" {
-		return "", errors.Errorf("missing host value at %s.%s", cm.Name, cm.Namespace)
+		return "", fmt.Errorf("missing host value at %s.%s", cm.Name, cm.Namespace)
 	}
 
 	// https://github.com/containerd/containerd/blob/main/docs/hosts.md

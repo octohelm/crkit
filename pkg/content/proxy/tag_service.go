@@ -17,10 +17,6 @@ var _ content.TagService = &proxyTagService{}
 func (pt *proxyTagService) Get(ctx context.Context, tag string) (*manifestv1.Descriptor, error) {
 	desc, err := pt.remoteTags.Get(ctx, tag)
 	if err == nil {
-		err := pt.localTags.Tag(ctx, tag, *desc)
-		if err != nil {
-			return nil, err
-		}
 		return desc, nil
 	}
 

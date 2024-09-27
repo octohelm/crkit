@@ -8,9 +8,8 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/pkg/errors"
-
 	"github.com/google/uuid"
+
 	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
 	"github.com/octohelm/crkit/pkg/content"
 	"github.com/octohelm/unifs/pkg/filesystem"
@@ -33,7 +32,7 @@ func (f *blobStore) Info(ctx context.Context, dgst digest.Digest) (*manifestv1.D
 	s, err := f.fs.Stat(ctx, defaultLayout.BlobDataPath(dgst))
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil, &content.ErrManifestBlobUnknown{
+			return nil, &content.ErrBlobUnknown{
 				Digest: dgst,
 			}
 		}
@@ -49,7 +48,7 @@ func (f *blobStore) Open(ctx context.Context, dgst digest.Digest) (io.ReadCloser
 	file, err := f.fs.OpenFile(ctx, defaultLayout.BlobDataPath(dgst), os.O_RDONLY, os.ModePerm)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil, &content.ErrManifestBlobUnknown{
+			return nil, &content.ErrBlobUnknown{
 				Digest: dgst,
 			}
 		}
@@ -134,7 +133,9 @@ func (w *writer) Commit(ctx context.Context, expected manifestv1.Descriptor) (*m
 	dgst := w.Digest(ctx)
 
 	if expected.Size > 0 && expected.Size != size {
-		return nil, errors.Wrapf(content.ErrBlobInvalidLength, "unexpected commit size %d, expected %d", size, expected.Size)
+		return nil, &content.ErrBlobInvalidLength{
+			Reason: fmt.Sprintf("unexpected commit size %d, expected %d", size, expected.Size),
+		}
 	}
 
 	if expected.Digest != "" && expected.Digest != dgst {
