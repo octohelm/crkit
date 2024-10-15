@@ -2,7 +2,6 @@ package registry
 
 import (
 	"context"
-
 	"github.com/octohelm/courier/pkg/courierhttp"
 	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
 	"github.com/octohelm/crkit/pkg/content"
@@ -52,7 +51,7 @@ func (req *GetManifest) Output(ctx context.Context) (any, error) {
 	}
 
 	return courierhttp.Wrap(p,
-		courierhttp.WithMetadata("Docker-Content-Digest", dgst.String()),
+		courierhttp.WithMetadata("Docker-Content-Digest", string(dgst)),
 		courierhttp.WithMetadata("Content-Type", m.Type()),
 	), nil
 }

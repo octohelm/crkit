@@ -3,7 +3,6 @@ package proxy
 import (
 	"context"
 	"fmt"
-
 	"github.com/distribution/reference"
 	"github.com/go-courier/logr"
 	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"

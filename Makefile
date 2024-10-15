@@ -47,7 +47,8 @@ debug.pull:
 	crane pull --format=oci --insecure 0.0.0.0:5050/docker.io/library/nginx:latest .tmp/nginx.tar
 
 debug.pull.proxy:
-	crane pull --format=oci --insecure 0.0.0.0:5050/${CONTAINER_REGISTRY}/ghcr.io/octohelm/crkit:v0.0.0-20240926121153-ee21b4f4c7cd .tmp/crkit.tar
+	crane pull --verbose --format=oci --insecure 0.0.0.0:5050/${CONTAINER_REGISTRY}/gcr.io/distroless/cc-debian12:debug .tmp/ccdebug.tar
+	crane pull --format=oci --insecure 0.0.0.0:5050/${CONTAINER_REGISTRY}/ghcr.io/octohelm/crkit:v0.0.0-20241015075301-491947339730 .tmp/crkit.tar
 
 debug.push:
 	crane push --insecure .tmp/nginx.tar 0.0.0.0:5050/docker.io/library/nginx:latest
