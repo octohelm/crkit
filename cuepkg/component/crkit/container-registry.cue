@@ -31,7 +31,16 @@ import (
 		// cron job 配置
 		// 支持 标准格式
 		// 也支持 @every {duration} 等语义化格式 
-		config: CRKIT_UPLOAD_CACHE_CRON: string | *"@every 1s"
+		config: CRKIT_UPLOAD_CACHE_CRON: string | *"@every 3s"
+
+		// Remote container registry endpoint 
+		config: CRKIT_REMOTE_ENDPOINT: string | *""
+
+		// Remote container registry username 
+		config: CRKIT_REMOTE_USERNAME: string | *""
+
+		// Remote container registry password 
+		config: CRKIT_REMOTE_PASSWORD: string | *""
 
 		// 地址
 		config: CRKIT_CONTENT_BACKEND: string
