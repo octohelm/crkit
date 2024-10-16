@@ -178,8 +178,8 @@ github.com/modern-go/reflect2 v1.0.2 h1:xBagoLtFs94CBntxluKeaWgTMpvLxC4ur3nMaC9G
 github.com/modern-go/reflect2 v1.0.2/go.mod h1:yWuevngMOJpCy52FWWMvUC8ws7m/LJsjYzDa0/r8luk=
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 h1:C3w9PqII01/Oq1c1nUAm88MOHcQC9l5mIlSMApZMrHA=
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822/go.mod h1:+n7T8mK8HuQTcFwEeznm/DIxMOiR9yIdICNftLE1DvQ=
-github.com/octohelm/courier v0.0.0-20241015104129-cfc23b15fcf0 h1:8WzAjmbvcbp2TfcItGGKfRViQxCcR7kghhQqTdydB+M=
-github.com/octohelm/courier v0.0.0-20241015104129-cfc23b15fcf0/go.mod h1:uHccmYdw4rrly3faZQHLkZGCDYjj3zuwjKrUYo4QiXo=
+github.com/octohelm/courier v0.0.0-20241016020846-1e67e3bbea34 h1:1nqjXElxR0/DNoQW/LCcIFB+CID1aD4x+6bKxRQtjpw=
+github.com/octohelm/courier v0.0.0-20241016020846-1e67e3bbea34/go.mod h1:uHccmYdw4rrly3faZQHLkZGCDYjj3zuwjKrUYo4QiXo=
 github.com/octohelm/gengo v0.0.0-20241014043309-2344b8632080 h1:JydhpFfiuBsIXWs4f3GQJDpCmG5LFKgzB7CFkRGWs3s=
 github.com/octohelm/gengo v0.0.0-20241014043309-2344b8632080/go.mod h1:7bkbdNmnQEmnVbvdSJdRwvGmm2/3KgvxXSDi/nXCOk8=
 github.com/octohelm/kubekit v0.0.0-20240816091736-f2433647d633 h1:pLd+NUgPr6suaX8I/rhoRf8iFFoGeRFjiqYAF3mXgYE=

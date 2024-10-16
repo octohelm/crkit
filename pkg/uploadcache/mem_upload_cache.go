@@ -103,6 +103,8 @@ func (w *writer) expires() {
 }
 
 func (w *writer) Write(p []byte) (int, error) {
+	w.expires()
+
 	defer w.expires()
 
 	return w.BlobWriter.Write(p)

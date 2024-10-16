@@ -12,7 +12,7 @@ require (
 	github.com/google/go-containerregistry v0.20.2
 	github.com/google/uuid v1.6.0
 	github.com/innoai-tech/infra v0.0.0-20241015082502-4ed36f4275a4
-	github.com/octohelm/courier v0.0.0-20241015104129-cfc23b15fcf0
+	github.com/octohelm/courier v0.0.0-20241016020846-1e67e3bbea34
 	github.com/octohelm/gengo v0.0.0-20241014043309-2344b8632080
 	github.com/octohelm/kubekit v0.0.0-20240816091736-f2433647d633
 	github.com/octohelm/kubepkgspec v0.0.0-20241015012541-484a91b9d42a

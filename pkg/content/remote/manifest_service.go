@@ -63,7 +63,7 @@ func (ms *manifestService) Info(ctx context.Context, dgst digest.Digest) (*manif
 		return nil, err
 	}
 
-	i, _ := strconv.ParseInt(meta.Get("Content-Length"), 64, 10)
+	i, _ := strconv.ParseInt(meta.Get("Content-Length"), 10, 64)
 
 	return &manifestv1.Descriptor{
 		MediaType: meta.Get("Content-Type"),
