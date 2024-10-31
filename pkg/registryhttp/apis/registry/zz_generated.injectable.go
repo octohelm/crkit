@@ -16,7 +16,7 @@ func (v *CancelUploadBlob) Init(ctx context.Context) error {
 	if value, ok := uploadcache.UploadCacheFromContext(ctx); ok {
 		v.uploadCache = value
 	} else {
-		return fmt.Errorf("missing provider %T", v.uploadCache)
+		return fmt.Errorf("missing provider %T.uploadCache", v)
 	}
 
 	if err := v.NameScoped.Init(ctx); err != nil {
@@ -30,7 +30,7 @@ func (v *NameScoped) Init(ctx context.Context) error {
 	if value, ok := content.NamespaceFromContext(ctx); ok {
 		v.namespace = value
 	} else {
-		return fmt.Errorf("missing provider %T", v.namespace)
+		return fmt.Errorf("missing provider %T.namespace", v)
 	}
 
 	return nil
@@ -40,7 +40,7 @@ func (v *UploadBlob) Init(ctx context.Context) error {
 	if value, ok := uploadcache.UploadCacheFromContext(ctx); ok {
 		v.uploadCache = value
 	} else {
-		return fmt.Errorf("missing provider %T", v.uploadCache)
+		return fmt.Errorf("missing provider %T.uploadCache", v)
 	}
 
 	if err := v.NameScoped.Init(ctx); err != nil {
@@ -54,7 +54,7 @@ func (v *UploadPatchBlob) Init(ctx context.Context) error {
 	if value, ok := uploadcache.UploadCacheFromContext(ctx); ok {
 		v.uploadCache = value
 	} else {
-		return fmt.Errorf("missing provider %T", v.uploadCache)
+		return fmt.Errorf("missing provider %T.uploadCache", v)
 	}
 
 	if err := v.NameScoped.Init(ctx); err != nil {
@@ -68,7 +68,7 @@ func (v *UploadPutBlob) Init(ctx context.Context) error {
 	if value, ok := uploadcache.UploadCacheFromContext(ctx); ok {
 		v.uploadCache = value
 	} else {
-		return fmt.Errorf("missing provider %T", v.uploadCache)
+		return fmt.Errorf("missing provider %T.uploadCache", v)
 	}
 
 	if err := v.NameScoped.Init(ctx); err != nil {

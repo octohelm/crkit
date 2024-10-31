@@ -2,6 +2,8 @@ module github.com/octohelm/crkit
 
 go 1.23.2
 
+replace github.com/octohelm/courier => ../../../github.com/octohelm/courier
+
 require (
 	github.com/containerd/containerd v1.7.23
 	github.com/containerd/platforms v0.2.1
@@ -12,11 +14,11 @@ require (
 	github.com/google/go-containerregistry v0.20.2
 	github.com/google/uuid v1.6.0
 	github.com/innoai-tech/infra v0.0.0-20241022104251-5a2bfc2c17f7
-	github.com/octohelm/courier v0.0.0-20241022023800-691a2df64fa6
-	github.com/octohelm/gengo v0.0.0-20241021060200-490be2d0c7f4
+	github.com/octohelm/courier v0.0.0-20241031023208-9bf52e91cc01
+	github.com/octohelm/gengo v0.0.0-20241023040556-a66fecda6cd6
 	github.com/octohelm/kubekit v0.0.0-20241021071650-ce12d81a1113
 	github.com/octohelm/kubepkgspec v0.0.0-20241015012541-484a91b9d42a
-	github.com/octohelm/storage v0.0.0-20241014040055-4f454a8d6947
+	github.com/octohelm/storage v0.0.0-20241025090738-73beed467466
 	github.com/octohelm/unifs v0.0.0-20241019063356-9efed187f510
 	github.com/octohelm/x v0.0.0-20241011014327-0fcf864c84d6
 	github.com/opencontainers/go-digest v1.0.0

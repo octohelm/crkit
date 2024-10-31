@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http/httptest"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/google/go-containerregistry/pkg/name"
@@ -227,6 +228,9 @@ func Test(t *testing.T) {
 }
 
 func writeAsOciTar(filename string, idx v1.ImageIndex) error {
+	if err := os.MkdirAll(filepath.Dir(filename), os.ModePerm); err != nil {
+		return err
+	}
 	f, err := os.OpenFile(filename, os.O_TRUNC|os.O_WRONLY|os.O_CREATE, 0o600)
 	if err != nil {
 		return err

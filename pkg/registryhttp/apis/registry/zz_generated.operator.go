@@ -88,6 +88,10 @@ func init() {
 	R.Register(courier.NewRouter(&HeadBlob{}))
 }
 
+func (*HeadBlob) ResponseStatusCode() int {
+	return 200
+}
+
 func (*HeadBlob) ResponseContent() any {
 	return new(any)
 }
@@ -98,6 +102,10 @@ func (*HeadBlob) ResponseData() *any {
 
 func init() {
 	R.Register(courier.NewRouter(&HeadManifest{}))
+}
+
+func (*HeadManifest) ResponseStatusCode() int {
+	return 200
 }
 
 func (*HeadManifest) ResponseContent() any {
@@ -124,6 +132,10 @@ func init() {
 	R.Register(courier.NewRouter(&PutManifest{}))
 }
 
+func (*PutManifest) ResponseStatusCode() int {
+	return 200
+}
+
 func (*PutManifest) ResponseContent() any {
 	return new(any)
 }
@@ -134,6 +146,10 @@ func (*PutManifest) ResponseData() *any {
 
 func init() {
 	R.Register(courier.NewRouter(&UploadBlob{}))
+}
+
+func (*UploadBlob) ResponseStatusCode() int {
+	return 201
 }
 
 func (*UploadBlob) ResponseContent() any {
@@ -148,6 +164,10 @@ func init() {
 	R.Register(courier.NewRouter(&UploadPatchBlob{}))
 }
 
+func (*UploadPatchBlob) ResponseStatusCode() int {
+	return 202
+}
+
 func (*UploadPatchBlob) ResponseContent() any {
 	return new(any)
 }
@@ -158,6 +178,10 @@ func (*UploadPatchBlob) ResponseData() *any {
 
 func init() {
 	R.Register(courier.NewRouter(&UploadPutBlob{}))
+}
+
+func (*UploadPutBlob) ResponseStatusCode() int {
+	return 201
 }
 
 func (*UploadPutBlob) ResponseContent() any {

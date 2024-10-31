@@ -22,11 +22,15 @@ import (
 
 type Reconciler struct {
 	ConfigPath string `flags:",omitempty"`
-	mgr        controllerruntime.Manager
+
+	mgr controllerruntime.Manager
 }
 
 func (r *Reconciler) Run(ctx context.Context) error {
-	return operator.ReconcilerRegistryContext.From(ctx).RegisterReconciler(r)
+	if x, ok := operator.ReconcilerRegistryFromContext(ctx); ok {
+		return x.RegisterReconciler(r)
+	}
+	return nil
 }
 
 func (r *Reconciler) AddToScheme(s *runtime.Scheme) error {

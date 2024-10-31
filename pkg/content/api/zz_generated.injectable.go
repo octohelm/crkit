@@ -11,6 +11,7 @@ import (
 )
 
 func (p *NamespaceProvider) InjectContext(ctx context.Context) context.Context {
+
 	return content.NamespaceInjectContext(ctx, p)
 }
 
