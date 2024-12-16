@@ -5,11 +5,19 @@ DON'T EDIT THIS FILE
 package v1
 
 // nolint:deadcode,unused
-func runtimeDoc(v any, names ...string) ([]string, bool) {
+func runtimeDoc(v any, prefix string, names ...string) ([]string, bool) {
 	if c, ok := v.(interface {
 		RuntimeDoc(names ...string) ([]string, bool)
 	}); ok {
-		return c.RuntimeDoc(names...)
+		doc, ok := c.RuntimeDoc(names...)
+		if ok {
+			if prefix != "" && len(doc) > 0 {
+				doc[0] = prefix + doc[0]
+				return doc, true
+			}
+
+			return doc, true
+		}
 	}
 	return nil, false
 }
@@ -17,8 +25,6 @@ func runtimeDoc(v any, names ...string) ([]string, bool) {
 func (v DockerManifest) RuntimeDoc(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
-		case "Versioned":
-			return []string{}, true
 		case "MediaType":
 			return []string{
 				"MediaType specifies the type of this document data structure e.g. `application/vnd.oci.image.manifest.v1+json`",
@@ -46,7 +52,7 @@ func (v DockerManifest) RuntimeDoc(names ...string) ([]string, bool) {
 			}, true
 
 		}
-		if doc, ok := runtimeDoc(v.Versioned, names...); ok {
+		if doc, ok := runtimeDoc(v.Versioned, "", names...); ok {
 			return doc, ok
 		}
 
@@ -58,8 +64,6 @@ func (v DockerManifest) RuntimeDoc(names ...string) ([]string, bool) {
 func (v DockerManifestList) RuntimeDoc(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
-		case "Versioned":
-			return []string{}, true
 		case "MediaType":
 			return []string{
 				"MediaType specifies the type of this document data structure e.g. `application/vnd.oci.image.index.v1+json`",
@@ -82,7 +86,7 @@ func (v DockerManifestList) RuntimeDoc(names ...string) ([]string, bool) {
 			}, true
 
 		}
-		if doc, ok := runtimeDoc(v.Versioned, names...); ok {
+		if doc, ok := runtimeDoc(v.Versioned, "", names...); ok {
 			return doc, ok
 		}
 
@@ -94,8 +98,6 @@ func (v DockerManifestList) RuntimeDoc(names ...string) ([]string, bool) {
 func (v OciIndex) RuntimeDoc(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
-		case "Versioned":
-			return []string{}, true
 		case "MediaType":
 			return []string{
 				"MediaType specifies the type of this document data structure e.g. `application/vnd.oci.image.index.v1+json`",
@@ -118,7 +120,7 @@ func (v OciIndex) RuntimeDoc(names ...string) ([]string, bool) {
 			}, true
 
 		}
-		if doc, ok := runtimeDoc(v.Versioned, names...); ok {
+		if doc, ok := runtimeDoc(v.Versioned, "", names...); ok {
 			return doc, ok
 		}
 
@@ -130,8 +132,6 @@ func (v OciIndex) RuntimeDoc(names ...string) ([]string, bool) {
 func (v OciManifest) RuntimeDoc(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
-		case "Versioned":
-			return []string{}, true
 		case "MediaType":
 			return []string{
 				"MediaType specifies the type of this document data structure e.g. `application/vnd.oci.image.manifest.v1+json`",
@@ -159,7 +159,7 @@ func (v OciManifest) RuntimeDoc(names ...string) ([]string, bool) {
 			}, true
 
 		}
-		if doc, ok := runtimeDoc(v.Versioned, names...); ok {
+		if doc, ok := runtimeDoc(v.Versioned, "", names...); ok {
 			return doc, ok
 		}
 
@@ -171,11 +171,9 @@ func (v OciManifest) RuntimeDoc(names ...string) ([]string, bool) {
 func (v Payload) RuntimeDoc(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
-		case "Manifest":
-			return []string{}, true
 
 		}
-		if doc, ok := runtimeDoc(v.Manifest, names...); ok {
+		if doc, ok := runtimeDoc(v.Manifest, "", names...); ok {
 			return doc, ok
 		}
 

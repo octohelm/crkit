@@ -142,7 +142,7 @@ func Test(t *testing.T) {
 			Cache:    c,
 			Registry: r,
 			CreatePuller: func(ref name.Reference, options ...remote.Option) (*remote.Puller, error) {
-				return remote.NewPuller(append(options)...)
+				return remote.NewPuller(options...)
 			},
 			Platforms: []string{
 				"linux/amd64",

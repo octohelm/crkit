@@ -5,11 +5,19 @@ DON'T EDIT THIS FILE
 package content
 
 // nolint:deadcode,unused
-func runtimeDoc(v any, names ...string) ([]string, bool) {
+func runtimeDoc(v any, prefix string, names ...string) ([]string, bool) {
 	if c, ok := v.(interface {
 		RuntimeDoc(names ...string) ([]string, bool)
 	}); ok {
-		return c.RuntimeDoc(names...)
+		doc, ok := c.RuntimeDoc(names...)
+		if ok {
+			if prefix != "" && len(doc) > 0 {
+				doc[0] = prefix + doc[0]
+				return doc, true
+			}
+
+			return doc, true
+		}
 	}
 	return nil, false
 }
@@ -17,6 +25,7 @@ func runtimeDoc(v any, names ...string) ([]string, bool) {
 func (Digest) RuntimeDoc(names ...string) ([]string, bool) {
 	return []string{}, true
 }
+
 func (v ErrBlobInvalidDigest) RuntimeDoc(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
@@ -171,9 +180,11 @@ func (v ErrTagUnknown) RuntimeDoc(names ...string) ([]string, bool) {
 func (Name) RuntimeDoc(names ...string) ([]string, bool) {
 	return []string{}, true
 }
+
 func (Reference) RuntimeDoc(names ...string) ([]string, bool) {
 	return []string{}, true
 }
+
 func (v TagList) RuntimeDoc(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {

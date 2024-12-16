@@ -26,8 +26,8 @@ func NewContext(t testing.TB, v any) context.Context {
 		testingx.Expect(t, err, testingx.Be[error](nil))
 		ctx = c
 
-		for i := range singletons {
-			if r, ok := singletons[i].(configuration.Runner); ok {
+		for s := range singletons.Configurators() {
+			if r, ok := s.(configuration.Runner); ok {
 				err := r.Run(ctx)
 				testingx.Expect(t, err, testingx.Be[error](nil))
 			}
@@ -36,8 +36,8 @@ func NewContext(t testing.TB, v any) context.Context {
 		go func() {
 			g, c := errgroup.WithContext(ctx)
 
-			for i := range singletons {
-				if server, ok := singletons[i].(configuration.Server); ok {
+			for s := range singletons.Configurators() {
+				if server, ok := s.(configuration.Server); ok {
 					g.Go(func() error {
 						err := server.Serve(c)
 						return err
@@ -51,7 +51,7 @@ func NewContext(t testing.TB, v any) context.Context {
 		t.Cleanup(func() {
 			c := configuration.ContextInjectorFromContext(ctx).InjectContext(ctx)
 
-			for _, s := range singletons {
+			for s := range singletons.Configurators() {
 				if canShutdown, ok := s.(configuration.CanShutdown); ok {
 					_ = configuration.Shutdown(c, canShutdown)
 				}
