@@ -44,7 +44,10 @@ func (bs *blobStore) Info(ctx context.Context, dgst digest.Digest) (*manifestv1.
 		return nil, err
 	}
 
-	i, _ := strconv.ParseInt(meta.Get("Content-Length"), 64, 10)
+	i, err := strconv.ParseInt(meta.Get("Content-Length"), 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("HEAD response header missing Content-Length: %w", err)
+	}
 
 	return &manifestv1.Descriptor{
 		MediaType: meta.Get("Content-Type"),
