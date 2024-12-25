@@ -14,7 +14,13 @@ import (
 type Client struct {
 	Registry
 
-	c *client.Client
+	RoundTripperCreateFunc client.RoundTripperCreateFunc
+
+	c courier.Client
+}
+
+func (c *Client) GetEndpoint() string {
+	return c.Endpoint
 }
 
 func (c *Client) Init(ctx context.Context) error {
@@ -52,6 +58,9 @@ func (c *Client) Init(ctx context.Context) error {
 }
 
 func (c *Client) Do(ctx context.Context, req any, metas ...courier.Metadata) courier.Result {
+	if c.RoundTripperCreateFunc != nil {
+		return c.c.Do(client.ContextWithRoundTripperCreator(ctx, c.RoundTripperCreateFunc), req, metas...)
+	}
 	return c.c.Do(ctx, req, metas...)
 }
 

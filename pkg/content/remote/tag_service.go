@@ -2,6 +2,7 @@ package remote
 
 import (
 	"context"
+	"github.com/octohelm/courier/pkg/courier"
 	"strconv"
 
 	"github.com/opencontainers/go-digest"
@@ -14,7 +15,7 @@ import (
 
 type tagService struct {
 	named  reference.Named
-	client *Client
+	client courier.Client
 }
 
 var _ content.TagService = &tagService{}

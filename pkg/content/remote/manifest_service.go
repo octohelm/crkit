@@ -2,6 +2,7 @@ package remote
 
 import (
 	"context"
+	"github.com/octohelm/courier/pkg/courier"
 	"strconv"
 	"strings"
 
@@ -16,7 +17,7 @@ import (
 
 type manifestService struct {
 	named  reference.Named
-	client *Client
+	client courier.Client
 }
 
 var _ content.ManifestService = &manifestService{}

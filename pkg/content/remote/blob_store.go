@@ -5,6 +5,7 @@ import (
 	"cmp"
 	"context"
 	"fmt"
+	"github.com/octohelm/courier/pkg/courier"
 	"io"
 	"net/http"
 	"net/url"
@@ -22,7 +23,7 @@ var _ content.BlobStore = &blobStore{}
 
 type blobStore struct {
 	named  reference.Named
-	client *Client
+	client courier.Client
 }
 
 func (bs *blobStore) Remove(ctx context.Context, dgst digest.Digest) error {
@@ -128,7 +129,9 @@ func (b *blobWriter) Digest(ctx context.Context) digest.Digest {
 func (b *blobWriter) endpoint() string {
 	location := b.location
 	if strings.HasPrefix(location, "/") {
-		location = b.client.Endpoint + location
+		if endpoint, ok := b.client.(interface{ GetEndpoint() string }); ok {
+			location = endpoint.GetEndpoint() + location
+		}
 	}
 	return location
 }

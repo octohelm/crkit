@@ -6,32 +6,48 @@ import (
 	"strings"
 
 	"github.com/distribution/reference"
+	"github.com/octohelm/courier/pkg/courier"
 	"github.com/octohelm/crkit/pkg/content"
 )
 
-func New(ctx context.Context, registry Registry) (content.Namespace, error) {
-	n := &namespace{
-		client: &Client{
-			Registry: registry,
-		},
+func WithClient(c courier.Client) Option {
+	return func(n *namespace) {
+		n.client = c
 	}
+}
+
+type Option func(n *namespace)
+
+func New(ctx context.Context, registry Registry, options ...Option) (content.Namespace, error) {
 
 	remoteURI, err := url.Parse(registry.Endpoint)
 	if err != nil {
 		return nil, err
 	}
 
-	n.remoteURI = remoteURI
+	c := &Client{
+		Registry: registry,
+	}
 
-	if err := n.client.Init(ctx); err != nil {
+	if err := c.Init(ctx); err != nil {
 		return nil, err
 	}
+
+	n := &namespace{
+		client: c,
+	}
+
+	for _, opt := range options {
+		opt(n)
+	}
+
+	n.remoteURI = remoteURI
 
 	return n, nil
 }
 
 type namespace struct {
-	client    *Client
+	client    courier.Client
 	remoteURI *url.URL
 }
 
@@ -49,7 +65,7 @@ func (n *namespace) Repository(ctx context.Context, named reference.Named) (cont
 }
 
 type repository struct {
-	client *Client
+	client courier.Client
 	named  reference.Named
 }
 
