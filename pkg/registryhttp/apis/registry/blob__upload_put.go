@@ -3,6 +3,7 @@ package registry
 import (
 	"context"
 	"fmt"
+	contentutil "github.com/octohelm/crkit/pkg/content/util"
 	"io"
 	"net/http"
 
@@ -19,10 +20,13 @@ type UploadPutBlob struct {
 
 	NameScoped
 
-	ID            string         `name:"id" in:"path"`
-	ContentLength int            `name:"Content-Length,omitempty" in:"header"`
-	Digest        content.Digest `name:"digest" in:"query"`
-	Chunk         io.ReadCloser  `in:"body"`
+	ID string `name:"id" in:"path"`
+
+	ContentRange  contentutil.Range `name:"Content-Range,omitzero" in:"header"`
+	ContentLength int64             `name:"Content-Length,omitempty" in:"header"`
+
+	Digest content.Digest `name:"digest" in:"query"`
+	Chunk  io.ReadCloser  `in:"body"`
 
 	uploadCache uploadcache.UploadCache `inject:""`
 }
@@ -40,7 +44,7 @@ func (req *UploadPutBlob) Output(ctx context.Context) (any, error) {
 		return nil, err
 	}
 
-	if req.ContentLength > 0 {
+	if req.ContentLength > 0 || !req.ContentRange.IsZero() {
 		if _, err := io.Copy(w, req.Chunk); err != nil {
 			return nil, err
 		}
@@ -49,6 +53,7 @@ func (req *UploadPutBlob) Output(ctx context.Context) (any, error) {
 	d, err := w.Commit(ctx, manifestv1.Descriptor{
 		Digest: digest.Digest(req.Digest),
 	})
+
 	if err != nil {
 		return nil, err
 	}

@@ -5,16 +5,18 @@ import (
 	"cmp"
 	"context"
 	"fmt"
-	"github.com/octohelm/courier/pkg/courier"
 	"io"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
 
+	"github.com/alecthomas/units"
 	"github.com/distribution/reference"
+	"github.com/octohelm/courier/pkg/courier"
 	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
 	"github.com/octohelm/crkit/pkg/content"
+	contentutil "github.com/octohelm/crkit/pkg/content/util"
 	"github.com/octohelm/crkit/pkg/registryhttp/apis/registry"
 	"github.com/opencontainers/go-digest"
 )
@@ -86,12 +88,25 @@ func (bs *blobStore) Writer(ctx context.Context) (content.BlobWriter, error) {
 
 	location := meta.Get("Location")
 
-	return &blobWriter{
+	bw := &blobWriter{
 		id:        digest.FromString(location).Hex(),
 		digester:  digest.SHA256.Digester(),
 		blobStore: bs,
 		location:  location,
-	}, nil
+
+		chunkMinLength: int64(20 * units.MiB),
+		chunk:          bytes.NewBuffer(nil),
+	}
+
+	chunkMinLength := meta.Get("OCI-Chunk-Min-Length")
+	if chunkMinLength != "" {
+		i, _ := strconv.ParseInt(chunkMinLength, 10, 64)
+		if i > 0 {
+			bw.chunkMinLength = i
+		}
+	}
+
+	return bw, nil
 }
 
 var _ content.BlobWriter = &blobWriter{}
@@ -102,8 +117,11 @@ type blobWriter struct {
 	id       string
 	location string
 
+	chunkMinLength int64
+	chunk          *bytes.Buffer
+	chunkOffset    int64
+
 	digester digest.Digester
-	offset   int64
 }
 
 func (b *blobWriter) ID() string {
@@ -114,12 +132,11 @@ func (b *blobWriter) Close() error {
 	req := &registry.CancelUploadBlob{}
 	req.Name = content.Name(b.named.Name())
 	req.ID = b.id
-
 	return nil
 }
 
 func (b *blobWriter) Size(ctx context.Context) int64 {
-	return b.offset
+	return b.chunkOffset
 }
 
 func (b *blobWriter) Digest(ctx context.Context) digest.Digest {
@@ -139,38 +156,72 @@ func (b *blobWriter) endpoint() string {
 func (b *blobWriter) Write(p []byte) (int, error) {
 	n := len(p)
 
-	req, err := http.NewRequest("PATCH", b.endpoint(), io.NopCloser(bytes.NewBuffer(p[:n])))
-	if err != nil {
-		return -1, err
+	b.chunk.Write(p[:n])
+	b.digester.Hash().Write(p[:n])
+
+	if int64(b.chunk.Len()) >= b.chunkMinLength {
+		if err := b.sendChunk(); err != nil {
+			return -1, err
+		}
 	}
 
-	req.Header.Set("Content-Type", "application/octet-stream")
-	req.Header.Set("Content-Range", fmt.Sprintf("%d-%d", b.offset, b.offset+int64(n)))
-	req.Header.Set("Content-Length", fmt.Sprintf("%d", n))
+	return n, nil
+}
+
+func (b *blobWriter) sendChunk() error {
+	req, err := http.NewRequest("PATCH", b.endpoint(), io.NopCloser(b.chunk))
+	if err != nil {
+		return err
+	}
+
+	n := int64(b.chunk.Len())
+
+	b.patchContentLength(req, n)
 
 	meta, err := b.client.Do(context.Background(), req).Into(nil)
 	if err != nil {
-		return -1, err
+		return err
 	}
 
-	b.offset += int64(n)
-	b.digester.Hash().Write(p[:n])
-
+	b.chunk.Reset()
 	b.location = meta.Get("Location")
+	b.chunkOffset += n
 
-	return n, nil
+	return nil
+}
+
+func (b *blobWriter) patchContentLength(req *http.Request, n int64) {
+	req.Header.Set("Content-Type", "application/octet-stream")
+	req.Header.Set("Content-Range", (contentutil.Range{Start: b.chunkOffset, Length: n}).String())
+	req.ContentLength = n
 }
 
 func (b *blobWriter) Commit(ctx context.Context, expect manifestv1.Descriptor) (*manifestv1.Descriptor, error) {
 	dgst := b.Digest(ctx)
 
-	req, err := http.NewRequest("PUT", b.endpoint(), nil)
-	if err != nil {
-		return nil, err
+	var req *http.Request
+
+	if n := int64(b.chunk.Len()); n == 0 {
+		r, err := http.NewRequest("PUT", b.endpoint(), nil)
+		if err != nil {
+			return nil, err
+		}
+		req = r
+	} else {
+		r, err := http.NewRequest("PUT", b.endpoint(), io.NopCloser(b.chunk))
+		if err != nil {
+			return nil, err
+		}
+
+		b.patchContentLength(r, n)
+		req = r
 	}
 
 	q := &url.Values{}
-	q.Set("digest", cmp.Or(string(expect.Digest), string(dgst)))
+	if expect.Digest != "" {
+		q.Set("digest", cmp.Or(string(expect.Digest), string(dgst)))
+	}
+
 	req.URL.RawQuery = q.Encode()
 
 	if _, err := b.client.Do(ctx, req).Into(nil); err != nil {

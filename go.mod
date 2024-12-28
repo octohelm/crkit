@@ -3,26 +3,27 @@ module github.com/octohelm/crkit
 go 1.23.4
 
 require (
+	github.com/alecthomas/units v0.0.0-20240927000941-0f3dac36c52b
 	github.com/containerd/containerd v1.7.24
 	github.com/containerd/platforms v0.2.1
 	github.com/distribution/reference v0.6.0
 	github.com/go-courier/logr v0.3.1
-	github.com/go-json-experiment/json v0.0.0-20241219015541-cad22780dab8
+	github.com/go-json-experiment/json v0.0.0-20241230001524-0240acd0e023
 	github.com/gobwas/glob v0.2.3
 	github.com/google/go-containerregistry v0.20.2
 	github.com/google/uuid v1.6.0
-	github.com/innoai-tech/infra v0.0.0-20241219050638-8962df4332c3
-	github.com/octohelm/courier v0.0.0-20241218075031-edbeb58d1ef4
+	github.com/innoai-tech/infra v0.0.0-20241225032057-07e570500ad4
+	github.com/octohelm/courier v0.0.0-20241230052240-903f29aa7621
 	github.com/octohelm/enumeration v0.0.0-20241121070632-2cd7179b161c
-	github.com/octohelm/gengo v0.0.0-20241115071734-9f4b1461bafa
+	github.com/octohelm/gengo v0.0.0-20241227040918-5bca0aaef7d5
 	github.com/octohelm/kubekit v0.0.0-20241216023902-2c9d675d9ca8
-	github.com/octohelm/kubepkgspec v0.0.0-20241211051456-222da95ab0fd
+	github.com/octohelm/kubepkgspec v0.0.0-20241220093955-977f489bf4b8
 	github.com/octohelm/unifs v0.0.0-20241019063356-9efed187f510
-	github.com/octohelm/x v0.0.0-20241125035954-3d4eebd9779d
+	github.com/octohelm/x v0.0.0-20241220070034-8d4a9441b90a
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.0
 	github.com/pelletier/go-toml/v2 v2.2.3
-	golang.org/x/exp v0.0.0-20241215155358-4a5509556b9e
+	golang.org/x/exp v0.0.0-20241217172543-b2144cdd0a67
 	golang.org/x/sync v0.10.0
 	k8s.io/api v0.32.0
 	k8s.io/apimachinery v0.32.0
@@ -40,7 +41,7 @@ require (
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/containerd/stargz-snapshotter/estargz v0.16.3 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
-	github.com/docker/cli v27.4.0+incompatible // indirect
+	github.com/docker/cli v27.4.1+incompatible // indirect
 	github.com/docker/distribution v2.8.3+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.8.2 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
@@ -61,11 +62,11 @@ require (
 	github.com/google/gnostic-models v0.6.9 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
-	github.com/grpc-ecosystem/grpc-gateway/v2 v2.24.0 // indirect
+	github.com/grpc-ecosystem/grpc-gateway/v2 v2.25.1 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/innoai-tech/openapi-playground v0.0.0-20241218103306-21a43ceaf06a // indirect
+	github.com/innoai-tech/openapi-playground v0.0.0-20241225012500-43ff08aee40d // indirect
 	github.com/jlaffaye/ftp v0.2.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
@@ -82,7 +83,7 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
-	github.com/onsi/gomega v1.36.1 // indirect
+	github.com/onsi/gomega v1.36.2 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/prometheus/client_golang v1.20.5 // indirect
 	github.com/prometheus/client_model v0.6.1 // indirect
@@ -119,10 +120,10 @@ require (
 	golang.org/x/time v0.8.0 // indirect
 	golang.org/x/tools v0.28.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20241216192217-9240e9c98484 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20241216192217-9240e9c98484 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20241223144023-3abc09e42ca8 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20241223144023-3abc09e42ca8 // indirect
 	google.golang.org/grpc v1.69.2 // indirect
-	google.golang.org/protobuf v1.36.0 // indirect
+	google.golang.org/protobuf v1.36.1 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect

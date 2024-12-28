@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/alecthomas/units"
 	"github.com/go-json-experiment/json"
-
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/registry"
 	"github.com/google/go-containerregistry/pkg/v1/random"
@@ -29,7 +29,7 @@ func TestNamespace(t *testing.T) {
 	var remoteRegistry *httptest.Server
 
 	remoteRegistry = httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-		fmt.Println("origin", req.Method, req.URL.String())
+		fmt.Println("registry", req.Method, req.URL.String(), req.Header)
 
 		if req.URL.Path == "/auth/token" {
 			tok := &authn.Token{}
@@ -76,10 +76,10 @@ func TestNamespace(t *testing.T) {
 			req.URL.Path = req.URL.Path[0 : len(req.URL.Path)-1]
 		}
 
-		fmt.Println("server", req.Method, req.URL.String())
-
 		ctx := content.NamespaceInjectContext(req.Context(), namespace)
 		ctx = uploadcache.UploadCacheInjectContext(ctx, uploadCache)
+
+		fmt.Println("proxy", req.Method, req.URL, req.Header)
 
 		h.ServeHTTP(w, req.WithContext(ctx))
 	}))
@@ -91,7 +91,7 @@ func TestNamespace(t *testing.T) {
 	testingx.Expect(t, err, testingx.BeNil[error]())
 
 	t.Run("push manifest", func(t *testing.T) {
-		img, err := random.Image(2048, 1)
+		img, err := random.Image(int64(100*units.MiB+101*units.KiB), 1)
 		testingx.Expect(t, err, testingx.BeNil[error]())
 
 		repo := reg.Repo("test", "x")
