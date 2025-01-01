@@ -3,6 +3,7 @@ package proxy
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 
 	"github.com/distribution/reference"
@@ -34,6 +35,8 @@ func (pbs *proxyBlobStore) Open(ctx context.Context, dgst digest.Digest) (io.Rea
 	if err == nil {
 		return blob, nil
 	}
+
+	fmt.Println(dgst)
 
 	blob, err = pbs.remoteStore.Open(ctx, dgst)
 	if err != nil {
@@ -72,38 +75,11 @@ func (pbs *proxyBlobStore) Info(ctx context.Context, dgst digest.Digest) (*manif
 		return desc, err
 	}
 
-	if !errors.As(err, ptr.Ptr(&content.ErrBlobUnknown{})) {
+	if !errors.As(err, ptr.Ptr(&content.ErrBlobUnknown{})) && !errors.As(err, ptr.Ptr(&content.ErrManifestBlobUnknown{})) {
 		return &manifestv1.Descriptor{}, err
 	}
 
-	d, err := pbs.remoteStore.Info(ctx, dgst)
-	if err != nil {
-		if errors.As(err, ptr.Ptr(&content.ErrBlobUnknown{})) {
-			// FIXME hack to use open to trigger remote sync
-			// harbor will return 404 when stat, util digest full synced
-			b, err := pbs.remoteStore.Open(ctx, dgst)
-			if err != nil {
-				return nil, err
-			}
-
-			bw, err := pbs.localStore.Writer(ctx)
-			if err != nil {
-				return nil, err
-			}
-			if _, err := io.Copy(bw, b); err != nil {
-				return nil, err
-			}
-			defer b.Close()
-			if _, err := bw.Commit(ctx, manifestv1.Descriptor{Digest: dgst}); err != nil {
-				return nil, err
-			}
-			// use local stat
-			return pbs.localStore.Info(ctx, dgst)
-		}
-
-		return nil, err
-	}
-	return d, nil
+	return pbs.remoteStore.Info(ctx, dgst)
 }
 
 func closerFunc(close func() error) io.Closer {

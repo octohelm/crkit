@@ -29,6 +29,7 @@ func TestNamespace(t *testing.T) {
 
 	c := &struct {
 		otel.Otel
+
 		MemUploadCache uploadcache.MemUploadCache
 		contentapi.NamespaceProvider
 	}{}
@@ -53,7 +54,7 @@ func TestNamespace(t *testing.T) {
 			req.URL.Path = req.URL.Path[0 : len(req.URL.Path)-1]
 		}
 
-		fmt.Println(req.Method, req.URL.String())
+		fmt.Println("registry", req.Method, req.URL.String())
 
 		h.ServeHTTP(w, req.WithContext(i.InjectContext(req.Context())))
 	}))
@@ -66,7 +67,6 @@ func TestNamespace(t *testing.T) {
 		testingx.Expect(t, err, testingx.BeNil[error]())
 
 		repo := reg.Repo("test", "manifest")
-
 		ref := repo.Tag("latest")
 
 		err = remote.Push(ref, img)

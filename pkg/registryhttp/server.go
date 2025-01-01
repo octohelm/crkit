@@ -30,6 +30,9 @@ func (s *Server) beforeInit(ctx context.Context) error {
 				req.RequestURI = req.URL.RequestURI()
 			}
 
+			// remove "Accept-Encoding" to disable compress
+			req.Header.Del("Accept-Encoding")
+
 			h.ServeHTTP(w, req)
 		})
 	})

@@ -2,6 +2,7 @@ package registry
 
 import (
 	"context"
+	"fmt"
 	"github.com/octohelm/courier/pkg/courierhttp"
 	"github.com/octohelm/crkit/pkg/content"
 	"github.com/opencontainers/go-digest"
@@ -26,6 +27,11 @@ func (req *GetBlob) Output(ctx context.Context) (any, error) {
 		return nil, err
 	}
 
+	desc, err := blobs.Info(ctx, digest.Digest(req.Digest))
+	if err != nil {
+		return nil, err
+	}
+
 	b, err := blobs.Open(ctx, digest.Digest(req.Digest))
 	if err != nil {
 		return nil, err
@@ -34,5 +40,7 @@ func (req *GetBlob) Output(ctx context.Context) (any, error) {
 	return courierhttp.Wrap(
 		b,
 		courierhttp.WithMetadata("Docker-Content-Digest", string(req.Digest)),
+		courierhttp.WithMetadata("Content-Type", desc.MediaType),
+		courierhttp.WithMetadata("Content-Length", fmt.Sprintf("%d", desc.Size)),
 	), nil
 }
