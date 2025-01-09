@@ -3,23 +3,26 @@ module github.com/octohelm/crkit
 go 1.23.4
 
 require (
-	github.com/alecthomas/units v0.0.0-20240927000941-0f3dac36c52b
-	github.com/containerd/containerd v1.7.24
-	github.com/containerd/platforms v0.2.1
-	github.com/distribution/reference v0.6.0
 	github.com/go-courier/logr v0.3.1
-	github.com/go-json-experiment/json v0.0.0-20250108213703-50a1ba2c17a5
-	github.com/gobwas/glob v0.2.3
-	github.com/google/go-containerregistry v0.20.2
-	github.com/google/uuid v1.6.0
 	github.com/innoai-tech/infra v0.0.0-20250109061318-14294167429e
 	github.com/octohelm/courier v0.0.0-20250109060539-e7e7b35c1a99
 	github.com/octohelm/enumeration v0.0.0-20241121070632-2cd7179b161c
 	github.com/octohelm/gengo v0.0.0-20250104080658-4527b142baef
-	github.com/octohelm/kubekit v0.0.0-20241216023902-2c9d675d9ca8
+	github.com/octohelm/kubekit v0.0.0-20250109062627-2d1a880b15da
 	github.com/octohelm/kubepkgspec v0.0.0-20250109061610-7652f6c3d179
-	github.com/octohelm/unifs v0.0.0-20241019063356-9efed187f510
+	github.com/octohelm/unifs v0.0.0-20250109063507-bae82c2d3c74
 	github.com/octohelm/x v0.0.0-20250109055815-dda0e47e75ea
+)
+
+require (
+	github.com/alecthomas/units v0.0.0-20240927000941-0f3dac36c52b
+	github.com/containerd/containerd v1.7.24
+	github.com/containerd/platforms v0.2.1
+	github.com/distribution/reference v0.6.0
+	github.com/go-json-experiment/json v0.0.0-20250108213703-50a1ba2c17a5
+	github.com/gobwas/glob v0.2.3
+	github.com/google/go-containerregistry v0.20.2
+	github.com/google/uuid v1.6.0
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.0
 	github.com/pelletier/go-toml/v2 v2.2.3

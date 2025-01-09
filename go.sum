@@ -180,12 +180,12 @@ github.com/octohelm/enumeration v0.0.0-20241121070632-2cd7179b161c h1:NrIvGZ3YdX
 github.com/octohelm/enumeration v0.0.0-20241121070632-2cd7179b161c/go.mod h1:09o5QRqS9Z7P/PzUiInOzut5OErC6ysZR3afP+NFFoY=
 github.com/octohelm/gengo v0.0.0-20250104080658-4527b142baef h1:7hDRGVqHHnbIEEvGUU6GlUWOEUX6IU1aPdLITJ5IMDE=
 github.com/octohelm/gengo v0.0.0-20250104080658-4527b142baef/go.mod h1:Rni7e5dksqqO5nqv7i9024C29217Ynsniqcyqg0Jg4s=
-github.com/octohelm/kubekit v0.0.0-20241216023902-2c9d675d9ca8 h1:JAmZWznmXezx85t4oBAJ1z6c5SNmoydZgfb2HNrvfQ0=
-github.com/octohelm/kubekit v0.0.0-20241216023902-2c9d675d9ca8/go.mod h1:ffp8Pj/oogxRai3wD82YILHUmmjTGNqmans7Dbqo35I=
+github.com/octohelm/kubekit v0.0.0-20250109062627-2d1a880b15da h1:D7Z5KAqJi0opP2wwe0kspI13Ggsb+74+Ggb6U4jwBlA=
+github.com/octohelm/kubekit v0.0.0-20250109062627-2d1a880b15da/go.mod h1:zlUyazEi9U2lpcct6VCL3RCp6GxntJRJgmn0kAbvIhA=
 github.com/octohelm/kubepkgspec v0.0.0-20250109061610-7652f6c3d179 h1:8UXtC8OzryZQsornXq5ySSEHb/fvhuE2mfKZsLb8Qjk=
 github.com/octohelm/kubepkgspec v0.0.0-20250109061610-7652f6c3d179/go.mod h1:1L27U0ZYGJiX262Of3vv8rV6STOr+yAtIIfPodaij8A=
-github.com/octohelm/unifs v0.0.0-20241019063356-9efed187f510 h1:4UOLgOcyi7Gc2xnrxv2O3RQomwTbnpeKixXVyUQ89h4=
-github.com/octohelm/unifs v0.0.0-20241019063356-9efed187f510/go.mod h1:ZVBxTPNTWBAhrJGHP1/jKYw2diQx8e+KE5n9q+kV6IA=
+github.com/octohelm/unifs v0.0.0-20250109063507-bae82c2d3c74 h1:XzsRw/wr3EsC7zQwSZk/9ye0EfR4pc6dV7Db4KzGjwU=
+github.com/octohelm/unifs v0.0.0-20250109063507-bae82c2d3c74/go.mod h1:80o9il+vVZa19yte/IEOci2TqX6jNFbsS+lnypuc5bU=
 github.com/octohelm/x v0.0.0-20250109055815-dda0e47e75ea h1:QDKqkUvOnt3DNbluYUwI1FiCuHZwSBEbyUikQG+cvTM=
 github.com/octohelm/x v0.0.0-20250109055815-dda0e47e75ea/go.mod h1:gP93DM1Djmpbu3+fOLSkrXxh0TlJDSa5kmFGNgZWUuo=
 github.com/onsi/ginkgo/v2 v2.22.1 h1:QW7tbJAUDyVDVOM5dFa7qaybo+CRfR7bemlQUN6Z8aM=
