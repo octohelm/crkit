@@ -4,6 +4,8 @@ DON'T EDIT THIS FILE
 */
 package v1
 
+import _ "embed"
+
 // nolint:deadcode,unused
 func runtimeDoc(v any, prefix string, names ...string) ([]string, bool) {
 	if c, ok := v.(interface {
@@ -22,37 +24,37 @@ func runtimeDoc(v any, prefix string, names ...string) ([]string, bool) {
 	return nil, false
 }
 
-func (v DockerManifest) RuntimeDoc(names ...string) ([]string, bool) {
+func (v *DockerManifest) RuntimeDoc(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
 		case "MediaType":
 			return []string{
-				"MediaType specifies the type of this document data structure e.g. `application/vnd.oci.image.manifest.v1+json`",
+				"specifies the type of this document data structure e.g. `application/vnd.oci.image.manifest.v1+json`",
 			}, true
 		case "ArtifactType":
 			return []string{
-				"ArtifactType specifies the IANA media type of artifact when the manifest is used for an artifact.",
+				"specifies the IANA media type of artifact when the manifest is used for an artifact.",
 			}, true
 		case "Config":
 			return []string{
-				"Config references a configuration object for a container, by digest.",
+				"references a configuration object for a container, by digest.",
 				"The referenced configuration object is a JSON blob that the runtime uses to set up the container.",
 			}, true
 		case "Layers":
 			return []string{
-				"Layers is an indexed list of layers referenced by the manifest.",
+				"is an indexed list of layers referenced by the manifest.",
 			}, true
 		case "Subject":
 			return []string{
-				"Subject is an optional link from the image manifest to another manifest forming an association between the image manifest and the other manifest.",
+				"is an optional link from the image manifest to another manifest forming an association between the image manifest and the other manifest.",
 			}, true
 		case "Annotations":
 			return []string{
-				"Annotations contains arbitrary metadata for the image manifest.",
+				"contains arbitrary metadata for the image manifest.",
 			}, true
 
 		}
-		if doc, ok := runtimeDoc(v.Versioned, "", names...); ok {
+		if doc, ok := runtimeDoc(&v.Versioned, "", names...); ok {
 			return doc, ok
 		}
 
@@ -61,32 +63,32 @@ func (v DockerManifest) RuntimeDoc(names ...string) ([]string, bool) {
 	return []string{}, true
 }
 
-func (v DockerManifestList) RuntimeDoc(names ...string) ([]string, bool) {
+func (v *DockerManifestList) RuntimeDoc(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
 		case "MediaType":
 			return []string{
-				"MediaType specifies the type of this document data structure e.g. `application/vnd.oci.image.index.v1+json`",
+				"specifies the type of this document data structure e.g. `application/vnd.oci.image.index.v1+json`",
 			}, true
 		case "ArtifactType":
 			return []string{
-				"ArtifactType specifies the IANA media type of artifact when the manifest is used for an artifact.",
+				"specifies the IANA media type of artifact when the manifest is used for an artifact.",
 			}, true
 		case "Manifests":
 			return []string{
-				"Manifests references platform specific manifests.",
+				"references platform specific manifests.",
 			}, true
 		case "Subject":
 			return []string{
-				"Subject is an optional link from the image manifest to another manifest forming an association between the image manifest and the other manifest.",
+				"is an optional link from the image manifest to another manifest forming an association between the image manifest and the other manifest.",
 			}, true
 		case "Annotations":
 			return []string{
-				"Annotations contains arbitrary metadata for the image index.",
+				"contains arbitrary metadata for the image index.",
 			}, true
 
 		}
-		if doc, ok := runtimeDoc(v.Versioned, "", names...); ok {
+		if doc, ok := runtimeDoc(&v.Versioned, "", names...); ok {
 			return doc, ok
 		}
 
@@ -95,32 +97,32 @@ func (v DockerManifestList) RuntimeDoc(names ...string) ([]string, bool) {
 	return []string{}, true
 }
 
-func (v OciIndex) RuntimeDoc(names ...string) ([]string, bool) {
+func (v *OciIndex) RuntimeDoc(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
 		case "MediaType":
 			return []string{
-				"MediaType specifies the type of this document data structure e.g. `application/vnd.oci.image.index.v1+json`",
+				"specifies the type of this document data structure e.g. `application/vnd.oci.image.index.v1+json`",
 			}, true
 		case "ArtifactType":
 			return []string{
-				"ArtifactType specifies the IANA media type of artifact when the manifest is used for an artifact.",
+				"specifies the IANA media type of artifact when the manifest is used for an artifact.",
 			}, true
 		case "Manifests":
 			return []string{
-				"Manifests references platform specific manifests.",
+				"references platform specific manifests.",
 			}, true
 		case "Subject":
 			return []string{
-				"Subject is an optional link from the image manifest to another manifest forming an association between the image manifest and the other manifest.",
+				"is an optional link from the image manifest to another manifest forming an association between the image manifest and the other manifest.",
 			}, true
 		case "Annotations":
 			return []string{
-				"Annotations contains arbitrary metadata for the image index.",
+				"contains arbitrary metadata for the image index.",
 			}, true
 
 		}
-		if doc, ok := runtimeDoc(v.Versioned, "", names...); ok {
+		if doc, ok := runtimeDoc(&v.Versioned, "", names...); ok {
 			return doc, ok
 		}
 
@@ -129,37 +131,37 @@ func (v OciIndex) RuntimeDoc(names ...string) ([]string, bool) {
 	return []string{}, true
 }
 
-func (v OciManifest) RuntimeDoc(names ...string) ([]string, bool) {
+func (v *OciManifest) RuntimeDoc(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
 		case "MediaType":
 			return []string{
-				"MediaType specifies the type of this document data structure e.g. `application/vnd.oci.image.manifest.v1+json`",
+				"specifies the type of this document data structure e.g. `application/vnd.oci.image.manifest.v1+json`",
 			}, true
 		case "ArtifactType":
 			return []string{
-				"ArtifactType specifies the IANA media type of artifact when the manifest is used for an artifact.",
+				"specifies the IANA media type of artifact when the manifest is used for an artifact.",
 			}, true
 		case "Config":
 			return []string{
-				"Config references a configuration object for a container, by digest.",
+				"references a configuration object for a container, by digest.",
 				"The referenced configuration object is a JSON blob that the runtime uses to set up the container.",
 			}, true
 		case "Layers":
 			return []string{
-				"Layers is an indexed list of layers referenced by the manifest.",
+				"is an indexed list of layers referenced by the manifest.",
 			}, true
 		case "Subject":
 			return []string{
-				"Subject is an optional link from the image manifest to another manifest forming an association between the image manifest and the other manifest.",
+				"is an optional link from the image manifest to another manifest forming an association between the image manifest and the other manifest.",
 			}, true
 		case "Annotations":
 			return []string{
-				"Annotations contains arbitrary metadata for the image manifest.",
+				"contains arbitrary metadata for the image manifest.",
 			}, true
 
 		}
-		if doc, ok := runtimeDoc(v.Versioned, "", names...); ok {
+		if doc, ok := runtimeDoc(&v.Versioned, "", names...); ok {
 			return doc, ok
 		}
 
@@ -168,12 +170,12 @@ func (v OciManifest) RuntimeDoc(names ...string) ([]string, bool) {
 	return []string{}, true
 }
 
-func (v Payload) RuntimeDoc(names ...string) ([]string, bool) {
+func (v *Payload) RuntimeDoc(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
 
 		}
-		if doc, ok := runtimeDoc(v.Manifest, "", names...); ok {
+		if doc, ok := runtimeDoc(&v.Manifest, "", names...); ok {
 			return doc, ok
 		}
 

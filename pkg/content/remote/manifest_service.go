@@ -2,11 +2,11 @@ package remote
 
 import (
 	"context"
-	"github.com/octohelm/courier/pkg/courier"
 	"strconv"
 	"strings"
 
 	"github.com/distribution/reference"
+	"github.com/octohelm/courier/pkg/courier"
 	"github.com/octohelm/crkit/pkg/registryhttp/apis/registry"
 	"golang.org/x/exp/maps"
 

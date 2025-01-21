@@ -12,13 +12,11 @@ import (
 )
 
 hosts: {
-	local: wd.#Local & {
-	}
+	local: wd.#Local & {}
 }
 
 pkg: {
-	_ver: client.#RevInfo & {
-	}
+	_ver: client.#RevInfo & {}
 
 	version: _ver.version
 }

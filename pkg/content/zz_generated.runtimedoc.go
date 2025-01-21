@@ -4,6 +4,8 @@ DON'T EDIT THIS FILE
 */
 package content
 
+import _ "embed"
+
 // nolint:deadcode,unused
 func runtimeDoc(v any, prefix string, names ...string) ([]string, bool) {
 	if c, ok := v.(interface {
@@ -22,11 +24,11 @@ func runtimeDoc(v any, prefix string, names ...string) ([]string, bool) {
 	return nil, false
 }
 
-func (Digest) RuntimeDoc(names ...string) ([]string, bool) {
+func (*Digest) RuntimeDoc(names ...string) ([]string, bool) {
 	return []string{}, true
 }
 
-func (v ErrBlobInvalidDigest) RuntimeDoc(names ...string) ([]string, bool) {
+func (v *ErrBlobInvalidDigest) RuntimeDoc(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
 		case "Digest":
@@ -41,7 +43,7 @@ func (v ErrBlobInvalidDigest) RuntimeDoc(names ...string) ([]string, bool) {
 	return []string{}, true
 }
 
-func (v ErrBlobInvalidLength) RuntimeDoc(names ...string) ([]string, bool) {
+func (v *ErrBlobInvalidLength) RuntimeDoc(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
 		case "Reason":
@@ -54,7 +56,7 @@ func (v ErrBlobInvalidLength) RuntimeDoc(names ...string) ([]string, bool) {
 	return []string{}, true
 }
 
-func (v ErrBlobUnknown) RuntimeDoc(names ...string) ([]string, bool) {
+func (v *ErrBlobUnknown) RuntimeDoc(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
 		case "Digest":
@@ -67,7 +69,7 @@ func (v ErrBlobUnknown) RuntimeDoc(names ...string) ([]string, bool) {
 	return []string{}, true
 }
 
-func (v ErrManifestBlobUnknown) RuntimeDoc(names ...string) ([]string, bool) {
+func (v *ErrManifestBlobUnknown) RuntimeDoc(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
 		case "Digest":
@@ -80,7 +82,7 @@ func (v ErrManifestBlobUnknown) RuntimeDoc(names ...string) ([]string, bool) {
 	return []string{}, true
 }
 
-func (v ErrManifestNameInvalid) RuntimeDoc(names ...string) ([]string, bool) {
+func (v *ErrManifestNameInvalid) RuntimeDoc(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
 		case "Name":
@@ -95,7 +97,7 @@ func (v ErrManifestNameInvalid) RuntimeDoc(names ...string) ([]string, bool) {
 	return []string{}, true
 }
 
-func (v ErrManifestUnknown) RuntimeDoc(names ...string) ([]string, bool) {
+func (v *ErrManifestUnknown) RuntimeDoc(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
 		case "Name":
@@ -110,7 +112,7 @@ func (v ErrManifestUnknown) RuntimeDoc(names ...string) ([]string, bool) {
 	return []string{}, true
 }
 
-func (v ErrManifestUnknownRevision) RuntimeDoc(names ...string) ([]string, bool) {
+func (v *ErrManifestUnknownRevision) RuntimeDoc(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
 		case "Name":
@@ -125,7 +127,7 @@ func (v ErrManifestUnknownRevision) RuntimeDoc(names ...string) ([]string, bool)
 	return []string{}, true
 }
 
-func (v ErrManifestUnverified) RuntimeDoc(names ...string) ([]string, bool) {
+func (v *ErrManifestUnverified) RuntimeDoc(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
 
@@ -136,7 +138,7 @@ func (v ErrManifestUnverified) RuntimeDoc(names ...string) ([]string, bool) {
 	return []string{}, true
 }
 
-func (v ErrRepositoryNameInvalid) RuntimeDoc(names ...string) ([]string, bool) {
+func (v *ErrRepositoryNameInvalid) RuntimeDoc(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
 		case "Name":
@@ -151,7 +153,7 @@ func (v ErrRepositoryNameInvalid) RuntimeDoc(names ...string) ([]string, bool) {
 	return []string{}, true
 }
 
-func (v ErrRepositoryUnknown) RuntimeDoc(names ...string) ([]string, bool) {
+func (v *ErrRepositoryUnknown) RuntimeDoc(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
 		case "Name":
@@ -164,7 +166,7 @@ func (v ErrRepositoryUnknown) RuntimeDoc(names ...string) ([]string, bool) {
 	return []string{}, true
 }
 
-func (v ErrTagUnknown) RuntimeDoc(names ...string) ([]string, bool) {
+func (v *ErrTagUnknown) RuntimeDoc(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
 		case "Tag":
@@ -177,15 +179,15 @@ func (v ErrTagUnknown) RuntimeDoc(names ...string) ([]string, bool) {
 	return []string{}, true
 }
 
-func (Name) RuntimeDoc(names ...string) ([]string, bool) {
+func (*Name) RuntimeDoc(names ...string) ([]string, bool) {
 	return []string{}, true
 }
 
-func (Reference) RuntimeDoc(names ...string) ([]string, bool) {
+func (*Reference) RuntimeDoc(names ...string) ([]string, bool) {
 	return []string{}, true
 }
 
-func (v TagList) RuntimeDoc(names ...string) ([]string, bool) {
+func (v *TagList) RuntimeDoc(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
 		case "Name":

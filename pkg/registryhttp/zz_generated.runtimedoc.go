@@ -4,6 +4,8 @@ DON'T EDIT THIS FILE
 */
 package registryhttp
 
+import _ "embed"
+
 // nolint:deadcode,unused
 func runtimeDoc(v any, prefix string, names ...string) ([]string, bool) {
 	if c, ok := v.(interface {
@@ -22,12 +24,12 @@ func runtimeDoc(v any, prefix string, names ...string) ([]string, bool) {
 	return nil, false
 }
 
-func (v Server) RuntimeDoc(names ...string) ([]string, bool) {
+func (v *Server) RuntimeDoc(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
 
 		}
-		if doc, ok := runtimeDoc(v.Server, "", names...); ok {
+		if doc, ok := runtimeDoc(&v.Server, "", names...); ok {
 			return doc, ok
 		}
 

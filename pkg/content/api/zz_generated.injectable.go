@@ -11,17 +11,20 @@ import (
 )
 
 func (p *NamespaceProvider) InjectContext(ctx context.Context) context.Context {
+	ctx = p.Content.InjectContext(ctx)
 
 	return content.NamespaceInjectContext(ctx, p)
 }
 
 func (v *NamespaceProvider) Init(ctx context.Context) error {
+
 	if err := v.beforeInit(ctx); err != nil {
 		return err
 	}
 	if err := v.Content.Init(ctx); err != nil {
 		return err
 	}
+
 	if err := v.afterInit(ctx); err != nil {
 		return err
 	}

@@ -13,6 +13,7 @@ import (
 	"github.com/opencontainers/go-digest"
 )
 
+// UploadBlob
 // +gengo:injectable
 type UploadBlob struct {
 	courierhttp.MethodPost `path:"/{name...}/blobs/uploads"`

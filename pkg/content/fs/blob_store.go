@@ -3,12 +3,11 @@ package fs
 import (
 	"context"
 	"fmt"
+	"github.com/google/uuid"
 	"io"
 	"os"
 	"path/filepath"
 	"sync"
-
-	"github.com/google/uuid"
 
 	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
 	"github.com/octohelm/crkit/pkg/content"
