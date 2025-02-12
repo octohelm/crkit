@@ -29,7 +29,6 @@ func (v *Client) RuntimeDoc(names ...string) ([]string, bool) {
 		switch names[0] {
 		case "RoundTripperCreateFunc":
 			return []string{}, true
-
 		}
 		if doc, ok := runtimeDoc(&v.Registry, "", names...); ok {
 			return doc, ok

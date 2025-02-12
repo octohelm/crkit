@@ -17,7 +17,6 @@ func (p *NamespaceProvider) InjectContext(ctx context.Context) context.Context {
 }
 
 func (v *NamespaceProvider) Init(ctx context.Context) error {
-
 	if err := v.beforeInit(ctx); err != nil {
 		return err
 	}

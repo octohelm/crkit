@@ -3,12 +3,11 @@ package authn
 import (
 	"bytes"
 	"errors"
-	"sort"
+	"maps"
+	"slices"
 	"strconv"
 	"strings"
 	"text/scanner"
-
-	"golang.org/x/exp/maps"
 )
 
 var errInvalidWwwAuthenticate = errors.New("invalid www-authenticate")
@@ -78,8 +77,7 @@ func (v WwwAuthenticate) String() string {
 	b.WriteString(v.AuthType)
 	b.WriteString(" ")
 
-	keys := maps.Keys(v.Params)
-	sort.Strings(keys)
+	keys := slices.Sorted(maps.Keys(v.Params))
 
 	for i, k := range keys {
 		if i > 0 {

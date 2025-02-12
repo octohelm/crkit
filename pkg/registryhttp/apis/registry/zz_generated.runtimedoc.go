@@ -27,7 +27,6 @@ func runtimeDoc(v any, prefix string, names ...string) ([]string, bool) {
 func (v *BaseURL) RuntimeDoc(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
-
 		}
 
 		return nil, false
@@ -40,7 +39,6 @@ func (v *CancelUploadBlob) RuntimeDoc(names ...string) ([]string, bool) {
 		switch names[0] {
 		case "ID":
 			return []string{}, true
-
 		}
 		if doc, ok := runtimeDoc(&v.NameScoped, "", names...); ok {
 			return doc, ok
@@ -56,7 +54,6 @@ func (v *DeleteBlob) RuntimeDoc(names ...string) ([]string, bool) {
 		switch names[0] {
 		case "Digest":
 			return []string{}, true
-
 		}
 		if doc, ok := runtimeDoc(&v.NameScoped, "", names...); ok {
 			return doc, ok
@@ -72,7 +69,6 @@ func (v *DeleteManifest) RuntimeDoc(names ...string) ([]string, bool) {
 		switch names[0] {
 		case "Reference":
 			return []string{}, true
-
 		}
 		if doc, ok := runtimeDoc(&v.NameScoped, "", names...); ok {
 			return doc, ok
@@ -88,7 +84,6 @@ func (v *GetBlob) RuntimeDoc(names ...string) ([]string, bool) {
 		switch names[0] {
 		case "Digest":
 			return []string{}, true
-
 		}
 		if doc, ok := runtimeDoc(&v.NameScoped, "", names...); ok {
 			return doc, ok
@@ -122,7 +117,6 @@ func (v *HeadBlob) RuntimeDoc(names ...string) ([]string, bool) {
 		switch names[0] {
 		case "Digest":
 			return []string{}, true
-
 		}
 		if doc, ok := runtimeDoc(&v.NameScoped, "", names...); ok {
 			return doc, ok
@@ -154,7 +148,6 @@ func (v *HeadManifest) RuntimeDoc(names ...string) ([]string, bool) {
 func (v *ListTag) RuntimeDoc(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
-
 		}
 		if doc, ok := runtimeDoc(&v.NameScoped, "", names...); ok {
 			return doc, ok
@@ -170,7 +163,6 @@ func (v *NameScoped) RuntimeDoc(names ...string) ([]string, bool) {
 		switch names[0] {
 		case "Name":
 			return []string{}, true
-
 		}
 
 		return nil, false

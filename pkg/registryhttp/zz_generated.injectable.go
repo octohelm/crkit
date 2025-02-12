@@ -9,7 +9,6 @@ import (
 )
 
 func (v *Server) Init(ctx context.Context) error {
-
 	if err := v.beforeInit(ctx); err != nil {
 		return err
 	}

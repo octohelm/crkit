@@ -9,12 +9,10 @@ import (
 )
 
 func (p *MemUploadCache) InjectContext(ctx context.Context) context.Context {
-
 	return UploadCacheInjectContext(ctx, p)
 }
 
 func (v *MemUploadCache) Init(ctx context.Context) error {
-
 	if err := v.beforeInit(ctx); err != nil {
 		return err
 	}

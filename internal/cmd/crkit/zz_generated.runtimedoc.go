@@ -29,7 +29,6 @@ func (v *Registry) RuntimeDoc(names ...string) ([]string, bool) {
 		switch names[0] {
 		case "UploadCache":
 			return []string{}, true
-
 		}
 		if doc, ok := runtimeDoc(&v.Otel, "", names...); ok {
 			return doc, ok

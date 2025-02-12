@@ -46,7 +46,6 @@ func (v *ErrUnauthorized) RuntimeDoc(names ...string) ([]string, bool) {
 		switch names[0] {
 		case "Reason":
 			return []string{}, true
-
 		}
 
 		return nil, false

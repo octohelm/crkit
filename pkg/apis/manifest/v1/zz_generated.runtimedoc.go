@@ -173,7 +173,6 @@ func (v *OciManifest) RuntimeDoc(names ...string) ([]string, bool) {
 func (v *Payload) RuntimeDoc(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
-
 		}
 		if doc, ok := runtimeDoc(&v.Manifest, "", names...); ok {
 			return doc, ok

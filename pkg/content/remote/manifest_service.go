@@ -2,16 +2,16 @@ package remote
 
 import (
 	"context"
+	"maps"
+	"slices"
 	"strconv"
 	"strings"
 
 	"github.com/distribution/reference"
 	"github.com/octohelm/courier/pkg/courier"
-	"github.com/octohelm/crkit/pkg/registryhttp/apis/registry"
-	"golang.org/x/exp/maps"
-
 	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
 	"github.com/octohelm/crkit/pkg/content"
+	"github.com/octohelm/crkit/pkg/registryhttp/apis/registry"
 	"github.com/opencontainers/go-digest"
 )
 
@@ -56,7 +56,7 @@ func (ms *manifestService) Put(ctx context.Context, m manifestv1.Manifest) (dige
 func (ms *manifestService) Info(ctx context.Context, dgst digest.Digest) (*manifestv1.Descriptor, error) {
 	req := &registry.HeadManifest{}
 	req.Name = content.Name(ms.named.Name())
-	req.Accept = strings.Join(maps.Keys((&manifestv1.Payload{}).Mapping()), ",")
+	req.Accept = strings.Join(slices.Collect(maps.Keys((&manifestv1.Payload{}).Mapping())), ",")
 	req.Reference = content.Reference(dgst.String())
 
 	_, meta, err := Do(ctx, ms.client, req)
@@ -75,7 +75,7 @@ func (ms *manifestService) Info(ctx context.Context, dgst digest.Digest) (*manif
 
 func (ms *manifestService) Get(ctx context.Context, dgst digest.Digest) (manifestv1.Manifest, error) {
 	req := &registry.GetManifest{}
-	req.Accept = strings.Join(maps.Keys((&manifestv1.Payload{}).Mapping()), ",")
+	req.Accept = strings.Join(slices.Collect(maps.Keys((&manifestv1.Payload{}).Mapping())), ",")
 	req.Name = content.Name(ms.named.Name())
 	req.Reference = content.Reference(dgst.String())
 

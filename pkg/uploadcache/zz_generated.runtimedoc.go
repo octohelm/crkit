@@ -27,7 +27,6 @@ func runtimeDoc(v any, prefix string, names ...string) ([]string, bool) {
 func (v *MemUploadCache) RuntimeDoc(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
-
 		}
 		if doc, ok := runtimeDoc(&v.Job, "", names...); ok {
 			return doc, ok
