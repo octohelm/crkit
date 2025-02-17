@@ -16,7 +16,7 @@ func (v *MemUploadCache) Init(ctx context.Context) error {
 	if err := v.beforeInit(ctx); err != nil {
 		return err
 	}
-	if err := v.Job.Init(ctx); err != nil {
+	if err := v.Agent.Init(ctx); err != nil {
 		return err
 	}
 

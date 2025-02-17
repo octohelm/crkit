@@ -6,31 +6,38 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-courier/logr"
-
+	"github.com/innoai-tech/infra/pkg/agent"
+	"github.com/innoai-tech/infra/pkg/configuration"
 	"github.com/innoai-tech/infra/pkg/cron"
 	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
 	"github.com/octohelm/crkit/pkg/content"
 )
 
+// MemUploadCache
 // +gengo:injectable:provider UploadCache
 type MemUploadCache struct {
-	cron.Job
+	agent.Agent
+
+	PruneInterval cron.Spec `flag:",omitzero"`
 
 	m sync.Map
 }
 
 func (c *MemUploadCache) SetDefaults() {
-	if c.Job.Cron == "" {
-		c.Job.Cron = "@every 3s"
+	if c.PruneInterval == "" {
+		c.PruneInterval = "@every 3s"
 	}
 }
 
 func (c *MemUploadCache) beforeInit(ctx context.Context) error {
-	c.ApplyAction("upload pruning", func(ctx context.Context) {
-		if err := c.cleanup(ctx); err != nil {
-			logr.FromContext(ctx).Error(err)
+	c.Host("upload pruning", func(ctx context.Context) error {
+		for range c.PruneInterval.Times(ctx) {
+			c.Go(configuration.Background(ctx), func(ctx context.Context) error {
+				return c.cleanup(ctx)
+			})
 		}
+
+		return nil
 	})
 	return nil
 }

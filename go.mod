@@ -4,15 +4,15 @@ go 1.24.0
 
 require (
 	github.com/go-courier/logr v0.3.1
-	github.com/innoai-tech/infra v0.0.0-20250213031804-1df17550f6a3
+	github.com/innoai-tech/infra v0.0.0-20250217020731-0860b45087be
 	github.com/innoai-tech/openapi-playground v0.0.0-20250211021902-60e42b12e553 // indirect
-	github.com/octohelm/courier v0.0.0-20250213031428-2432e8681d86
+	github.com/octohelm/courier v0.0.0-20250213104025-f21d0877d28c
 	github.com/octohelm/enumeration v0.0.0-20250115091102-ddf41951d733
 	github.com/octohelm/gengo v0.0.0-20250213040207-59af51fbf311
 	github.com/octohelm/kubekit v0.0.0-20250213040807-96036c24f7d0
-	github.com/octohelm/kubepkgspec v0.0.0-20250213032738-d6e2a13f0c65
+	github.com/octohelm/kubepkgspec v0.0.0-20250213104933-27718ca60b83
 	github.com/octohelm/unifs v0.0.0-20250213040300-eb95543cf94b
-	github.com/octohelm/x v0.0.0-20250212034859-0e2c4f726784
+	github.com/octohelm/x v0.0.0-20250213100717-a5d72cc790e0
 )
 
 require (
@@ -20,7 +20,7 @@ require (
 	github.com/containerd/containerd v1.7.25
 	github.com/containerd/platforms v0.2.1
 	github.com/distribution/reference v0.6.0
-	github.com/go-json-experiment/json v0.0.0-20250212230008-60a0516c2895
+	github.com/go-json-experiment/json v0.0.0-20250213060926-925ba3f173fa
 	github.com/gobwas/glob v0.2.3
 	github.com/google/go-containerregistry v0.20.3
 	github.com/google/uuid v1.6.0
