@@ -3,6 +3,7 @@ package registry
 import (
 	"context"
 	"fmt"
+
 	"github.com/octohelm/courier/pkg/courierhttp"
 	"github.com/octohelm/crkit/pkg/content"
 	"github.com/opencontainers/go-digest"

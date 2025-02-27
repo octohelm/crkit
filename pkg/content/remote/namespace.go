@@ -19,7 +19,6 @@ func WithClient(c courier.Client) Option {
 type Option func(n *namespace)
 
 func New(ctx context.Context, registry Registry, options ...Option) (content.Namespace, error) {
-
 	remoteURI, err := url.Parse(registry.Endpoint)
 	if err != nil {
 		return nil, err

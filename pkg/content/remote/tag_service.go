@@ -2,8 +2,9 @@ package remote
 
 import (
 	"context"
-	"github.com/octohelm/courier/pkg/courier"
 	"strconv"
+
+	"github.com/octohelm/courier/pkg/courier"
 
 	"github.com/opencontainers/go-digest"
 

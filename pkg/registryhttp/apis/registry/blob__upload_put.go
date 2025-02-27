@@ -3,9 +3,10 @@ package registry
 import (
 	"context"
 	"fmt"
-	contentutil "github.com/octohelm/crkit/pkg/content/util"
 	"io"
 	"net/http"
+
+	contentutil "github.com/octohelm/crkit/pkg/content/util"
 
 	"github.com/octohelm/courier/pkg/courierhttp"
 	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
@@ -53,7 +54,6 @@ func (req *UploadPutBlob) Output(ctx context.Context) (any, error) {
 	d, err := w.Commit(ctx, manifestv1.Descriptor{
 		Digest: digest.Digest(req.Digest),
 	})
-
 	if err != nil {
 		return nil, err
 	}

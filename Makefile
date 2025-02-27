@@ -4,7 +4,7 @@ ifeq ($(DEBUG),1)
 	PIPER := $(PIPER) --log-level=debug
 endif
 
-CRKIT = go run ./internal/cmd/crkit
+CRKIT = go tool crkit
 
 export KUBECONFIG = ${HOME}/.kube_config/config--algo-staging.yaml
 export PIPER_BUILDER_HOST =
@@ -26,10 +26,7 @@ dump.k8s:
 	$(CRKIT) serve registry --dump-k8s
 
 gen:
-	go run ./internal/cmd/tool gen ./internal/cmd/crkit
-
-gen.debug:
-	go run ./internal/cmd/tool gen ./pkg/content/api
+	go tool devtool gen --all ./internal/cmd/crkit
 
 dep:
 	go get -u ./...
@@ -38,7 +35,7 @@ test:
 	go test -v -failfast ./...
 
 fmt:
-	gofumpt -w -l .
+	go tool gofumpt -w -l .
 
 ship:
 	$(PIPER) do ship
