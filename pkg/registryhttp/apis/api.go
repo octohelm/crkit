@@ -9,7 +9,7 @@ import (
 
 var R = courierhttp.GroupRouter("/").With(
 
-	courierhttp.GroupRouter("/api").With(
+	courierhttp.GroupRouter("/api/crkit").With(
 		courier.NewRouter(&httprouter.OpenAPI{}),
 		courier.NewRouter(&httprouter.OpenAPIView{}),
 	),

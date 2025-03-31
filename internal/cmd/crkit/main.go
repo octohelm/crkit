@@ -4,9 +4,8 @@ import (
 	"context"
 	"os"
 
-	"github.com/octohelm/crkit/internal/version"
-
 	"github.com/innoai-tech/infra/pkg/cli"
+	"github.com/octohelm/crkit/internal/version"
 )
 
 var App = cli.NewApp(
