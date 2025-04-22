@@ -88,32 +88,24 @@ func init() {
 	R.Register(courier.NewRouter(&HeadBlob{}))
 }
 
-func (HeadBlob) ResponseStatusCode() int {
-	return 200
-}
-
 func (HeadBlob) ResponseContent() any {
-	return new(any)
+	return nil
 }
 
-func (HeadBlob) ResponseData() *any {
-	return new(any)
+func (HeadBlob) ResponseData() *courier.NoContent {
+	return new(courier.NoContent)
 }
 
 func init() {
 	R.Register(courier.NewRouter(&HeadManifest{}))
 }
 
-func (HeadManifest) ResponseStatusCode() int {
-	return 200
-}
-
 func (HeadManifest) ResponseContent() any {
-	return new(any)
+	return nil
 }
 
-func (HeadManifest) ResponseData() *any {
-	return new(any)
+func (HeadManifest) ResponseData() *courier.NoContent {
+	return new(courier.NoContent)
 }
 
 func init() {
@@ -132,62 +124,46 @@ func init() {
 	R.Register(courier.NewRouter(&PutManifest{}))
 }
 
-func (PutManifest) ResponseStatusCode() int {
-	return 200
-}
-
 func (PutManifest) ResponseContent() any {
-	return new(any)
+	return nil
 }
 
-func (PutManifest) ResponseData() *any {
-	return new(any)
+func (PutManifest) ResponseData() *courier.NoContent {
+	return new(courier.NoContent)
 }
 
 func init() {
 	R.Register(courier.NewRouter(&UploadBlob{}))
 }
 
-func (UploadBlob) ResponseStatusCode() int {
-	return 201
-}
-
 func (UploadBlob) ResponseContent() any {
-	return new(any)
+	return nil
 }
 
-func (UploadBlob) ResponseData() *any {
-	return new(any)
+func (UploadBlob) ResponseData() *courier.NoContent {
+	return new(courier.NoContent)
 }
 
 func init() {
 	R.Register(courier.NewRouter(&UploadPatchBlob{}))
 }
 
-func (UploadPatchBlob) ResponseStatusCode() int {
-	return 202
-}
-
 func (UploadPatchBlob) ResponseContent() any {
-	return new(any)
+	return nil
 }
 
-func (UploadPatchBlob) ResponseData() *any {
-	return new(any)
+func (UploadPatchBlob) ResponseData() *courier.NoContent {
+	return new(courier.NoContent)
 }
 
 func init() {
 	R.Register(courier.NewRouter(&UploadPutBlob{}))
 }
 
-func (UploadPutBlob) ResponseStatusCode() int {
-	return 201
-}
-
 func (UploadPutBlob) ResponseContent() any {
-	return new(any)
+	return nil
 }
 
-func (UploadPutBlob) ResponseData() *any {
-	return new(any)
+func (UploadPutBlob) ResponseData() *courier.NoContent {
+	return new(courier.NoContent)
 }

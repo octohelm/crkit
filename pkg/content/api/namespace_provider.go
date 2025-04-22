@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"github.com/octohelm/unifs/pkg/filesystem"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -11,7 +12,6 @@ import (
 	contentfs "github.com/octohelm/crkit/pkg/content/fs"
 	contentproxy "github.com/octohelm/crkit/pkg/content/proxy"
 	contentremote "github.com/octohelm/crkit/pkg/content/remote"
-	"github.com/octohelm/unifs/pkg/filesystem"
 	"github.com/octohelm/unifs/pkg/filesystem/api"
 	"github.com/octohelm/unifs/pkg/strfmt"
 )

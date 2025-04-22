@@ -78,6 +78,12 @@ func (a *Authn) exchangeToken(ctx context.Context, realm *url.URL) (*Token, erro
 			tok.TokenType = "Bearer"
 		}
 
+		if tok.ExpiresIn == 0 {
+			tok.ExpiresIn = 600
+		}
+
+		tok.ExpiredAt = time.Now().Add(time.Duration(tok.ExpiresIn-60) * time.Second)
+
 		return tok, nil
 	}
 
@@ -89,7 +95,7 @@ func (a *Authn) exchangeToken(ctx context.Context, realm *url.URL) (*Token, erro
 func (a *Authn) getToken(ctx context.Context, name string, actions []string) (*Token, error) {
 	scope := fmt.Sprintf("repository:%s:%s", name, strings.Join(actions, ","))
 
-	getToken, loaded := a.scopeTokens.LoadOrStore(scope, sync.OnceValues(func() (*Token, error) {
+	getToken, _ := a.scopeTokens.LoadOrStore(scope, sync.OnceValues(func() (*Token, error) {
 		c := client.GetShortConnClientContext(ctx)
 
 		req, err := http.NewRequest(http.MethodGet, a.CheckEndpoint, nil)
@@ -138,9 +144,6 @@ func (a *Authn) getToken(ctx context.Context, name string, actions []string) (*T
 	tok, err := getToken()
 	if err != nil {
 		return nil, err
-	}
-	if !loaded {
-		tok.ExpiredAt = time.Now().Add(time.Duration(tok.ExpiresIn-60) * time.Second)
 	}
 
 	if tok.ExpiredAt.Before(time.Now()) {
