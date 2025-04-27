@@ -25,7 +25,7 @@ func (s *Server) beforeInit(ctx context.Context) error {
 
 	s.ApplyGlobalHandlers(func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-			if strings.HasSuffix(req.URL.Path, "/") {
+			if req.URL.Path != "/" && strings.HasSuffix(req.URL.Path, "/") {
 				req.URL.Path = req.URL.Path[0 : len(req.URL.Path)-1]
 				req.RequestURI = req.URL.RequestURI()
 			}
