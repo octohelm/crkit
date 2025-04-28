@@ -24,12 +24,12 @@ func KubePkg(idx v1.ImageIndex) (*kubepkgv1alpha1.KubePkg, error) {
 				return nil, err
 			}
 
-			indexManifest, err := kubePkgIndex.IndexManifest()
+			kubePkgIndexManifest, err := kubePkgIndex.IndexManifest()
 			if err != nil {
 				return nil, err
 			}
 
-			for _, m := range indexManifest.Manifests {
+			for _, m := range kubePkgIndexManifest.Manifests {
 				if m.ArtifactType == ArtifactType {
 					img, err := kubePkgIndex.Image(m.Digest)
 					if err != nil {

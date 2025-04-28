@@ -1,5 +1,6 @@
 // +gengo:operator:register=R
-// +gengo:operator:tag=containerregistry
+//
+//go:generate go tool devtool gen .
 package registry
 
 import (

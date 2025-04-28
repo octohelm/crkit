@@ -159,3 +159,15 @@ func (ErrManifestNameInvalid) ErrCode() string {
 func (err *ErrManifestNameInvalid) Error() string {
 	return fmt.Sprintf("manifest name %q invalid: %v", err.Name, err.Reason)
 }
+
+type ErrBlobUploadUnknown struct {
+	statuserror.NotFound
+}
+
+func (ErrBlobUploadUnknown) ErrCode() string {
+	return "BLOB_UPLOAD_UNKNOWN"
+}
+
+func (err *ErrBlobUploadUnknown) Error() string {
+	return "blob upload unknown"
+}

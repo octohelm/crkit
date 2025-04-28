@@ -21,7 +21,7 @@ func NewFilesystemCache(path string) cache.Cache {
 }
 
 func (fs *fscache) Put(l v1.Layer) (v1.Layer, error) {
-	digest, err := l.Digest()
+	dgst, err := l.Digest()
 	if err != nil {
 		return nil, err
 	}
@@ -32,7 +32,7 @@ func (fs *fscache) Put(l v1.Layer) (v1.Layer, error) {
 	return &layer{
 		Layer:  l,
 		path:   fs.path,
-		digest: digest,
+		digest: dgst,
 		diffID: diffID,
 	}, nil
 }

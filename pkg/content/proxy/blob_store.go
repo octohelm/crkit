@@ -3,7 +3,6 @@ package proxy
 import (
 	"context"
 	"errors"
-	"fmt"
 	"io"
 
 	"github.com/distribution/reference"
@@ -22,6 +21,10 @@ type proxyBlobStore struct {
 
 var _ content.BlobStore = &proxyBlobStore{}
 
+func (pbs *proxyBlobStore) Resume(ctx context.Context, id string) (content.BlobWriter, error) {
+	return pbs.remoteStore.Resume(ctx, id)
+}
+
 func (pbs *proxyBlobStore) Writer(ctx context.Context) (content.BlobWriter, error) {
 	return pbs.remoteStore.Writer(ctx)
 }
@@ -35,8 +38,6 @@ func (pbs *proxyBlobStore) Open(ctx context.Context, dgst digest.Digest) (io.Rea
 	if err == nil {
 		return blob, nil
 	}
-
-	fmt.Println(dgst)
 
 	blob, err = pbs.remoteStore.Open(ctx, dgst)
 	if err != nil {

@@ -1,11 +1,13 @@
+//go:generate go tool devtool gen .
 package api
 
 import (
 	"context"
-	"github.com/octohelm/unifs/pkg/filesystem"
 	"log/slog"
 	"os"
 	"path/filepath"
+
+	"github.com/octohelm/unifs/pkg/filesystem"
 
 	"github.com/go-courier/logr"
 	"github.com/octohelm/crkit/pkg/content"
@@ -16,12 +18,13 @@ import (
 	"github.com/octohelm/unifs/pkg/strfmt"
 )
 
-// +gengo:injectable:provider github.com/octohelm/crkit/pkg/content.Namespace
+// +gengo:injectable:provider
 type NamespaceProvider struct {
 	Remote  contentremote.Registry
 	Content api.FileSystemBackend
+	NoCache bool `flag:",omitzero"`
 
-	content.Namespace `flag:"-"`
+	namespace content.Namespace `provide:""`
 }
 
 func (s *NamespaceProvider) beforeInit(ctx context.Context) error {
@@ -45,12 +48,27 @@ func (s *NamespaceProvider) afterInit(ctx context.Context) error {
 	local := contentfs.NewNamespace(s.Content.FileSystem())
 
 	if s.Remote.Endpoint != "" {
+		if s.NoCache {
+			remote, err := contentremote.New(ctx, s.Remote)
+			if err != nil {
+				return err
+			}
+
+			s.namespace = remote
+
+			logr.FromContext(ctx).
+				WithValues(slog.String("remote", s.Remote.Endpoint)).
+				Info("proxy")
+
+			return nil
+		}
+
 		proxy, err := contentproxy.NewProxyFallbackRegistry(ctx, local, s.Remote)
 		if err != nil {
 			return err
 		}
 
-		s.Namespace = proxy
+		s.namespace = proxy
 
 		logr.FromContext(ctx).
 			WithValues(slog.String("remote", s.Remote.Endpoint)).
@@ -59,7 +77,7 @@ func (s *NamespaceProvider) afterInit(ctx context.Context) error {
 		return nil
 	}
 
-	s.Namespace = local
+	s.namespace = local
 
 	return nil
 }

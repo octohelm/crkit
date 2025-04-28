@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/octohelm/courier/pkg/courierhttp"
-	"github.com/octohelm/crkit/pkg/uploadcache"
 )
 
 // +gengo:injectable
@@ -13,15 +12,27 @@ type CancelUploadBlob struct {
 	NameScoped
 
 	ID string `name:"id" in:"path"`
-
-	uploadCache uploadcache.UploadCache `inject:""`
 }
 
 func (req *CancelUploadBlob) Output(ctx context.Context) (any, error) {
-	w, err := req.uploadCache.Resume(ctx, req.ID)
+	repo, err := req.Repository(ctx)
 	if err != nil {
-		return nil, nil
+		return nil, err
 	}
-	_ = w.Close()
+
+	blobs, err := repo.Blobs(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	w, err := blobs.Resume(ctx, req.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := w.Cancel(ctx); err != nil {
+		return nil, err
+	}
+
 	return nil, nil
 }

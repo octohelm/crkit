@@ -7,8 +7,6 @@ package main
 func (v *Registry) RuntimeDoc(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
-		case "UploadCache":
-			return []string{}, true
 		}
 		if doc, ok := runtimeDoc(&v.Otel, "", names...); ok {
 			return doc, ok

@@ -3,26 +3,20 @@ package registry
 import (
 	"context"
 	"fmt"
-	"io"
 	"net/http"
 
 	"github.com/octohelm/courier/pkg/courierhttp"
 )
 
 // +gengo:injectable
-type UploadPatchBlob struct {
-	courierhttp.MethodPatch `path:"/{name...}/blobs/uploads/{id}"`
-
+type GetUploadBlob struct {
+	courierhttp.MethodGet `path:"/{name...}/blobs/uploads/{id}"`
 	NameScoped
 
 	ID string `name:"id" in:"path"`
-
-	Chunk io.ReadCloser `in:"body"`
 }
 
-func (req *UploadPatchBlob) Output(ctx context.Context) (any, error) {
-	defer req.Chunk.Close()
-
+func (req *GetUploadBlob) Output(ctx context.Context) (any, error) {
 	repo, err := req.Repository(ctx)
 	if err != nil {
 		return nil, err
@@ -38,14 +32,6 @@ func (req *UploadPatchBlob) Output(ctx context.Context) (any, error) {
 		return nil, err
 	}
 	defer w.Close()
-
-	if _, err := io.Copy(w, req.Chunk); err != nil {
-		return nil, err
-	}
-
-	if err := w.Close(); err != nil {
-		return nil, err
-	}
 
 	endRange := w.Size(ctx)
 	if endRange > 0 {

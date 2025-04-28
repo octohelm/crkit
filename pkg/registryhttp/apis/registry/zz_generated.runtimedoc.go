@@ -92,6 +92,21 @@ func (v *GetManifest) RuntimeDoc(names ...string) ([]string, bool) {
 	return []string{}, true
 }
 
+func (v *GetUploadBlob) RuntimeDoc(names ...string) ([]string, bool) {
+	if len(names) > 0 {
+		switch names[0] {
+		case "ID":
+			return []string{}, true
+		}
+		if doc, ok := runtimeDoc(&v.NameScoped, "", names...); ok {
+			return doc, ok
+		}
+
+		return nil, false
+	}
+	return []string{}, true
+}
+
 func (v *HeadBlob) RuntimeDoc(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {

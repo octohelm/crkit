@@ -9,7 +9,6 @@ import (
 	"github.com/octohelm/courier/pkg/courierhttp"
 	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
 	"github.com/octohelm/crkit/pkg/content"
-	"github.com/octohelm/crkit/pkg/uploadcache"
 	"github.com/opencontainers/go-digest"
 )
 
@@ -24,8 +23,6 @@ type UploadBlob struct {
 	ContentType   string         `name:"Content-Type,omitempty" in:"header"`
 	Digest        content.Digest `name:"digest,omitempty" in:"query"`
 	Blob          io.ReadCloser  `in:"body"`
-
-	uploadCache uploadcache.UploadCache `inject:""`
 }
 
 func (req *UploadBlob) Output(ctx context.Context) (any, error) {
@@ -46,6 +43,8 @@ func (req *UploadBlob) Output(ctx context.Context) (any, error) {
 		if err != nil {
 			return nil, err
 		}
+		defer w.Close()
+
 		if _, err := io.Copy(w, req.Blob); err != nil {
 			return nil, err
 		}
@@ -64,11 +63,16 @@ func (req *UploadBlob) Output(ctx context.Context) (any, error) {
 		), nil
 	}
 
-	// https://github.com/opencontainers/distribution-spec/blob/main/spec.md#post-then-put
-	w, err := req.uploadCache.BlobWriter(ctx, repo)
+	blobs, err := repo.Blobs(ctx)
 	if err != nil {
 		return nil, err
 	}
+
+	w, err := blobs.Writer(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer w.Close()
 
 	return courierhttp.Wrap[any](nil,
 		courierhttp.WithStatusCode(http.StatusAccepted),

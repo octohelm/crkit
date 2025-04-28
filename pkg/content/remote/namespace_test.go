@@ -1,140 +1,164 @@
 package remote_test
 
 import (
-	"context"
 	"fmt"
+	randv2 "math/rand/v2"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 
-	"github.com/alecthomas/units"
 	"github.com/go-json-experiment/json"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/registry"
 	"github.com/google/go-containerregistry/pkg/v1/random"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
+	"github.com/innoai-tech/infra/pkg/configuration"
+	"github.com/innoai-tech/infra/pkg/configuration/testingutil"
+	"github.com/innoai-tech/infra/pkg/otel"
 	"github.com/octohelm/courier/pkg/courierhttp/handler/httprouter"
 	"github.com/octohelm/crkit/pkg/content"
-	contentremote "github.com/octohelm/crkit/pkg/content/remote"
+	contentapi "github.com/octohelm/crkit/pkg/content/api"
 	"github.com/octohelm/crkit/pkg/content/remote/authn"
 	"github.com/octohelm/crkit/pkg/registryhttp/apis"
-	"github.com/octohelm/crkit/pkg/uploadcache"
-	testingx "github.com/octohelm/x/testing"
+	"github.com/octohelm/unifs/pkg/strfmt"
+	"github.com/octohelm/unifs/pkg/units"
+	"github.com/octohelm/x/testing/bdd"
 )
 
-func TestNamespace(t *testing.T) {
-	rh := registry.New()
+func FuzzRemoteNamespace(f *testing.F) {
+	images := []remote.Taggable{
+		bdd.Must(random.Image(int64(units.BinarySize(int64(randv2.IntN(100)))*units.MiB), randv2.Int64N(5))),
+		bdd.Must(random.Index(int64(units.BinarySize(int64(randv2.IntN(100)))*units.MiB), randv2.Int64N(5), 2)),
+	}
 
-	var remoteRegistry *httptest.Server
+	for i := range images {
+		f.Add(i)
+	}
 
-	remoteRegistry = httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-		fmt.Println("registry", req.Method, req.URL.String(), req.Header)
+	f.Fuzz(func(t *testing.T, idx int) {
+		img := images[idx]
 
-		if req.URL.Path == "/auth/token" {
-			tok := &authn.Token{}
-			tok.TokenType = "Bearer"
-			tok.AccessToken = "test"
-			tok.ExpiresIn = 1800
+		remoteRegistry := bdd.MustDo(func() (remoteRegistry *httptest.Server, err error) {
+			rh := registry.New()
 
-			rw.WriteHeader(http.StatusOK)
-			_ = json.MarshalWrite(rw, tok)
+			remoteRegistry = httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+				if req.URL.Path == "/auth/token" {
+					tok := &authn.Token{}
+					tok.TokenType = "Bearer"
+					tok.AccessToken = "test"
+					tok.ExpiresIn = 1800
 
-			return
-		}
+					rw.WriteHeader(http.StatusOK)
+					_ = json.MarshalWrite(rw, tok)
 
-		auth := req.Header.Get("Authorization")
-		if auth == "" {
-			rw.Header().Set("WWW-Authenticate", fmt.Sprintf("Bearer realm=%q,service=%s", remoteRegistry.URL+"/auth/token", "test"))
-			rw.WriteHeader(http.StatusUnauthorized)
-			_, _ = rw.Write(nil)
-			return
-		}
+					return
+				}
 
-		rh.ServeHTTP(rw, req)
-	}))
+				auth := req.Header.Get("Authorization")
+				if auth == "" {
+					rw.Header().Set("WWW-Authenticate", fmt.Sprintf("Bearer realm=%q,service=%s", remoteRegistry.URL+"/auth/token", "test"))
+					rw.WriteHeader(http.StatusUnauthorized)
+					_, _ = rw.Write(nil)
+					return
+				}
 
-	ctx := context.Background()
+				rh.ServeHTTP(rw, req)
+			}))
 
-	namespace, err := contentremote.New(ctx, contentremote.Registry{
-		Endpoint: remoteRegistry.URL,
-		Username: "test",
-		Password: "test",
-	})
-	testingx.Expect(t, err, testingx.BeNil[error]())
-
-	uploadCache := &uploadcache.MemUploadCache{}
-	uploadCache.SetDefaults()
-	err = uploadCache.Init(ctx)
-	testingx.Expect(t, err, testingx.BeNil[error]())
-
-	h, err := httprouter.New(apis.R, "registry")
-	testingx.Expect(t, err, testingx.BeNil[error]())
-
-	registryServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		if strings.HasSuffix(req.URL.Path, "/") {
-			req.URL.Path = req.URL.Path[0 : len(req.URL.Path)-1]
-		}
-
-		ctx := content.NamespaceInjectContext(req.Context(), namespace)
-		ctx = uploadcache.UploadCacheInjectContext(ctx, uploadCache)
-
-		fmt.Println("proxy", req.Method, req.URL, req.Header)
-
-		h.ServeHTTP(w, req.WithContext(ctx))
-	}))
-
-	reg, err := name.NewRegistry(
-		strings.TrimPrefix(registryServer.URL, "http://"),
-		name.Insecure,
-	)
-	testingx.Expect(t, err, testingx.BeNil[error]())
-
-	t.Run("push manifest", func(t *testing.T) {
-		img, err := random.Image(int64(100*units.MiB+101*units.KiB), 1)
-		testingx.Expect(t, err, testingx.BeNil[error]())
-
-		repo := reg.Repo("test", "x")
-
-		ref := repo.Tag("latest")
-
-		t.Run("could push", func(t *testing.T) {
-			err = remote.Push(ref, img)
-			testingx.Expect(t, err, testingx.BeNil[error]())
+			return remoteRegistry, nil
 		})
 
-		t.Run("then pull and push as v1", func(t *testing.T) {
-			img1, err := remote.Image(ref)
-			testingx.Expect(t, err, testingx.BeNil[error]())
+		ctx, _ := testingutil.BuildContext(t, func(d *struct {
+			otel.Otel
 
-			err = remote.Push(repo.Tag("v1"), img1)
-			testingx.Expect(t, err, testingx.BeNil[error]())
+			contentapi.NamespaceProvider
+		},
+		) {
+			tmp := t.TempDir()
 
-			t.Run("then could do with tags", func(t *testing.T) {
-				r, _ := namespace.Repository(ctx, content.Name("test/x"))
+			t.Cleanup(func() {
+				_ = os.RemoveAll(tmp)
+			})
 
-				tags, err := r.Tags(ctx)
-				testingx.Expect(t, err, testingx.BeNil[error]())
+			d.Content.Backend = *bdd.Must(strfmt.ParseEndpoint("file://" + tmp))
 
-				t.Run("could listed", func(t *testing.T) {
-					tagList, err := tags.All(ctx)
-					testingx.Expect(t, err, testingx.BeNil[error]())
-					testingx.Expect(t, tagList, testingx.Equal([]string{
-						"latest", "v1",
-					}))
-				})
+			d.NoCache = true
 
-				t.Run("could remove", func(t *testing.T) {
-					err := tags.Untag(ctx, "latest")
-					testingx.Expect(t, err, testingx.BeNil[error]())
+			d.Remote.Endpoint = remoteRegistry.URL
+			d.Remote.Username = "test"
+			d.Remote.Password = "test"
+		})
 
-					tagList, err := tags.All(ctx)
-					testingx.Expect(t, err, testingx.BeNil[error]())
-					testingx.Expect(t, tagList, testingx.Equal([]string{
-						"v1",
-					}))
+		injector := configuration.ContextInjectorFromContext(ctx)
+
+		rr := bdd.MustDo(func() (*httptest.Server, error) {
+			h, err := httprouter.New(apis.R, "registry")
+			if err != nil {
+				return nil, err
+			}
+
+			return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+				if strings.HasSuffix(req.URL.Path, "/") {
+					req.URL.Path = req.URL.Path[0 : len(req.URL.Path)-1]
+				}
+
+				fmt.Println(req.Method, req.URL.String())
+
+				h.ServeHTTP(w, req.WithContext(injector.InjectContext(ctx)))
+			})), nil
+		})
+
+		reg := bdd.Must(name.NewRegistry(strings.TrimPrefix(rr.URL, "http://"), name.Insecure))
+
+		t.Run("GIVEN an artifact", bdd.GivenT(func(b bdd.T) {
+			ns, _ := content.NamespaceFromContext(ctx)
+
+			repo := reg.Repo("test", "manifest")
+			ref := repo.Tag("latest")
+
+			b.When("push this image to container registry", func(b bdd.T) {
+				b.Then("success pushed",
+					bdd.NoError(remote.Push(ref, img)),
+				)
+
+				b.When("pull and push as v1", func(b bdd.T) {
+					img1 := bdd.Must(remote.Image(ref))
+
+					err := remote.Push(ref.Tag("v1"), img1)
+					b.Then("success",
+						bdd.NoError(err),
+					)
+
+					repository := bdd.Must(ns.Repository(ctx, content.Name("test/manifest")))
+					tags := bdd.Must(repository.Tags(ctx))
+
+					b.Then("could got two tags",
+						bdd.Equal(
+							[]string{
+								"latest", "v1",
+							},
+							bdd.Must(tags.All(ctx)),
+						),
+					)
+
+					b.When("remove tag", func(b bdd.T) {
+						b.Then("success",
+							bdd.NoError(tags.Untag(ctx, "latest")),
+						)
+
+						b.Then("could got two tags",
+							bdd.Equal(
+								[]string{
+									"v1",
+								},
+								bdd.Must(tags.All(ctx)),
+							),
+						)
+					})
 				})
 			})
-		})
+		}))
 	})
 }

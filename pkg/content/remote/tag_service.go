@@ -4,14 +4,12 @@ import (
 	"context"
 	"strconv"
 
-	"github.com/octohelm/courier/pkg/courier"
-
-	"github.com/opencontainers/go-digest"
-
 	"github.com/distribution/reference"
+	"github.com/octohelm/courier/pkg/courier"
 	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
 	"github.com/octohelm/crkit/pkg/content"
 	"github.com/octohelm/crkit/pkg/registryhttp/apis/registry"
+	"github.com/opencontainers/go-digest"
 )
 
 type tagService struct {

@@ -12,8 +12,9 @@ import (
 
 func (p *NamespaceProvider) InjectContext(ctx context.Context) context.Context {
 	ctx = p.Content.InjectContext(ctx)
+	ctx = content.NamespaceInjectContext(ctx, p.namespace)
 
-	return content.NamespaceInjectContext(ctx, p)
+	return ctx
 }
 
 func (v *NamespaceProvider) Init(ctx context.Context) error {

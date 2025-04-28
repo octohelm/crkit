@@ -6,12 +6,10 @@ import (
 	"io"
 	"net/http"
 
-	contentutil "github.com/octohelm/crkit/pkg/content/util"
-
 	"github.com/octohelm/courier/pkg/courierhttp"
 	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
 	"github.com/octohelm/crkit/pkg/content"
-	"github.com/octohelm/crkit/pkg/uploadcache"
+	contentutil "github.com/octohelm/crkit/pkg/content/util"
 	"github.com/opencontainers/go-digest"
 )
 
@@ -28,8 +26,6 @@ type UploadPutBlob struct {
 
 	Digest content.Digest `name:"digest" in:"query"`
 	Chunk  io.ReadCloser  `in:"body"`
-
-	uploadCache uploadcache.UploadCache `inject:""`
 }
 
 func (req *UploadPutBlob) Output(ctx context.Context) (any, error) {
@@ -40,10 +36,16 @@ func (req *UploadPutBlob) Output(ctx context.Context) (any, error) {
 		return nil, err
 	}
 
-	w, err := req.uploadCache.Resume(ctx, req.ID)
+	blobs, err := repo.Blobs(ctx)
 	if err != nil {
 		return nil, err
 	}
+
+	w, err := blobs.Resume(ctx, req.ID)
+	if err != nil {
+		return nil, err
+	}
+	defer w.Close()
 
 	if req.ContentLength > 0 || !req.ContentRange.IsZero() {
 		if _, err := io.Copy(w, req.Chunk); err != nil {

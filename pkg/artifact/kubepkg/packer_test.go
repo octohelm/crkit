@@ -17,10 +17,11 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/mutate"
 	"github.com/google/go-containerregistry/pkg/v1/random"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
-	"github.com/octohelm/crkit/pkg/kubepkg/cache"
+	"github.com/octohelm/crkit/pkg/artifact/kubepkg/cache"
 	"github.com/octohelm/crkit/pkg/ocitar"
 	kubepkgv1alpha1 "github.com/octohelm/kubepkgspec/pkg/apis/kubepkg/v1alpha1"
 	testingx "github.com/octohelm/x/testing"
+	"github.com/octohelm/x/testing/bdd"
 )
 
 //go:embed testdata/example.kubepkg.json
@@ -30,7 +31,7 @@ func Test(t *testing.T) {
 	imageIndex := mutate.AppendManifests(
 		empty.Index,
 		mutate.IndexAddendum{
-			Add: must(random.Image(10, 1)),
+			Add: bdd.Must(random.Image(10, 1)),
 			Descriptor: v1.Descriptor{
 				Platform: &v1.Platform{
 					OS:           "linux",
@@ -39,7 +40,7 @@ func Test(t *testing.T) {
 			},
 		},
 		mutate.IndexAddendum{
-			Add: must(random.Image(10, 1)),
+			Add: bdd.Must(random.Image(10, 1)),
 			Descriptor: v1.Descriptor{
 				Platform: &v1.Platform{
 					OS:           "linux",
@@ -237,11 +238,4 @@ func writeAsOciTar(filename string, idx v1.ImageIndex) error {
 	}
 	defer f.Close()
 	return ocitar.Write(f, idx)
-}
-
-func must[T any](x T, err error) T {
-	if err != nil {
-		panic(err)
-	}
-	return x
 }

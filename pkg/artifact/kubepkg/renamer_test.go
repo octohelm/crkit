@@ -3,9 +3,8 @@ package kubepkg
 import (
 	"testing"
 
-	testingx "github.com/octohelm/x/testing"
-
 	containerregistryname "github.com/google/go-containerregistry/pkg/name"
+	testingx "github.com/octohelm/x/testing"
 )
 
 func TestRename(t *testing.T) {

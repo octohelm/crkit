@@ -1,16 +1,18 @@
-package fs_test
+package fs
 
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"os"
+	"strings"
 	"testing"
 
 	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
-	contentfs "github.com/octohelm/crkit/pkg/content/fs"
+	"github.com/octohelm/crkit/pkg/content/fs/layout"
 	"github.com/octohelm/unifs/pkg/filesystem/local"
-	testingx "github.com/octohelm/x/testing"
+	"github.com/octohelm/x/testing/bdd"
 	"github.com/opencontainers/go-digest"
 )
 
@@ -22,38 +24,111 @@ func TestBlobStore(t *testing.T) {
 
 	fs := local.NewFS(tmp)
 
-	s := contentfs.NewBlobStore(fs)
+	t.Run("GIVEN a blob store", bdd.GivenT(func(b bdd.T) {
+		blobs := &blobStore{
+			workspace: newWorkspace(fs, layout.Default),
+		}
 
-	str := "12345678"
+		b.When("do write some text", func(b bdd.T) {
+			w := bdd.Must(blobs.Writer(b.Context()))
 
-	t.Run("put contents", func(t *testing.T) {
-		ctx := context.Background()
+			text := []byte("hello world")
 
-		w, err := s.Writer(ctx)
-		testingx.Expect(t, err, testingx.Be[error](nil))
-		defer w.Close()
+			_, err := w.Write(text)
+			b.Then("success write",
+				bdd.NoError(err),
+			)
 
-		buf := bytes.NewBufferString(str)
-		_, _ = io.Copy(w, buf)
+			d, err := w.Commit(b.Context(), manifestv1.Descriptor{})
+			b.Then("success commit",
+				bdd.NoError(err),
+				bdd.Equal(len(text), int(d.Size)),
+				bdd.Equal(digest.FromBytes(text), d.Digest),
+			)
 
-		d, err := w.Commit(ctx, manifestv1.Descriptor{})
-		testingx.Expect(t, err, testingx.Be[error](nil))
-		testingx.Expect(t, d.Size, testingx.Be(int64(len(str))))
-		testingx.Expect(t, d.Digest, testingx.Be(digest.FromString(str)))
+			b.When("query info", func(b bdd.T) {
+				info, err := blobs.Info(b.Context(), d.Digest)
 
-		t.Run("info", func(t *testing.T) {
-			d, err := s.Info(ctx, digest.FromString(str))
-			testingx.Expect(t, err, testingx.Be[error](nil))
-			testingx.Expect(t, d.Size, testingx.Be(int64(len(str))))
+				b.Then("success",
+					bdd.NoError(err),
+					bdd.Equal(d.Size, info.Size),
+					bdd.Equal(d.Digest, info.Digest),
+				)
+			})
+
+			b.When("get content", func(b bdd.T) {
+				f, err := blobs.Open(b.Context(), d.Digest)
+				b.Then("success",
+					bdd.NoError(err),
+				)
+				defer f.Close()
+
+				data := bdd.Must(io.ReadAll(f))
+				b.Then("read content as same as written",
+					bdd.Equal(string(text), string(data)),
+				)
+			})
 		})
+	}))
 
-		t.Run("open", func(t *testing.T) {
-			r, err := s.Open(ctx, digest.FromString(str))
-			testingx.Expect(t, err, testingx.Be[error](nil))
-			defer r.Close()
+	t.Run("GIVEN a blob store for resumable writing", bdd.GivenT(func(b bdd.T) {
+		blobs := &blobStore{
+			workspace: newWorkspace(fs, layout.Default),
+		}
 
-			data, _ := io.ReadAll(r)
-			testingx.Expect(t, string(data), testingx.Be(str))
+		b.When("do write", func(b bdd.T) {
+			writerForCreate := bdd.Must(blobs.Writer(b.Context()))
+			id := writerForCreate.ID()
+			_ = writerForCreate.Close()
+
+			chunkSize := 5
+			chunkN := 5
+
+			appendChunk := func(ctx context.Context, id string) error {
+				w, err := blobs.Resume(ctx, id)
+				if err != nil {
+					return err
+				}
+				defer w.Close()
+
+				if _, err := w.Write(bytes.Repeat([]byte("1"), chunkSize)); err != nil {
+					return err
+				}
+				return nil
+			}
+
+			for i := range 5 {
+				b.When(fmt.Sprintf("append %d", i), func(b bdd.T) {
+					err := appendChunk(b.Context(), id)
+					b.Then("success",
+						bdd.NoError(err),
+					)
+				})
+			}
+
+			b.When("commit", func(b bdd.T) {
+				writerForCommit := bdd.Must(blobs.Resume(b.Context(), id))
+				defer writerForCommit.Close()
+
+				d := bdd.Must(writerForCommit.Commit(b.Context(), manifestv1.Descriptor{}))
+
+				b.Then("success",
+					bdd.Equal(chunkSize*chunkN, int(d.Size)),
+				)
+
+				b.When("get content", func(b bdd.T) {
+					f, err := blobs.Open(b.Context(), d.Digest)
+					b.Then("success",
+						bdd.NoError(err),
+					)
+					defer f.Close()
+
+					data := bdd.Must(io.ReadAll(f))
+					b.Then("read content as same as written",
+						bdd.Equal(strings.Repeat("1", chunkSize*chunkN), string(data)),
+					)
+				})
+			})
 		})
-	})
+	}))
 }

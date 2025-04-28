@@ -85,6 +85,18 @@ func (GetManifest) ResponseData() *manifestv1.Payload {
 }
 
 func init() {
+	R.Register(courier.NewRouter(&GetUploadBlob{}))
+}
+
+func (GetUploadBlob) ResponseContent() any {
+	return nil
+}
+
+func (GetUploadBlob) ResponseData() *courier.NoContent {
+	return new(courier.NoContent)
+}
+
+func init() {
 	R.Register(courier.NewRouter(&HeadBlob{}))
 }
 

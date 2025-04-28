@@ -8,8 +8,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/octohelm/crkit/pkg/ociutil"
-
 	"github.com/containerd/containerd/images"
 	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
@@ -19,6 +17,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/partial"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/octohelm/crkit/pkg/artifact"
+	"github.com/octohelm/crkit/pkg/ociutil"
 	kubepkgv1alpha1 "github.com/octohelm/kubepkgspec/pkg/apis/kubepkg/v1alpha1"
 	"github.com/octohelm/kubepkgspec/pkg/object"
 	"github.com/octohelm/kubepkgspec/pkg/workload"

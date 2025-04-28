@@ -9,16 +9,17 @@ import (
 	fmt "fmt"
 
 	content "github.com/octohelm/crkit/pkg/content"
-	uploadcache "github.com/octohelm/crkit/pkg/uploadcache"
 )
 
 func (v *CancelUploadBlob) Init(ctx context.Context) error {
-	if value, ok := uploadcache.UploadCacheFromContext(ctx); ok {
-		v.uploadCache = value
-	} else {
-		return fmt.Errorf("missing provider %T.uploadCache", v)
+	if err := v.NameScoped.Init(ctx); err != nil {
+		return err
 	}
 
+	return nil
+}
+
+func (v *GetUploadBlob) Init(ctx context.Context) error {
 	if err := v.NameScoped.Init(ctx); err != nil {
 		return err
 	}
@@ -37,12 +38,6 @@ func (v *NameScoped) Init(ctx context.Context) error {
 }
 
 func (v *UploadBlob) Init(ctx context.Context) error {
-	if value, ok := uploadcache.UploadCacheFromContext(ctx); ok {
-		v.uploadCache = value
-	} else {
-		return fmt.Errorf("missing provider %T.uploadCache", v)
-	}
-
 	if err := v.NameScoped.Init(ctx); err != nil {
 		return err
 	}
@@ -51,12 +46,6 @@ func (v *UploadBlob) Init(ctx context.Context) error {
 }
 
 func (v *UploadPatchBlob) Init(ctx context.Context) error {
-	if value, ok := uploadcache.UploadCacheFromContext(ctx); ok {
-		v.uploadCache = value
-	} else {
-		return fmt.Errorf("missing provider %T.uploadCache", v)
-	}
-
 	if err := v.NameScoped.Init(ctx); err != nil {
 		return err
 	}
@@ -65,12 +54,6 @@ func (v *UploadPatchBlob) Init(ctx context.Context) error {
 }
 
 func (v *UploadPutBlob) Init(ctx context.Context) error {
-	if value, ok := uploadcache.UploadCacheFromContext(ctx); ok {
-		v.uploadCache = value
-	} else {
-		return fmt.Errorf("missing provider %T.uploadCache", v)
-	}
-
 	if err := v.NameScoped.Init(ctx); err != nil {
 		return err
 	}

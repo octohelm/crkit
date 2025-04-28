@@ -11,10 +11,9 @@ func (v *NamespaceProvider) RuntimeDoc(names ...string) ([]string, bool) {
 			return []string{}, true
 		case "Content":
 			return []string{}, true
+		case "NoCache":
+			return []string{}, true
 
-		}
-		if doc, ok := runtimeDoc(&v.Namespace, "", names...); ok {
-			return doc, ok
 		}
 
 		return nil, false

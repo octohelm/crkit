@@ -2,40 +2,33 @@ package remote
 
 import (
 	"bytes"
-	"cmp"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
 
-	"github.com/alecthomas/units"
 	"github.com/distribution/reference"
 	"github.com/octohelm/courier/pkg/courier"
+	"github.com/octohelm/courier/pkg/statuserror"
 	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
 	"github.com/octohelm/crkit/pkg/content"
 	contentutil "github.com/octohelm/crkit/pkg/content/util"
 	"github.com/octohelm/crkit/pkg/registryhttp/apis/registry"
+	"github.com/octohelm/unifs/pkg/units"
 	"github.com/opencontainers/go-digest"
 )
-
-var _ content.BlobStore = &blobStore{}
 
 type blobStore struct {
 	named  reference.Named
 	client courier.Client
 }
 
-func (bs *blobStore) Remove(ctx context.Context, dgst digest.Digest) error {
-	req := &registry.DeleteBlob{}
-	req.Name = content.Name(bs.named.Name())
-	req.Digest = content.Digest(dgst)
-
-	_, _, err := Do(ctx, bs.client, req)
-	return err
-}
+var _ content.Provider = &blobStore{}
 
 func (bs *blobStore) Info(ctx context.Context, dgst digest.Digest) (*manifestv1.Descriptor, error) {
 	req := &registry.HeadBlob{}
@@ -77,6 +70,28 @@ func (bs *blobStore) Open(ctx context.Context, dgst digest.Digest) (r io.ReadClo
 	return pr, nil
 }
 
+var _ content.Remover = &blobStore{}
+
+func (bs *blobStore) Remove(ctx context.Context, dgst digest.Digest) error {
+	req := &registry.DeleteBlob{}
+	req.Name = content.Name(bs.named.Name())
+	req.Digest = content.Digest(dgst)
+
+	_, _, err := Do(ctx, bs.client, req)
+	return err
+}
+
+func (bs *blobStore) Resume(ctx context.Context, id string) (content.BlobWriter, error) {
+	bw := &blobWriter{
+		ctx:       ctx,
+		blobStore: bs,
+		chunk:     bytes.NewBuffer(nil),
+	}
+	bw.location = fmt.Sprintf("/v2/%s/blobs/uploads/%s", bw.named.Name(), id)
+	bw.id = id
+	return bw, nil
+}
+
 func (bs *blobStore) Writer(ctx context.Context) (content.BlobWriter, error) {
 	req := &registry.UploadBlob{}
 	req.Name = content.Name(bs.named.Name())
@@ -86,24 +101,14 @@ func (bs *blobStore) Writer(ctx context.Context) (content.BlobWriter, error) {
 		return nil, err
 	}
 
-	location := meta.Get("Location")
-
 	bw := &blobWriter{
-		id:        digest.FromString(location).Hex(),
-		digester:  digest.SHA256.Digester(),
+		ctx:       ctx,
 		blobStore: bs,
-		location:  location,
-
-		chunkMinLength: int64(20 * units.MiB),
-		chunk:          bytes.NewBuffer(nil),
+		chunk:     bytes.NewBuffer(nil),
 	}
 
-	chunkMinLength := meta.Get("OCI-Chunk-Min-Length")
-	if chunkMinLength != "" {
-		i, _ := strconv.ParseInt(chunkMinLength, 10, 64)
-		if i > 0 {
-			bw.chunkMinLength = i
-		}
+	if err := bw.syncFromMeta(meta); err != nil {
+		return nil, err
 	}
 
 	return bw, nil
@@ -112,55 +117,53 @@ func (bs *blobStore) Writer(ctx context.Context) (content.BlobWriter, error) {
 var _ content.BlobWriter = &blobWriter{}
 
 type blobWriter struct {
+	ctx context.Context
+
 	*blobStore
+	chunk *bytes.Buffer
 
 	id       string
 	location string
+	written  int64
+
+	err  error
+	once sync.Once
 
 	chunkMinLength int64
-	chunk          *bytes.Buffer
-	chunkOffset    int64
-
-	digester digest.Digester
+	digest         digest.Digest
 }
 
-func (b *blobWriter) ID() string {
-	return b.id
+func (bw *blobWriter) ID() string {
+	return bw.id
 }
 
-func (b *blobWriter) Close() error {
-	req := &registry.CancelUploadBlob{}
-	req.Name = content.Name(b.named.Name())
-	req.ID = b.id
-	return nil
+func (bw *blobWriter) Size(ctx context.Context) int64 {
+	return bw.written
 }
 
-func (b *blobWriter) Size(ctx context.Context) int64 {
-	return b.chunkOffset
+func (bw *blobWriter) Digest(ctx context.Context) digest.Digest {
+	return bw.digest
 }
 
-func (b *blobWriter) Digest(ctx context.Context) digest.Digest {
-	return b.digester.Digest()
-}
+func (bw *blobWriter) endpoint() string {
+	location := bw.location
 
-func (b *blobWriter) endpoint() string {
-	location := b.location
 	if strings.HasPrefix(location, "/") {
-		if endpoint, ok := b.client.(interface{ GetEndpoint() string }); ok {
+		if endpoint, ok := bw.client.(interface{ GetEndpoint() string }); ok {
 			location = endpoint.GetEndpoint() + location
 		}
 	}
+
 	return location
 }
 
-func (b *blobWriter) Write(p []byte) (int, error) {
+func (bw *blobWriter) Write(p []byte) (int, error) {
 	n := len(p)
 
-	b.chunk.Write(p[:n])
-	b.digester.Hash().Write(p[:n])
+	bw.chunk.Write(p[:n])
 
-	if int64(b.chunk.Len()) >= b.chunkMinLength {
-		if err := b.sendChunk(); err != nil {
+	if int64(bw.chunk.Len()) >= bw.chunkMinLength {
+		if err := bw.sendChunkIfNeed(bw.ctx); err != nil {
 			return -1, err
 		}
 	}
@@ -168,69 +171,59 @@ func (b *blobWriter) Write(p []byte) (int, error) {
 	return n, nil
 }
 
-func (b *blobWriter) sendChunk() error {
-	req, err := http.NewRequest("PATCH", b.endpoint(), io.NopCloser(b.chunk))
+func (bw *blobWriter) Cancel(ctx context.Context) error {
+	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, bw.endpoint(), nil)
 	if err != nil {
 		return err
 	}
-
-	n := int64(b.chunk.Len())
-
-	b.patchContentLength(req, n)
-
-	meta, err := b.client.Do(context.Background(), req).Into(nil)
-	if err != nil {
+	if _, err := bw.client.Do(context.Background(), req).Into(nil); err != nil {
 		return err
 	}
-
-	b.chunk.Reset()
-	b.location = meta.Get("Location")
-	b.chunkOffset += n
-
 	return nil
 }
 
-func (b *blobWriter) patchContentLength(req *http.Request, n int64) {
-	req.Header.Set("Content-Type", "application/octet-stream")
-	req.Header.Set("Content-Range", (contentutil.Range{Start: b.chunkOffset, Length: n}).String())
-	req.ContentLength = n
+func (bw *blobWriter) Close() error {
+	bw.once.Do(func() {
+		bw.err = bw.sendChunkIfNeed(bw.ctx)
+	})
+
+	return bw.err
 }
 
-func (b *blobWriter) Commit(ctx context.Context, expect manifestv1.Descriptor) (*manifestv1.Descriptor, error) {
-	dgst := b.Digest(ctx)
-
+func (bw *blobWriter) Commit(ctx context.Context, expect manifestv1.Descriptor) (*manifestv1.Descriptor, error) {
 	var req *http.Request
 
-	if n := int64(b.chunk.Len()); n == 0 {
-		r, err := http.NewRequest("PUT", b.endpoint(), nil)
+	if n := int64(bw.chunk.Len()); n == 0 {
+		r, err := http.NewRequestWithContext(ctx, http.MethodPut, bw.endpoint(), nil)
 		if err != nil {
 			return nil, err
 		}
 		req = r
 	} else {
-		r, err := http.NewRequest("PUT", b.endpoint(), io.NopCloser(b.chunk))
+		r, err := http.NewRequestWithContext(ctx, http.MethodPut, bw.endpoint(), io.NopCloser(bw.chunk))
 		if err != nil {
 			return nil, err
 		}
-
-		b.patchContentLength(r, n)
+		bw.patchRequestContentLength(r, n)
 		req = r
 	}
 
 	q := &url.Values{}
 	if expect.Digest != "" {
-		q.Set("digest", cmp.Or(string(expect.Digest), string(dgst)))
+		q.Set("digest", string(expect.Digest))
 	}
 
 	req.URL.RawQuery = q.Encode()
 
-	if _, err := b.client.Do(ctx, req).Into(nil); err != nil {
+	meta, err := bw.client.Do(ctx, req).Into(nil)
+	if err != nil {
 		return nil, err
 	}
 
 	d := &manifestv1.Descriptor{}
-	d.Digest = dgst
-	d.Size = b.Size(ctx)
+
+	d.Digest = digest.Digest(meta.Get("Docker-Content-Digest"))
+	d.Size = bw.Size(ctx)
 
 	if expect.Size > 0 {
 		if d.Size != expect.Size {
@@ -250,4 +243,99 @@ func (b *blobWriter) Commit(ctx context.Context, expect manifestv1.Descriptor) (
 	}
 
 	return d, nil
+}
+
+func (bw *blobWriter) patchRequestContentLength(req *http.Request, n int64) {
+	req.Header.Set("Content-Type", "application/octet-stream")
+	req.Header.Set("Content-Range", (&contentutil.Range{Start: bw.written, Length: n}).String())
+	req.ContentLength = n
+}
+
+func (bw *blobWriter) sendChunkIfNeed(ctx context.Context) error {
+	if bw.chunk.Len() == 0 {
+		return nil
+	}
+	return bw.sendChunk(ctx, false)
+}
+
+func (bw *blobWriter) sendChunk(ctx context.Context, retry bool) error {
+	req, err := http.NewRequestWithContext(ctx, http.MethodPatch, bw.endpoint(), io.NopCloser(bw.chunk))
+	if err != nil {
+		return err
+	}
+
+	n := int64(bw.chunk.Len())
+
+	bw.patchRequestContentLength(req, n)
+
+	meta, err := bw.client.Do(ctx, req).Into(nil)
+	if err != nil {
+		if !retry {
+			d := &statuserror.Descriptor{}
+			if errors.As(err, &d) {
+				if d.Status == http.StatusRequestedRangeNotSatisfiable {
+					if err := bw.syncFromBlobUpload(ctx); err != nil {
+						return err
+					}
+					return bw.sendChunk(ctx, true)
+				}
+			}
+		}
+		return err
+	}
+
+	bw.chunk.Reset()
+	bw.written += n
+
+	return bw.syncFromMeta(meta)
+}
+
+func (bw *blobWriter) syncFromBlobUpload(ctx context.Context) error {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, bw.endpoint(), nil)
+	if err != nil {
+		return err
+	}
+
+	meta, err := bw.client.Do(ctx, req).Into(nil)
+	if err != nil {
+		return err
+	}
+
+	return bw.syncFromMeta(meta)
+}
+
+func (bw *blobWriter) syncFromMeta(meta courier.Metadata) error {
+	if chunkMinLength := meta.Get("OCI-Chunk-Min-Length"); chunkMinLength != "" {
+		i, _ := strconv.ParseInt(chunkMinLength, 10, 64)
+		if i > 0 {
+			bw.chunkMinLength = i
+		}
+	}
+
+	if bw.chunkMinLength == 0 {
+		bw.chunkMinLength = int64(20 * units.MiB)
+	}
+
+	if location := meta.Get("Location"); location != "" {
+		bw.location = location
+
+		fmt.Println("Location", location)
+
+		if bw.id == "" {
+			parts := strings.SplitN(bw.location, "/blobs/uploads/", 2)
+			if len(parts) == 2 {
+				bw.id = strings.Trim(parts[1], "/")
+			}
+		}
+	}
+
+	if rng := meta.Get("Range"); rng != "" {
+		r, err := contentutil.ParseRange(rng)
+		if err != nil {
+			return err
+		}
+		bw.written = r.Length
+	}
+
+	return nil
 }

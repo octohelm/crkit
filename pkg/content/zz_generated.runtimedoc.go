@@ -47,6 +47,16 @@ func (v *ErrBlobUnknown) RuntimeDoc(names ...string) ([]string, bool) {
 	return []string{}, true
 }
 
+func (v *ErrBlobUploadUnknown) RuntimeDoc(names ...string) ([]string, bool) {
+	if len(names) > 0 {
+		switch names[0] {
+		}
+
+		return nil, false
+	}
+	return []string{}, true
+}
+
 func (v *ErrManifestBlobUnknown) RuntimeDoc(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {

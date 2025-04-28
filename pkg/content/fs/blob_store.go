@@ -2,34 +2,28 @@ package fs
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
-	"sync"
+	"time"
 
 	"github.com/google/uuid"
-
 	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
 	"github.com/octohelm/crkit/pkg/content"
 	"github.com/octohelm/unifs/pkg/filesystem"
 	"github.com/opencontainers/go-digest"
 )
 
-func NewBlobStore(fsys filesystem.FileSystem) content.BlobStore {
-	return &blobStore{fs: fsys}
-}
-
 type blobStore struct {
-	fs filesystem.FileSystem
+	workspace *workspace
 }
 
-func (f *blobStore) Remove(ctx context.Context, dgst digest.Digest) error {
-	return f.fs.RemoveAll(ctx, defaultLayout.BlobDataPath(dgst))
+func (bs *blobStore) Remove(ctx context.Context, dgst digest.Digest) error {
+	return bs.workspace.Remove(ctx, bs.workspace.layout.BlobDataPath(dgst))
 }
 
-func (f *blobStore) Info(ctx context.Context, dgst digest.Digest) (*manifestv1.Descriptor, error) {
-	s, err := f.fs.Stat(ctx, defaultLayout.BlobDataPath(dgst))
+func (bs *blobStore) Info(ctx context.Context, dgst digest.Digest) (*manifestv1.Descriptor, error) {
+	s, err := bs.workspace.Stat(ctx, bs.workspace.layout.BlobDataPath(dgst))
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, &content.ErrBlobUnknown{
@@ -44,8 +38,8 @@ func (f *blobStore) Info(ctx context.Context, dgst digest.Digest) (*manifestv1.D
 	}, nil
 }
 
-func (f *blobStore) Open(ctx context.Context, dgst digest.Digest) (io.ReadCloser, error) {
-	file, err := f.fs.OpenFile(ctx, defaultLayout.BlobDataPath(dgst), os.O_RDONLY, os.ModePerm)
+func (bs *blobStore) Open(ctx context.Context, dgst digest.Digest) (io.ReadCloser, error) {
+	file, err := bs.workspace.Open(ctx, bs.workspace.layout.BlobDataPath(dgst))
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, &content.ErrBlobUnknown{
@@ -57,117 +51,75 @@ func (f *blobStore) Open(ctx context.Context, dgst digest.Digest) (io.ReadCloser
 	return file, nil
 }
 
-func (f *blobStore) Writer(ctx context.Context) (content.BlobWriter, error) {
+func (bs *blobStore) Writer(ctx context.Context) (content.BlobWriter, error) {
 	id := uuid.New().String()
+	startedAt := time.Now().UTC()
 
-	uploadPath := defaultLayout.UploadDataPath(id)
-
-	if err := filesystem.MkdirAll(ctx, f.fs, filepath.Dir(uploadPath)); err != nil {
+	if err := bs.workspace.PutContent(ctx, bs.workspace.layout.UploadDataStartedAtPath(id), []byte(startedAt.Format(time.RFC3339))); err != nil {
 		return nil, err
 	}
 
-	file, err := f.fs.OpenFile(ctx, uploadPath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, os.ModePerm)
+	uploadDataPath := bs.workspace.layout.UploadDataPath(id)
+
+	if err := filesystem.MkdirAll(ctx, bs.workspace.fs, filepath.Dir(uploadDataPath)); err != nil {
+		return nil, err
+	}
+
+	file, err := bs.workspace.fs.OpenFile(ctx, uploadDataPath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, os.ModePerm)
 	if err != nil {
 		return nil, err
 	}
 
-	return &writer{
-		id:       id,
-		path:     uploadPath,
-		digester: digest.SHA256.Digester(),
-		file:     file,
-		store:    f,
+	return &blobWriter{
+		ctx:            ctx,
+		id:             id,
+		startedAt:      startedAt,
+		uploadDataPath: uploadDataPath,
+		digester:       digest.SHA256.Digester(),
+		file:           file,
+		workspace:      bs.workspace,
+		resumable:      true,
 	}, nil
 }
 
-type writer struct {
-	id       string
-	digester digest.Digester
-	file     filesystem.File
-	path     string
-
-	store  *blobStore
-	offset int64
-	once   sync.Once
-
-	err error
-}
-
-func (w *writer) ID() string {
-	return w.id
-}
-
-func (w *writer) Write(p []byte) (n int, err error) {
-	n, err = w.file.Write(p)
-	w.digester.Hash().Write(p[:n])
-	w.offset += int64(len(p))
-	return n, err
-}
-
-func (w *writer) Close() error {
-	w.once.Do(func() {
-		w.err = w.file.Close()
-	})
-
-	return w.err
-}
-
-func (w *writer) Digest(ctx context.Context) digest.Digest {
-	return w.digester.Digest()
-}
-
-func (w *writer) Size(ctx context.Context) int64 {
-	return w.offset
-}
-
-func (w *writer) Commit(ctx context.Context, expected manifestv1.Descriptor) (*manifestv1.Descriptor, error) {
-	defer func() {
-		_ = w.store.fs.RemoveAll(ctx, filepath.Dir(w.path))
-	}()
-
-	if err := w.Close(); err != nil {
-		return nil, err
-	}
-
-	size := w.Size(ctx)
-	dgst := w.Digest(ctx)
-
-	if expected.Size > 0 && expected.Size != size {
-		return nil, &content.ErrBlobInvalidLength{
-			Reason: fmt.Sprintf("unexpected commit size %d, expected %d", size, expected.Size),
+func (bs *blobStore) Resume(ctx context.Context, id string) (content.BlobWriter, error) {
+	startedAtBytes, err := bs.workspace.GetContent(ctx, bs.workspace.layout.UploadDataStartedAtPath(id))
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, &content.ErrBlobUploadUnknown{}
 		}
+		return nil, err
 	}
 
-	if expected.Digest != "" && expected.Digest != dgst {
-		return nil, &content.ErrBlobInvalidDigest{
-			Digest: dgst,
-			Reason: fmt.Errorf("not match %s", expected.Digest),
+	startedAt, err := time.Parse(time.RFC3339, string(startedAtBytes))
+	if err != nil {
+		return nil, err
+	}
+
+	uploadDataPath := bs.workspace.layout.UploadDataPath(id)
+
+	file, err := bs.workspace.fs.OpenFile(ctx, uploadDataPath, os.O_WRONLY, os.ModePerm)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, &content.ErrBlobUploadUnknown{}
 		}
-	}
-
-	target := defaultLayout.BlobDataPath(dgst)
-
-	_, err := w.store.fs.Stat(ctx, target)
-	if err == nil {
-		// remove uploaded
-		return &manifestv1.Descriptor{
-			Size:      size,
-			Digest:    dgst,
-			MediaType: expected.MediaType,
-		}, nil
-	}
-
-	if err := filesystem.MkdirAll(ctx, w.store.fs, filepath.Dir(target)); err != nil {
 		return nil, err
 	}
 
-	if err := w.store.fs.Rename(ctx, w.path, target); err != nil {
+	b := &blobWriter{
+		ctx:            ctx,
+		id:             id,
+		startedAt:      startedAt,
+		uploadDataPath: uploadDataPath,
+		digester:       digest.SHA256.Digester(),
+		file:           file,
+		workspace:      bs.workspace,
+		resumable:      true,
+	}
+
+	if err := b.resumeDigestIfNeed(ctx); err != nil {
 		return nil, err
 	}
 
-	return &manifestv1.Descriptor{
-		Size:      size,
-		Digest:    dgst,
-		MediaType: expected.MediaType,
-	}, nil
+	return b, nil
 }

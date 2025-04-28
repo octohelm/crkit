@@ -4,19 +4,19 @@ import (
 	"context"
 	"io"
 
-	"github.com/distribution/reference"
 	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
 	"github.com/octohelm/crkit/pkg/content"
-	"github.com/octohelm/unifs/pkg/filesystem"
 	"github.com/opencontainers/go-digest"
 )
 
 var _ content.ManifestService = &manifestService{}
 
 type manifestService struct {
-	named     reference.Named
-	fs        filesystem.FileSystem
-	blobStore content.BlobStore
+	blobStore *linkedBlobStore
+}
+
+func (m *manifestService) Delete(ctx context.Context, dgst digest.Digest) error {
+	return m.blobStore.Remove(ctx, dgst)
 }
 
 func (m *manifestService) Info(ctx context.Context, dgst digest.Digest) (*manifestv1.Descriptor, error) {
@@ -76,8 +76,4 @@ func (m *manifestService) Put(ctx context.Context, manifest manifestv1.Manifest)
 	}
 
 	return d.Digest, nil
-}
-
-func (m *manifestService) Delete(ctx context.Context, dgst digest.Digest) error {
-	return m.blobStore.Remove(ctx, dgst)
 }

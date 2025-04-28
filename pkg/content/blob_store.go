@@ -22,6 +22,7 @@ type Provider interface {
 
 type Ingester interface {
 	Writer(ctx context.Context) (BlobWriter, error)
+	Resume(ctx context.Context, id string) (BlobWriter, error)
 }
 
 type Remover interface {
@@ -34,8 +35,10 @@ type BlobLister interface {
 
 type BlobWriter interface {
 	io.WriteCloser
+
 	ID() string
 	Digest(ctx context.Context) digest.Digest
 	Size(ctx context.Context) int64
+	Cancel(ctx context.Context) error
 	Commit(ctx context.Context, expected manifestv1.Descriptor) (*manifestv1.Descriptor, error)
 }
