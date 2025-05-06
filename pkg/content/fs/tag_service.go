@@ -3,6 +3,7 @@ package fs
 import (
 	"context"
 	"io/fs"
+	"iter"
 	"os"
 
 	"github.com/distribution/reference"
@@ -67,7 +68,7 @@ func (t *tagService) Tag(ctx context.Context, tag string, desc manifestv1.Descri
 }
 
 func (t *tagService) Untag(ctx context.Context, tag string) error {
-	return t.workspace.Remove(ctx, t.workspace.layout.RepositoryManifestTagPath(t.named, tag))
+	return t.workspace.Delete(ctx, t.workspace.layout.RepositoryManifestTagPath(t.named, tag))
 }
 
 func (t *tagService) All(ctx context.Context) ([]string, error) {
@@ -88,4 +89,10 @@ func (t *tagService) All(ctx context.Context) ([]string, error) {
 	}
 
 	return tags, nil
+}
+
+var _ content.TagRevisionIterable = &tagService{}
+
+func (t *tagService) TagRevisions(ctx context.Context, tag string) iter.Seq2[content.LinkedDigest, error] {
+	return newLinkedBlobStoreForTagService(t.workspace, t.named, tag).LinkedDigests(ctx)
 }

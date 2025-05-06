@@ -1,7 +1,6 @@
 package proxy_test
 
 import (
-	"fmt"
 	randv2 "math/rand/v2"
 	"net/http"
 	"net/http/httptest"
@@ -27,8 +26,8 @@ import (
 
 func FuzzProxyNamespace(f *testing.F) {
 	images := []remote.Taggable{
-		bdd.Must(random.Image(int64(units.BinarySize(int64(randv2.IntN(100)))*units.MiB), randv2.Int64N(5))),
-		bdd.Must(random.Index(int64(units.BinarySize(int64(randv2.IntN(100)))*units.MiB), randv2.Int64N(5), 2)),
+		bdd.Must(random.Image(int64(units.BinarySize(int64(randv2.IntN(10)))*units.MiB), randv2.Int64N(5))),
+		bdd.Must(random.Index(int64(units.BinarySize(int64(randv2.IntN(10)))*units.MiB), randv2.Int64N(5), 2)),
 	}
 
 	for i := range images {
@@ -58,7 +57,7 @@ func FuzzProxyNamespace(f *testing.F) {
 
 		injector := configuration.ContextInjectorFromContext(ctx)
 
-		s := bdd.MustDo(func() (*httptest.Server, error) {
+		registryServer := bdd.MustDo(func() (*httptest.Server, error) {
 			h, err := httprouter.New(apis.R, "registry")
 			if err != nil {
 				return nil, err
@@ -68,14 +67,12 @@ func FuzzProxyNamespace(f *testing.F) {
 				if strings.HasSuffix(req.URL.Path, "/") {
 					req.URL.Path = req.URL.Path[0 : len(req.URL.Path)-1]
 				}
-
-				fmt.Println(req.Method, req.URL.String())
-
 				h.ServeHTTP(w, req.WithContext(injector.InjectContext(ctx)))
 			})), nil
 		})
+		t.Cleanup(registryServer.Close)
 
-		reg := bdd.Must(name.NewRegistry(strings.TrimPrefix(s.URL, "http://"), name.Insecure))
+		reg := bdd.Must(name.NewRegistry(strings.TrimPrefix(registryServer.URL, "http://"), name.Insecure))
 
 		t.Run("GIVEN an artifact", bdd.GivenT(func(b bdd.T) {
 			ns, _ := content.NamespaceFromContext(ctx)

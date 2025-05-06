@@ -8,10 +8,12 @@ import (
 	context "context"
 
 	content "github.com/octohelm/crkit/pkg/content"
+	fsdriver "github.com/octohelm/crkit/pkg/content/fs/driver"
 )
 
 func (p *NamespaceProvider) InjectContext(ctx context.Context) context.Context {
 	ctx = p.Content.InjectContext(ctx)
+	ctx = fsdriver.DriverInjectContext(ctx, p.driver)
 	ctx = content.NamespaceInjectContext(ctx, p.namespace)
 
 	return ctx

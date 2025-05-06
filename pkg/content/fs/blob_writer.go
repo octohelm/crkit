@@ -9,7 +9,7 @@ import (
 
 	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
 	"github.com/octohelm/crkit/pkg/content"
-	"github.com/octohelm/unifs/pkg/filesystem"
+	"github.com/octohelm/crkit/pkg/content/fs/driver"
 	"github.com/opencontainers/go-digest"
 )
 
@@ -19,13 +19,14 @@ type blobWriter struct {
 	id        string
 	startedAt time.Time
 
-	digester       digest.Digester
-	uploadDataPath string
-	file           filesystem.File
+	digester   digest.Digester
+	fileWriter driver.FileWriter
+	path       string
+
+	written int64
 
 	workspace *workspace
 
-	written   int64
 	resumable bool
 
 	closeOnce sync.Once
@@ -41,16 +42,28 @@ func (bw *blobWriter) Write(p []byte) (n int, err error) {
 		return 0, err
 	}
 
-	n, err = bw.file.Write(p)
+	n, err = bw.fileWriter.Write(p)
 	bw.digester.Hash().Write(p[:n])
 	bw.written += int64(len(p))
 
 	return n, err
 }
 
+func (bw *blobWriter) Digest(ctx context.Context) digest.Digest {
+	return bw.digester.Digest()
+}
+
+func (bw *blobWriter) Size(ctx context.Context) int64 {
+	return bw.fileWriter.Size()
+}
+
+func (bw *blobWriter) Cancel(ctx context.Context) error {
+	return bw.fileWriter.Cancel(ctx)
+}
+
 func (bw *blobWriter) Close() error {
 	bw.closeOnce.Do(func() {
-		if err := bw.file.Close(); err != nil {
+		if err := bw.fileWriter.Close(); err != nil {
 			bw.err = err
 			return
 		}
@@ -63,24 +76,8 @@ func (bw *blobWriter) Close() error {
 	return bw.err
 }
 
-func (bw *blobWriter) Digest(ctx context.Context) digest.Digest {
-	return bw.digester.Digest()
-}
-
-func (bw *blobWriter) Size(ctx context.Context) int64 {
-	return bw.written
-}
-
-func (bw *blobWriter) Cancel(ctx context.Context) error {
-	if err := bw.Close(); err != nil {
-		return err
-	}
-
-	return bw.workspace.Remove(ctx, filepath.Dir(bw.uploadDataPath))
-}
-
 func (bw *blobWriter) Commit(ctx context.Context, expected manifestv1.Descriptor) (*manifestv1.Descriptor, error) {
-	if err := bw.resumeDigestIfNeed(ctx); err != nil {
+	if err := bw.fileWriter.Commit(ctx); err != nil {
 		return nil, err
 	}
 
@@ -90,43 +87,46 @@ func (bw *blobWriter) Commit(ctx context.Context, expected manifestv1.Descriptor
 
 	defer func() {
 		// remove full uploaded
-		_ = bw.workspace.Remove(ctx, filepath.Dir(bw.uploadDataPath))
+		_ = bw.cleanUpload(ctx)
 	}()
 
-	size := bw.Size(ctx)
-	dgst := bw.Digest(ctx)
+	desc := &manifestv1.Descriptor{
+		Size:      bw.Size(ctx),
+		Digest:    bw.Digest(ctx),
+		MediaType: expected.MediaType,
+	}
 
-	if expected.Size > 0 && expected.Size != size {
+	if expected.Size > 0 && expected.Size != desc.Size {
 		return nil, &content.ErrBlobInvalidLength{
-			Reason: fmt.Sprintf("unexpected commit size %d, expected %d", size, expected.Size),
+			Reason: fmt.Sprintf("unexpected commit size %d, expected %d", desc.Size, expected.Size),
 		}
 	}
 
-	if expected.Digest != "" && expected.Digest != dgst {
+	if expected.Digest != "" && expected.Digest != desc.Digest {
 		return nil, &content.ErrBlobInvalidDigest{
-			Digest: dgst,
+			Digest: desc.Digest,
 			Reason: fmt.Errorf("not match %s", expected.Digest),
 		}
 	}
 
-	blobDataPath := bw.workspace.layout.BlobDataPath(dgst)
-
-	// skip moving when digest exists
-	if _, err := bw.workspace.Stat(ctx, blobDataPath); err == nil {
-		return &manifestv1.Descriptor{
-			Size:      size,
-			Digest:    dgst,
-			MediaType: expected.MediaType,
-		}, nil
-	}
-
-	if err := bw.workspace.Move(ctx, bw.uploadDataPath, blobDataPath); err != nil {
+	if err := bw.moveBlob(ctx, desc); err != nil {
 		return nil, err
 	}
 
-	return &manifestv1.Descriptor{
-		Size:      size,
-		Digest:    dgst,
-		MediaType: expected.MediaType,
-	}, nil
+	return desc, nil
+}
+
+func (bw *blobWriter) cleanUpload(ctx context.Context) error {
+	return bw.workspace.Delete(ctx, filepath.Dir(bw.path))
+}
+
+func (bw *blobWriter) moveBlob(ctx context.Context, desc *manifestv1.Descriptor) error {
+	blobDataPath := bw.workspace.layout.BlobDataPath(desc.Digest)
+
+	// skip moving when digest exists
+	if _, err := bw.workspace.Stat(ctx, blobDataPath); err == nil {
+		return nil
+	}
+
+	return bw.workspace.Move(ctx, bw.path, blobDataPath)
 }

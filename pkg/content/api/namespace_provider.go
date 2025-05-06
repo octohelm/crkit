@@ -1,4 +1,3 @@
-//go:generate go tool devtool gen .
 package api
 
 import (
@@ -7,13 +6,14 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/octohelm/unifs/pkg/filesystem"
-
 	"github.com/go-courier/logr"
-	"github.com/octohelm/crkit/pkg/content"
 	contentfs "github.com/octohelm/crkit/pkg/content/fs"
 	contentproxy "github.com/octohelm/crkit/pkg/content/proxy"
+
+	"github.com/octohelm/crkit/pkg/content"
+	"github.com/octohelm/crkit/pkg/content/fs/driver"
 	contentremote "github.com/octohelm/crkit/pkg/content/remote"
+	"github.com/octohelm/unifs/pkg/filesystem"
 	"github.com/octohelm/unifs/pkg/filesystem/api"
 	"github.com/octohelm/unifs/pkg/strfmt"
 )
@@ -22,8 +22,10 @@ import (
 type NamespaceProvider struct {
 	Remote  contentremote.Registry
 	Content api.FileSystemBackend
+
 	NoCache bool `flag:",omitzero"`
 
+	driver    driver.Driver     `provide:""`
 	namespace content.Namespace `provide:""`
 }
 
@@ -33,7 +35,12 @@ func (s *NamespaceProvider) beforeInit(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
-		endpoint, _ := strfmt.ParseEndpoint("file://" + filepath.Join(cwd, ".tmp/container-registry"))
+
+		endpoint, err := strfmt.ParseEndpoint("file://" + filepath.Join(cwd, ".tmp/container-registry"))
+		if err != nil {
+			return err
+		}
+
 		s.Content.Backend = *endpoint
 	}
 
@@ -41,11 +48,17 @@ func (s *NamespaceProvider) beforeInit(ctx context.Context) error {
 }
 
 func (s *NamespaceProvider) afterInit(ctx context.Context) error {
-	if err := filesystem.MkdirAll(ctx, s.Content.FileSystem(), "."); err != nil {
-		return err
+	if !s.NoCache {
+		if err := filesystem.MkdirAll(ctx, s.Content.FileSystem(), "."); err != nil {
+			return err
+		}
 	}
 
 	local := contentfs.NewNamespace(s.Content.FileSystem())
+
+	if !s.NoCache {
+		s.driver = driver.FromFileSystem(s.Content.FileSystem())
+	}
 
 	if s.Remote.Endpoint != "" {
 		if s.NoCache {
@@ -72,7 +85,7 @@ func (s *NamespaceProvider) afterInit(ctx context.Context) error {
 
 		logr.FromContext(ctx).
 			WithValues(slog.String("remote", s.Remote.Endpoint)).
-			Info("proxy")
+			Info("proxy with local cache")
 
 		return nil
 	}

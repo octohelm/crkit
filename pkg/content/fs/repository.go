@@ -21,13 +21,13 @@ func (r *repository) Blobs(ctx context.Context) (content.BlobStore, error) {
 }
 
 func (r *repository) Manifests(ctx context.Context) (content.ManifestService, error) {
-	return &manifestService{blobStore: newLinkedBlobStoreAsManifestService(r.workspace, r.named)}, nil
+	return &manifestService{blobStore: newLinkedBlobStoreForManifestService(r.workspace, r.named)}, nil
 }
 
 func (r *repository) Tags(ctx context.Context) (content.TagService, error) {
 	return &tagService{
 		named:           r.named,
 		workspace:       r.workspace,
-		manifestService: &manifestService{blobStore: newLinkedBlobStoreAsManifestService(r.workspace, r.named)},
+		manifestService: &manifestService{blobStore: newLinkedBlobStoreForManifestService(r.workspace, r.named)},
 	}, nil
 }

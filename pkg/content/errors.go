@@ -7,6 +7,16 @@ import (
 	"github.com/opencontainers/go-digest"
 )
 
+type ErrNotImplemented struct {
+	statuserror.NotImplemented
+
+	Reason error
+}
+
+func (err *ErrNotImplemented) Error() string {
+	return fmt.Sprintf("not implemented: %s", err.Reason)
+}
+
 type ErrBlobUnknown struct {
 	statuserror.NotFound
 

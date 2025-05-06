@@ -6,12 +6,14 @@ import (
 	specv1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
+const MediaTypeImageManifest = specv1.MediaTypeImageManifest
+
 type OciManifest specv1.Manifest
 
 var _ Manifest = OciManifest{}
 
 func (OciManifest) Type() string {
-	return specv1.MediaTypeImageManifest
+	return MediaTypeImageManifest
 }
 
 func (m OciManifest) References() iter.Seq[Descriptor] {

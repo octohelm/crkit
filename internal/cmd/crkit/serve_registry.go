@@ -4,6 +4,8 @@ import (
 	"github.com/innoai-tech/infra/pkg/cli"
 	"github.com/innoai-tech/infra/pkg/otel"
 	contentapi "github.com/octohelm/crkit/pkg/content/api"
+	"github.com/octohelm/crkit/pkg/content/fs/garbagecollector"
+	"github.com/octohelm/crkit/pkg/content/fs/uploadpurger"
 	"github.com/octohelm/crkit/pkg/registryhttp"
 )
 
@@ -16,6 +18,9 @@ type Registry struct {
 	otel.Otel
 
 	contentapi.NamespaceProvider
+
+	UploadPurger     uploadpurger.UploadPurger
+	GarbageCollector garbagecollector.GarbageCollector
 
 	registryhttp.Server
 }

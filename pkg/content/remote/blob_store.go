@@ -200,10 +200,13 @@ func (bw *blobWriter) Commit(ctx context.Context, expect manifestv1.Descriptor) 
 		}
 		req = r
 	} else {
-		r, err := http.NewRequestWithContext(ctx, http.MethodPut, bw.endpoint(), io.NopCloser(bw.chunk))
+		defer bw.chunk.Reset()
+
+		r, err := http.NewRequestWithContext(ctx, http.MethodPut, bw.endpoint(), bw.chunk)
 		if err != nil {
 			return nil, err
 		}
+
 		bw.patchRequestContentLength(r, n)
 		req = r
 	}
@@ -255,11 +258,12 @@ func (bw *blobWriter) sendChunkIfNeed(ctx context.Context) error {
 	if bw.chunk.Len() == 0 {
 		return nil
 	}
+
 	return bw.sendChunk(ctx, false)
 }
 
 func (bw *blobWriter) sendChunk(ctx context.Context, retry bool) error {
-	req, err := http.NewRequestWithContext(ctx, http.MethodPatch, bw.endpoint(), io.NopCloser(bw.chunk))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPatch, bw.endpoint(), bw.chunk)
 	if err != nil {
 		return err
 	}
@@ -318,8 +322,6 @@ func (bw *blobWriter) syncFromMeta(meta courier.Metadata) error {
 
 	if location := meta.Get("Location"); location != "" {
 		bw.location = location
-
-		fmt.Println("Location", location)
 
 		if bw.id == "" {
 			parts := strings.SplitN(bw.location, "/blobs/uploads/", 2)

@@ -6,12 +6,14 @@ import (
 	specv1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
+const MediaTypeImageIndex = specv1.MediaTypeImageIndex
+
 type OciIndex specv1.Index
 
 var _ Manifest = OciIndex{}
 
 func (OciIndex) Type() string {
-	return specv1.MediaTypeImageIndex
+	return MediaTypeImageIndex
 }
 
 func (i OciIndex) References() iter.Seq[Descriptor] {

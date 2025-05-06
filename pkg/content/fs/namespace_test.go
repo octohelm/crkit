@@ -2,6 +2,7 @@ package fs_test
 
 import (
 	"fmt"
+
 	randv2 "math/rand/v2"
 	"net/http"
 	"net/http/httptest"
@@ -9,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/distribution/reference"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/v1/random"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
@@ -18,6 +20,7 @@ import (
 	"github.com/octohelm/courier/pkg/courierhttp/handler/httprouter"
 	"github.com/octohelm/crkit/pkg/content"
 	contentapi "github.com/octohelm/crkit/pkg/content/api"
+	"github.com/octohelm/crkit/pkg/content/collect"
 	"github.com/octohelm/crkit/pkg/registryhttp/apis"
 	"github.com/octohelm/unifs/pkg/strfmt"
 	"github.com/octohelm/unifs/pkg/units"
@@ -26,8 +29,8 @@ import (
 
 func FuzzNamespace(f *testing.F) {
 	images := []remote.Taggable{
-		bdd.Must(random.Image(int64(units.BinarySize(int64(randv2.IntN(100)))*units.MiB), randv2.Int64N(5))),
-		bdd.Must(random.Index(int64(units.BinarySize(int64(randv2.IntN(100)))*units.MiB), randv2.Int64N(5), 2)),
+		bdd.Must(random.Image(int64(units.BinarySize(int64(randv2.IntN(10)))*units.MiB), 5)),
+		bdd.Must(random.Index(int64(units.BinarySize(int64(randv2.IntN(10)))*units.MiB), 5, 2)),
 	}
 
 	for i := range images {
@@ -36,6 +39,11 @@ func FuzzNamespace(f *testing.F) {
 
 	f.Fuzz(func(t *testing.T, idx int) {
 		img := images[idx]
+
+		layerN := 1
+		if idx > 0 {
+			layerN = 3
+		}
 
 		ctx, _ := testingutil.BuildContext(t, func(d *struct {
 			otel.Otel
@@ -68,6 +76,7 @@ func FuzzNamespace(f *testing.F) {
 				h.ServeHTTP(w, req.WithContext(injector.InjectContext(req.Context())))
 			})), nil
 		})
+		t.Cleanup(s.Close)
 
 		reg := bdd.Must(name.NewRegistry(strings.TrimPrefix(s.URL, "http://"), name.Insecure))
 
@@ -77,9 +86,23 @@ func FuzzNamespace(f *testing.F) {
 			repo := reg.Repo("test", "manifest")
 			ref := repo.Tag("latest")
 
+			named, _ := reference.WithName("test/manifest")
+
 			b.When("push this image to container registry", func(b bdd.T) {
 				b.Then("success pushed",
 					bdd.NoError(remote.Push(ref, img)),
+				)
+
+				catalogs := bdd.Must(collect.Catalogs(ctx, ns))
+				b.Then("got catalogs",
+					bdd.Equal([]string{named.Name()}, catalogs),
+				)
+
+				manifests := bdd.Must(bdd.Must(ns.Repository(ctx, named)).Manifests(ctx))
+
+				revisions := bdd.Must(collect.Manifests(ctx, manifests))
+				b.Then("got digests same as pushed",
+					bdd.Equal(layerN, len(revisions)),
 				)
 
 				b.When("pull and push as v1", func(b bdd.T) {

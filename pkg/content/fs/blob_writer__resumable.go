@@ -5,7 +5,6 @@ import (
 	"encoding"
 	"fmt"
 	"hash"
-	"io"
 	"io/fs"
 	"iter"
 	"path/filepath"
@@ -24,11 +23,7 @@ func (bw *blobWriter) resumeDigestIfNeed(ctx context.Context) error {
 		return nil
 	}
 
-	info, err := bw.file.Stat()
-	if err != nil {
-		return err
-	}
-	offset := info.Size()
+	offset := bw.fileWriter.Size()
 	if offset == bw.written {
 		return nil
 	}
@@ -60,9 +55,6 @@ func (bw *blobWriter) resumeDigestIfNeed(ctx context.Context) error {
 		}
 
 		bw.written = hashStateMatch.offset
-		if _, err := bw.file.Seek(0, io.SeekEnd); err != nil {
-			return err
-		}
 	}
 
 	return nil
@@ -74,7 +66,7 @@ type hashStateEntry struct {
 }
 
 func (bw *blobWriter) storedHashStates(ctx context.Context) iter.Seq2[hashStateEntry, error] {
-	uploadHashStatePathPrefix := filepath.Dir(bw.workspace.layout.UploadHashState(bw.id, bw.written))
+	uploadHashStatePathPrefix := filepath.Dir(bw.workspace.layout.UploadHashStatePath(bw.id, bw.written))
 
 	return func(yield func(hashStateEntry, error) bool) {
 		_ = bw.workspace.WalkDir(ctx, uploadHashStatePathPrefix, func(path string, d fs.DirEntry, err error) error {
@@ -91,7 +83,7 @@ func (bw *blobWriter) storedHashStates(ctx context.Context) iter.Seq2[hashStateE
 				logr.FromContext(ctx).Error(fmt.Errorf("unable to get stored hash states with written %d: %w", offset, err))
 			}
 
-			if !yield(hashStateEntry{offset: offset, path: bw.workspace.layout.UploadHashState(bw.id, offset)}, err) {
+			if !yield(hashStateEntry{offset: offset, path: bw.workspace.layout.UploadHashStatePath(bw.id, offset)}, err) {
 				return fs.SkipAll
 			}
 			return nil
@@ -114,5 +106,5 @@ func (bw *blobWriter) storeHashState(ctx context.Context) error {
 		return err
 	}
 
-	return bw.workspace.PutContent(ctx, bw.workspace.layout.UploadHashState(bw.id, bw.written), state)
+	return bw.workspace.PutContent(ctx, bw.workspace.layout.UploadHashStatePath(bw.id, bw.written), state)
 }

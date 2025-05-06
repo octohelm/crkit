@@ -3,6 +3,7 @@ package fs
 import (
 	"context"
 	"io"
+	"iter"
 
 	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
 	"github.com/octohelm/crkit/pkg/content"
@@ -13,6 +14,12 @@ var _ content.ManifestService = &manifestService{}
 
 type manifestService struct {
 	blobStore *linkedBlobStore
+}
+
+var _ content.LinkedDigestIterable = &manifestService{}
+
+func (m *manifestService) LinkedDigests(ctx context.Context) iter.Seq2[content.LinkedDigest, error] {
+	return m.blobStore.LinkedDigests(ctx)
 }
 
 func (m *manifestService) Delete(ctx context.Context, dgst digest.Digest) error {

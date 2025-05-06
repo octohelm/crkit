@@ -42,3 +42,7 @@ type BlobWriter interface {
 	Cancel(ctx context.Context) error
 	Commit(ctx context.Context, expected manifestv1.Descriptor) (*manifestv1.Descriptor, error)
 }
+
+type DigestIterable interface {
+	Digests(ctx context.Context) iter.Seq2[digest.Digest, error]
+}
