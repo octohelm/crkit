@@ -93,7 +93,7 @@ func (bs *blobStore) Resume(ctx context.Context, id string) (content.BlobWriter,
 }
 
 func (bs *blobStore) Writer(ctx context.Context) (content.BlobWriter, error) {
-	req := &registry.UploadBlob{}
+	req := &registry.CreateBlobUpload{}
 	req.Name = content.Name(bs.named.Name())
 
 	_, meta, err := Do(ctx, bs.client, req)

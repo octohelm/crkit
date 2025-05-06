@@ -7,14 +7,14 @@ import (
 )
 
 // +gengo:injectable
-type CancelUploadBlob struct {
+type CancelBlobUpload struct {
 	courierhttp.MethodDelete `path:"/{name...}/blobs/uploads/{id}"`
 	NameScoped
 
 	ID string `name:"id" in:"path"`
 }
 
-func (req *CancelUploadBlob) Output(ctx context.Context) (any, error) {
+func (req *CancelBlobUpload) Output(ctx context.Context) (any, error) {
 	repo, err := req.Repository(ctx)
 	if err != nil {
 		return nil, err

@@ -11,7 +11,7 @@ import (
 	content "github.com/octohelm/crkit/pkg/content"
 )
 
-func (v *CancelUploadBlob) Init(ctx context.Context) error {
+func (v *CancelBlobUpload) Init(ctx context.Context) error {
 	if err := v.NameScoped.Init(ctx); err != nil {
 		return err
 	}
@@ -19,7 +19,15 @@ func (v *CancelUploadBlob) Init(ctx context.Context) error {
 	return nil
 }
 
-func (v *GetUploadBlob) Init(ctx context.Context) error {
+func (v *CreateBlobUpload) Init(ctx context.Context) error {
+	if err := v.NameScoped.Init(ctx); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (v *GetBlobUpload) Init(ctx context.Context) error {
 	if err := v.NameScoped.Init(ctx); err != nil {
 		return err
 	}
@@ -37,7 +45,7 @@ func (v *NameScoped) Init(ctx context.Context) error {
 	return nil
 }
 
-func (v *UploadBlob) Init(ctx context.Context) error {
+func (v *PatchBlobUpload) Init(ctx context.Context) error {
 	if err := v.NameScoped.Init(ctx); err != nil {
 		return err
 	}
@@ -45,15 +53,7 @@ func (v *UploadBlob) Init(ctx context.Context) error {
 	return nil
 }
 
-func (v *UploadPatchBlob) Init(ctx context.Context) error {
-	if err := v.NameScoped.Init(ctx); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (v *UploadPutBlob) Init(ctx context.Context) error {
+func (v *PutBlobUpload) Init(ctx context.Context) error {
 	if err := v.NameScoped.Init(ctx); err != nil {
 		return err
 	}

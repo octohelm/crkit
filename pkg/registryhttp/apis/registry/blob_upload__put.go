@@ -14,7 +14,7 @@ import (
 )
 
 // +gengo:injectable
-type UploadPutBlob struct {
+type PutBlobUpload struct {
 	courierhttp.MethodPut `path:"/{name...}/blobs/uploads/{id}"`
 
 	NameScoped
@@ -28,7 +28,7 @@ type UploadPutBlob struct {
 	Chunk  io.ReadCloser  `in:"body"`
 }
 
-func (req *UploadPutBlob) Output(ctx context.Context) (any, error) {
+func (req *PutBlobUpload) Output(ctx context.Context) (any, error) {
 	defer req.Chunk.Close()
 
 	repo, err := req.Repository(ctx)

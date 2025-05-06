@@ -9,14 +9,14 @@ import (
 )
 
 // +gengo:injectable
-type GetUploadBlob struct {
+type GetBlobUpload struct {
 	courierhttp.MethodGet `path:"/{name...}/blobs/uploads/{id}"`
 	NameScoped
 
 	ID string `name:"id" in:"path"`
 }
 
-func (req *GetUploadBlob) Output(ctx context.Context) (any, error) {
+func (req *GetBlobUpload) Output(ctx context.Context) (any, error) {
 	repo, err := req.Repository(ctx)
 	if err != nil {
 		return nil, err

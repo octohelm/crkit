@@ -12,9 +12,9 @@ import (
 	"github.com/opencontainers/go-digest"
 )
 
-// UploadBlob
+// CreateBlobUpload
 // +gengo:injectable
-type UploadBlob struct {
+type CreateBlobUpload struct {
 	courierhttp.MethodPost `path:"/{name...}/blobs/uploads"`
 
 	NameScoped
@@ -25,7 +25,7 @@ type UploadBlob struct {
 	Blob          io.ReadCloser  `in:"body"`
 }
 
-func (req *UploadBlob) Output(ctx context.Context) (any, error) {
+func (req *CreateBlobUpload) Output(ctx context.Context) (any, error) {
 	defer req.Blob.Close()
 
 	repo, err := req.Repository(ctx)

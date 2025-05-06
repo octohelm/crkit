@@ -25,14 +25,26 @@ func (BaseURL) ResponseData() *map[string]string {
 }
 
 func init() {
-	R.Register(courier.NewRouter(&CancelUploadBlob{}))
+	R.Register(courier.NewRouter(&CancelBlobUpload{}))
 }
 
-func (CancelUploadBlob) ResponseContent() any {
+func (CancelBlobUpload) ResponseContent() any {
 	return nil
 }
 
-func (CancelUploadBlob) ResponseData() *courier.NoContent {
+func (CancelBlobUpload) ResponseData() *courier.NoContent {
+	return new(courier.NoContent)
+}
+
+func init() {
+	R.Register(courier.NewRouter(&CreateBlobUpload{}))
+}
+
+func (CreateBlobUpload) ResponseContent() any {
+	return nil
+}
+
+func (CreateBlobUpload) ResponseData() *courier.NoContent {
 	return new(courier.NoContent)
 }
 
@@ -73,6 +85,18 @@ func (GetBlob) ResponseData() *io.ReadCloser {
 }
 
 func init() {
+	R.Register(courier.NewRouter(&GetBlobUpload{}))
+}
+
+func (GetBlobUpload) ResponseContent() any {
+	return nil
+}
+
+func (GetBlobUpload) ResponseData() *courier.NoContent {
+	return new(courier.NoContent)
+}
+
+func init() {
 	R.Register(courier.NewRouter(&GetManifest{}))
 }
 
@@ -82,18 +106,6 @@ func (GetManifest) ResponseContent() any {
 
 func (GetManifest) ResponseData() *manifestv1.Payload {
 	return new(manifestv1.Payload)
-}
-
-func init() {
-	R.Register(courier.NewRouter(&GetUploadBlob{}))
-}
-
-func (GetUploadBlob) ResponseContent() any {
-	return nil
-}
-
-func (GetUploadBlob) ResponseData() *courier.NoContent {
-	return new(courier.NoContent)
 }
 
 func init() {
@@ -133,6 +145,30 @@ func (ListTag) ResponseData() *content.TagList {
 }
 
 func init() {
+	R.Register(courier.NewRouter(&PatchBlobUpload{}))
+}
+
+func (PatchBlobUpload) ResponseContent() any {
+	return nil
+}
+
+func (PatchBlobUpload) ResponseData() *courier.NoContent {
+	return new(courier.NoContent)
+}
+
+func init() {
+	R.Register(courier.NewRouter(&PutBlobUpload{}))
+}
+
+func (PutBlobUpload) ResponseContent() any {
+	return nil
+}
+
+func (PutBlobUpload) ResponseData() *courier.NoContent {
+	return new(courier.NoContent)
+}
+
+func init() {
 	R.Register(courier.NewRouter(&PutManifest{}))
 }
 
@@ -141,41 +177,5 @@ func (PutManifest) ResponseContent() any {
 }
 
 func (PutManifest) ResponseData() *courier.NoContent {
-	return new(courier.NoContent)
-}
-
-func init() {
-	R.Register(courier.NewRouter(&UploadBlob{}))
-}
-
-func (UploadBlob) ResponseContent() any {
-	return nil
-}
-
-func (UploadBlob) ResponseData() *courier.NoContent {
-	return new(courier.NoContent)
-}
-
-func init() {
-	R.Register(courier.NewRouter(&UploadPatchBlob{}))
-}
-
-func (UploadPatchBlob) ResponseContent() any {
-	return nil
-}
-
-func (UploadPatchBlob) ResponseData() *courier.NoContent {
-	return new(courier.NoContent)
-}
-
-func init() {
-	R.Register(courier.NewRouter(&UploadPutBlob{}))
-}
-
-func (UploadPutBlob) ResponseContent() any {
-	return nil
-}
-
-func (UploadPutBlob) ResponseData() *courier.NoContent {
 	return new(courier.NoContent)
 }
