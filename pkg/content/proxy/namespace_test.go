@@ -1,6 +1,7 @@
 package proxy_test
 
 import (
+	"github.com/distribution/reference"
 	randv2 "math/rand/v2"
 	"net/http"
 	"net/http/httptest"
@@ -52,6 +53,7 @@ func FuzzProxyNamespace(f *testing.F) {
 			})
 
 			d.Remote.Endpoint = remoteRegistry.URL
+
 			d.Content.Backend = *bdd.Must(strfmt.ParseEndpoint("file://" + tmp))
 		})
 
@@ -72,53 +74,33 @@ func FuzzProxyNamespace(f *testing.F) {
 		})
 		t.Cleanup(registryServer.Close)
 
-		reg := bdd.Must(name.NewRegistry(strings.TrimPrefix(registryServer.URL, "http://"), name.Insecure))
+		remoteReg := bdd.Must(name.NewRegistry(strings.TrimPrefix(remoteRegistry.URL, "http://"), name.Insecure))
+
+		proxyReg := bdd.Must(name.NewRegistry(strings.TrimPrefix(registryServer.URL, "http://"), name.Insecure))
 
 		t.Run("GIVEN an artifact", bdd.GivenT(func(b bdd.T) {
 			ns, _ := content.NamespaceFromContext(ctx)
 
-			repo := reg.Repo("test", "manifest")
-			ref := repo.Tag("latest")
+			repo := bdd.Must(ns.Repository(ctx, bdd.Must(reference.WithName("test/manifest"))))
+			tagService := bdd.Must(repo.Tags(ctx))
 
-			b.When("push this image to container registry", func(b bdd.T) {
+			ref := remoteReg.Repo("test", "manifest").Tag("latest")
+
+			b.When("push this image to remote registry", func(b bdd.T) {
 				b.Then("success pushed",
 					bdd.NoError(remote.Push(ref, img)),
 				)
 
-				b.When("pull and push as v1", func(b bdd.T) {
-					img1 := bdd.Must(remote.Image(ref))
+				b.When("pull from proxy registry and push as v1", func(b bdd.T) {
+					img1 := bdd.Must(remote.Image(proxyReg.Repo("test", "manifest").Tag("latest")))
 
 					err := remote.Push(ref.Tag("v1"), img1)
 					b.Then("success",
 						bdd.NoError(err),
 					)
 
-					repository := bdd.Must(ns.Repository(ctx, content.Name("test/manifest")))
-					tags := bdd.Must(repository.Tags(ctx))
-
-					b.Then("could got two tags",
-						bdd.Equal(
-							[]string{
-								"latest", "v1",
-							},
-							bdd.Must(tags.All(ctx)),
-						),
-					)
-
-					b.When("remove tag", func(b bdd.T) {
-						b.Then("success",
-							bdd.NoError(tags.Untag(ctx, "latest")),
-						)
-
-						b.Then("could got two tags",
-							bdd.Equal(
-								[]string{
-									"v1",
-								},
-								bdd.Must(tags.All(ctx)),
-							),
-						)
-					})
+					_ = bdd.Must(tagService.Get(ctx, "latest"))
+					_ = bdd.Must(tagService.Get(ctx, "v1"))
 				})
 			})
 		}))

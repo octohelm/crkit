@@ -15,3 +15,7 @@ type Namespace interface {
 type RepositoryNameIterable interface {
 	RepositoryNames(ctx context.Context) iter.Seq2[reference.Named, error]
 }
+
+type PersistNamespaceWrapper interface {
+	UnwarpPersistNamespace() Namespace
+}

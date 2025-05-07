@@ -9,6 +9,10 @@ import (
 )
 
 func Catalogs(ctx context.Context, ns content.Namespace) (catalogs []string, err error) {
+	if underlying, ok := ns.(content.PersistNamespaceWrapper); ok {
+		ns = underlying.UnwarpPersistNamespace()
+	}
+
 	i, ok := ns.(content.RepositoryNameIterable)
 	if !ok {
 		return nil, &content.ErrNotImplemented{Reason: errors.New("RepositoryNameIterable of TagService")}
@@ -73,6 +77,10 @@ func Layers(ctx context.Context, blobStore content.BlobStore) (digests []digest.
 }
 
 func Blobs(ctx context.Context, ns content.Namespace) (digests []digest.Digest, err error) {
+	if underlying, ok := ns.(content.PersistNamespaceWrapper); ok {
+		ns = underlying.UnwarpPersistNamespace()
+	}
+
 	i, ok := ns.(content.DigestIterable)
 	if !ok {
 		return nil, &content.ErrNotImplemented{Reason: errors.New("DigestIterable of Namespace")}

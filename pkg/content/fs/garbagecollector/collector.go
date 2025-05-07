@@ -22,6 +22,10 @@ func MarkAndSweepExcludeModifiedIn(
 	excludeModifiedIn time.Duration,
 	dryRun bool,
 ) error {
+	if underlying, ok := namespace.(content.PersistNamespaceWrapper); ok {
+		namespace = underlying.UnwarpPersistNamespace()
+	}
+
 	repositoryNameIterable, ok := namespace.(content.RepositoryNameIterable)
 	if !ok {
 		return &content.ErrNotImplemented{Reason: errors.New("RepositoryNameIterable of Namespace")}

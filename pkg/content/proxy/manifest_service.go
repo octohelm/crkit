@@ -3,7 +3,6 @@ package proxy
 import (
 	"context"
 	"fmt"
-
 	"github.com/distribution/reference"
 	"github.com/go-courier/logr"
 	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
@@ -38,9 +37,9 @@ func (pms *proxyManifestService) Get(ctx context.Context, dgst digest.Digest) (m
 		if err != nil {
 			return nil, err
 		}
-		// store local
+
 		go func() {
-			if _, err := pms.localManifests.Put(ctx, manifest); err != nil {
+			if _, err := pms.localManifests.Put(context.WithoutCancel(ctx), manifest); err != nil {
 				logr.FromContext(ctx).Error(fmt.Errorf("store manifest to local failed: %w", err))
 			}
 		}()

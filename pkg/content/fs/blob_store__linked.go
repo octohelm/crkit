@@ -128,6 +128,11 @@ func (lbs *linkedBlobStore) LinkedDigests(ctx context.Context) iter.Seq2[content
 
 			return nil
 		}); err != nil {
+			// skip base dir not exists
+			if os.IsNotExist(err) {
+				return
+			}
+
 			if !yield(content.LinkedDigest{}, err) {
 				return
 			}

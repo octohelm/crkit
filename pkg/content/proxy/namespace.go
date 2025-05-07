@@ -10,8 +10,8 @@ import (
 
 // namespace fetches content from a remote registry and caches it locally
 type namespace struct {
-	embedded content.Namespace // provides local registry functionality
-	remote   content.Namespace
+	local  content.Namespace // provides local registry functionality
+	remote content.Namespace
 }
 
 func NewProxyFallbackRegistry(ctx context.Context, registry content.Namespace, remoteRegistry remote.Registry) (content.Namespace, error) {
@@ -21,13 +21,13 @@ func NewProxyFallbackRegistry(ctx context.Context, registry content.Namespace, r
 	}
 
 	return &namespace{
-		embedded: registry,
-		remote:   r,
+		local:  registry,
+		remote: r,
 	}, nil
 }
 
 func (n *namespace) Repository(ctx context.Context, name reference.Named) (content.Repository, error) {
-	localRepo, err := n.embedded.Repository(ctx, name)
+	localRepo, err := n.local.Repository(ctx, name)
 	if err != nil {
 		return nil, err
 	}
@@ -42,6 +42,12 @@ func (n *namespace) Repository(ctx context.Context, name reference.Named) (conte
 		localRepo:  localRepo,
 		remoteRepo: remoteRepo,
 	}, nil
+}
+
+var _ content.PersistNamespaceWrapper = &namespace{}
+
+func (n *namespace) UnwarpPersistNamespace() content.Namespace {
+	return n.local
 }
 
 type repository struct {
@@ -88,16 +94,30 @@ func (pr *repository) Blobs(ctx context.Context) (content.BlobStore, error) {
 }
 
 func (pr *repository) Tags(ctx context.Context) (content.TagService, error) {
-	l, err := pr.localRepo.Tags(ctx)
+	localTagService, err := pr.localRepo.Tags(ctx)
 	if err != nil {
 		return nil, err
 	}
-	r, err := pr.remoteRepo.Tags(ctx)
+
+	localManifestService, err := pr.localRepo.Manifests(ctx)
 	if err != nil {
 		return nil, err
 	}
+
+	remoteTagService, err := pr.remoteRepo.Tags(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	remoteManifestService, err := pr.remoteRepo.Manifests(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	return &proxyTagService{
-		localTags:  l,
-		remoteTags: r,
+		localTagService:       localTagService,
+		localManifestService:  localManifestService,
+		remoteTagService:      remoteTagService,
+		remoteManifestService: remoteManifestService,
 	}, nil
 }
