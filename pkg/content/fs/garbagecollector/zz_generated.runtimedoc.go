@@ -4,6 +4,18 @@ DON'T EDIT THIS FILE
 */
 package garbagecollector
 
+func (v *Executor) RuntimeDoc(names ...string) ([]string, bool) {
+	if len(names) > 0 {
+		switch names[0] {
+		case "ExcludeModifiedIn":
+			return []string{}, true
+		}
+
+		return nil, false
+	}
+	return []string{}, true
+}
+
 func (v *GarbageCollector) RuntimeDoc(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {

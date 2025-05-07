@@ -11,6 +11,17 @@ import (
 	fsdriver "github.com/octohelm/crkit/pkg/content/fs/driver"
 )
 
+func (v *Executor) Init(ctx context.Context) error {
+	if value, ok := fsdriver.DriverFromContext(ctx); ok {
+		v.driver = value
+	}
+	if value, ok := content.NamespaceFromContext(ctx); ok {
+		v.namespace = value
+	}
+
+	return nil
+}
+
 func (v *GarbageCollector) Init(ctx context.Context) error {
 	if value, ok := fsdriver.DriverFromContext(ctx); ok {
 		v.driver = value

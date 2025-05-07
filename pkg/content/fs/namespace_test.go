@@ -2,13 +2,13 @@ package fs_test
 
 import (
 	"fmt"
-
-	randv2 "math/rand/v2"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"strings"
 	"testing"
+
+	randv2 "math/rand/v2"
 
 	"github.com/distribution/reference"
 	"github.com/google/go-containerregistry/pkg/name"

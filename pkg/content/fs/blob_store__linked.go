@@ -92,6 +92,10 @@ func (lbs *linkedBlobStore) LinkedDigests(ctx context.Context) iter.Seq2[content
 		}
 
 		if err := lbs.workspace.WalkDir(ctx, lbs.linkDirFunc(), func(path string, d fs.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+
 			if path == "." || d.IsDir() {
 				return nil
 			}
@@ -105,23 +109,24 @@ func (lbs *linkedBlobStore) LinkedDigests(ctx context.Context) iter.Seq2[content
 			parentDir, hex := filepath.Split(strings.TrimSuffix(dir, string(filepath.Separator)))
 			alg := filepath.Base(strings.TrimSuffix(parentDir, string(filepath.Separator)))
 
+			dgst := digest.NewDigestFromHex(alg, hex)
+			if err := dgst.Validate(); err != nil {
+				return fmt.Errorf("invalid linked digest of link path %s: %w", path, err)
+			}
+
 			info, err := d.Info()
 			if err != nil {
 				return err
 			}
 
-			if alg == "" || hex == "" {
-				return fmt.Errorf("invalid alg or hex: %q", path)
-			}
-
 			if !yieldLinkedDigest(content.LinkedDigest{
-				Digest:  digest.NewDigestFromHex(alg, hex),
+				Digest:  dgst,
 				ModTime: info.ModTime(),
 			}, nil) {
 				return fs.SkipAll
 			}
 
-			return err
+			return nil
 		}); err != nil {
 			if !yield(content.LinkedDigest{}, err) {
 				return

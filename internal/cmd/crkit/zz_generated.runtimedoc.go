@@ -4,6 +4,25 @@ DON'T EDIT THIS FILE
 */
 package main
 
+func (v *GC) RuntimeDoc(names ...string) ([]string, bool) {
+	if len(names) > 0 {
+		switch names[0] {
+		}
+		if doc, ok := runtimeDoc(&v.Otel, "", names...); ok {
+			return doc, ok
+		}
+		if doc, ok := runtimeDoc(&v.NamespaceProvider, "", names...); ok {
+			return doc, ok
+		}
+		if doc, ok := runtimeDoc(&v.Executor, "", names...); ok {
+			return doc, ok
+		}
+
+		return nil, false
+	}
+	return []string{}, true
+}
+
 func (v *Registry) RuntimeDoc(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {

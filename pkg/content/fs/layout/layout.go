@@ -62,11 +62,11 @@ func (b Layout) RepositoryLayersPath(name reference.Named) string {
 
 // RepositoryLayerLinkPath
 // repositories/{name}/_layers/{algorithm}/{hex_digest}/link
-func (b Layout) RepositoryLayerLinkPath(name reference.Named, digest digest.Digest) string {
-	return filepath.Join(b.RepositoryLayersPath(name), digest.Algorithm().String(), digest.Hex(), "link")
+func (b Layout) RepositoryLayerLinkPath(name reference.Named, dgst digest.Digest) string {
+	return filepath.Join(b.RepositoryLayersPath(name), dgst.Algorithm().String(), dgst.Hex(), "link")
 }
 
-// RepositoryManifestRevisionPath
+// RepositoryManifestRevisionsPath
 // repositories/{name}/_manifests/revisions/
 func (b Layout) RepositoryManifestRevisionsPath(name reference.Named) string {
 	return filepath.Join(b.RepositoryPath(name), "_manifests", "revisions")
@@ -74,14 +74,14 @@ func (b Layout) RepositoryManifestRevisionsPath(name reference.Named) string {
 
 // RepositoryManifestRevisionPath
 // repositories/{name}/_manifests/revisions/{algorithm}/{hex_digest}
-func (b Layout) RepositoryManifestRevisionPath(name reference.Named, digest digest.Digest) string {
-	return filepath.Join(b.RepositoryManifestRevisionsPath(name), digest.Algorithm().String(), digest.Hex())
+func (b Layout) RepositoryManifestRevisionPath(name reference.Named, dgst digest.Digest) string {
+	return filepath.Join(b.RepositoryManifestRevisionsPath(name), dgst.Algorithm().String(), dgst.Hex())
 }
 
 // RepositoryManifestRevisionLinkPath
 // repositories/{name}/_manifests/revisions/{algorithm}/{hex_digest}/link
-func (b Layout) RepositoryManifestRevisionLinkPath(name reference.Named, digest digest.Digest) string {
-	return filepath.Join(b.RepositoryManifestRevisionPath(name, digest), "link")
+func (b Layout) RepositoryManifestRevisionLinkPath(name reference.Named, dgst digest.Digest) string {
+	return filepath.Join(b.RepositoryManifestRevisionPath(name, dgst), "link")
 }
 
 // RepositoryManifestTagsPath
@@ -110,8 +110,8 @@ func (b Layout) RepositoryManifestTagIndexPath(name reference.Named, tag string)
 
 // RepositoryManifestTagIndexEntryPath
 // repositories/{name}/_manifests/tags/{tag}/index/{algorithm}/{hex_digest}
-func (b Layout) RepositoryManifestTagIndexEntryPath(name reference.Named, tag string, digest digest.Digest) string {
-	return filepath.Join(b.RepositoryManifestTagIndexPath(name, tag), digest.Algorithm().String(), digest.Hex())
+func (b Layout) RepositoryManifestTagIndexEntryPath(name reference.Named, tag string, dgst digest.Digest) string {
+	return filepath.Join(b.RepositoryManifestTagIndexPath(name, tag), dgst.Algorithm().String(), dgst.Hex())
 }
 
 // RepositoryManifestTagIndexLinkPath

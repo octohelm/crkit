@@ -2,11 +2,13 @@ package fs
 
 import (
 	"context"
-	"github.com/opencontainers/go-digest"
+	"fmt"
 	"io/fs"
 	"iter"
 	"path/filepath"
 	"strings"
+
+	"github.com/opencontainers/go-digest"
 
 	"github.com/distribution/reference"
 	"github.com/octohelm/crkit/pkg/content"
@@ -44,24 +46,34 @@ func (n *namespace) RepositoryNames(ctx context.Context) iter.Seq2[reference.Nam
 		}
 
 		err := n.workspace.WalkDir(ctx, n.workspace.layout.RepositorysPath(), func(path string, d fs.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+
 			if path == "." {
 				return nil
 			}
 
 			if d.IsDir() {
 				if base := filepath.Base(path); base == "_manifests" {
-					if !yieldNamed(reference.WithName(strings.TrimSuffix(path, "/_manifests"))) {
+					name := strings.TrimSuffix(path, "/_manifests")
+
+					named, err := reference.WithName(name)
+					if err != nil {
+						return fmt.Errorf("failed to parse repository name %q: %w", name, err)
+					}
+
+					if !yieldNamed(named, nil) {
 						return fs.SkipAll
 					}
+
 					return fs.SkipDir
 				} else if strings.HasPrefix(base, "_") {
 					return fs.SkipDir
 				}
-
-				return nil
 			}
 
-			return err
+			return nil
 		})
 		if err != nil {
 			if !yield(nil, err) {

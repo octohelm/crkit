@@ -30,6 +30,10 @@ func (bs *blobStore) Digests(ctx context.Context) iter.Seq2[digest.Digest, error
 		}
 
 		err := bs.workspace.WalkDir(ctx, bs.workspace.layout.BlobsPath(), func(path string, d fs.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+
 			if path == "." || d.IsDir() {
 				return nil
 			}
@@ -38,18 +42,20 @@ func (bs *blobStore) Digests(ctx context.Context) iter.Seq2[digest.Digest, error
 			if base != "data" {
 				return nil
 			}
+
 			parentDir, hex := filepath.Split(strings.TrimSuffix(dir, string(filepath.Separator)))
 			alg := filepath.Dir(strings.TrimSuffix(parentDir, string(filepath.Separator)))
 
-			if alg == "" || hex == "" {
-				return fmt.Errorf("invalid alg or hex: %q", path)
+			dgst := digest.NewDigestFromHex(alg, hex)
+			if err := dgst.Validate(); err != nil {
+				return fmt.Errorf("invalid digest of data path %s: %w", path, err)
 			}
-
-			if !yieldNamed(digest.NewDigestFromHex(alg, hex), nil) {
+			
+			if !yieldNamed(dgst, nil) {
 				return fs.SkipAll
 			}
 
-			return err
+			return nil
 		})
 		if err != nil {
 			if !yield("", err) {

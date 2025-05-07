@@ -19,6 +19,16 @@ func (v *CancelBlobUpload) Init(ctx context.Context) error {
 	return nil
 }
 
+func (v *Catalog) Init(ctx context.Context) error {
+	if value, ok := content.NamespaceFromContext(ctx); ok {
+		v.namespace = value
+	} else {
+		return fmt.Errorf("missing provider %T.namespace", v)
+	}
+
+	return nil
+}
+
 func (v *CreateBlobUpload) Init(ctx context.Context) error {
 	if err := v.NameScoped.Init(ctx); err != nil {
 		return err

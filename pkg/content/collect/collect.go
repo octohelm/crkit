@@ -3,6 +3,7 @@ package collect
 import (
 	"context"
 	"errors"
+
 	"github.com/octohelm/crkit/pkg/content"
 	"github.com/opencontainers/go-digest"
 )

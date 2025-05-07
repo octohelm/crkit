@@ -5,6 +5,9 @@ serve:
     	--log-format=text \
     	--addr=:5070
 
+gc:
+    {{ crkit }} gc -c --log-level=debug --dry-run
+
 serve-proxy:
     {{ crkit }} serve registry -c \
     	--log-format=text \

@@ -2,6 +2,9 @@ package garbagecollector
 
 import (
 	"context"
+	"fmt"
+	"github.com/go-courier/logr"
+	"log/slog"
 	"os"
 
 	"github.com/distribution/reference"
@@ -10,26 +13,93 @@ import (
 	"github.com/opencontainers/go-digest"
 )
 
-func NewVacuum(driver driver.Driver) *Vacuum {
-	return &Vacuum{driver: driver, layout: layout.Default}
+type Vacuum interface {
+	RemoveBlob(ctx context.Context, dgst digest.Digest) error
+	RemoveLayer(ctx context.Context, named reference.Named, dgst digest.Digest) error
+	RemoveManifest(ctx context.Context, named reference.Named, dgst digest.Digest, allTags []string) error
 }
 
-type Vacuum struct {
+func NewVacuum(driver driver.Driver, dryRun bool) Vacuum {
+	return &maybeVacuum{
+		vacuum: &vacuum{driver: driver, layout: layout.Default},
+		dryRun: dryRun,
+	}
+}
+
+type maybeVacuum struct {
+	vacuum *vacuum
+	dryRun bool
+}
+
+func (m *maybeVacuum) RemoveBlob(ctx context.Context, dgst digest.Digest) error {
+	logr.FromContext(ctx).
+		WithValues(
+			slog.String("blob", string(dgst)),
+		).
+		Info("removing")
+	if m.dryRun {
+		return nil
+	}
+	return m.vacuum.RemoveBlob(ctx, dgst)
+}
+
+func (m *maybeVacuum) RemoveLayer(ctx context.Context, named reference.Named, dgst digest.Digest) error {
+	logr.FromContext(ctx).
+		WithValues(
+			slog.String("name", named.String()),
+			slog.String("layer", string(dgst)),
+		).
+		Info("removing")
+
+	if m.dryRun {
+		return nil
+	}
+	return m.vacuum.RemoveLayer(ctx, named, dgst)
+}
+
+func (m *maybeVacuum) RemoveManifest(ctx context.Context, named reference.Named, dgst digest.Digest, allTags []string) error {
+	logr.FromContext(ctx).
+		WithValues(
+			slog.String("name", named.String()),
+			slog.String("manifest", string(dgst)),
+		).
+		Info("removing")
+
+	if m.dryRun {
+		return nil
+	}
+
+	return m.vacuum.RemoveManifest(ctx, named, dgst, allTags)
+}
+
+type vacuum struct {
 	driver driver.Driver
 	layout layout.Layout
 }
 
-func (v *Vacuum) RemoveBlob(ctx context.Context, dgst digest.Digest) error {
+func (v *vacuum) RemoveBlob(ctx context.Context, dgst digest.Digest) error {
+	if err := dgst.Validate(); err != nil {
+		return fmt.Errorf("invalid digest: %s %w", dgst, err)
+	}
+
 	// delete blobs/{algorithm}/{hex_digest_prefix_2}/{hex_digest}/data
 	return v.driver.Delete(ctx, v.layout.BlobDataPath(dgst))
 }
 
-func (v *Vacuum) RemoveLayer(ctx context.Context, named reference.Named, dgst digest.Digest) error {
+func (v *vacuum) RemoveLayer(ctx context.Context, named reference.Named, dgst digest.Digest) error {
+	if err := dgst.Validate(); err != nil {
+		return fmt.Errorf("invalid digest: %s %w", dgst, err)
+	}
+
 	// delete repositories/{name}/_layers/{algorithm}/{hex_digest}/link
 	return v.driver.Delete(ctx, v.layout.RepositoryLayerLinkPath(named, dgst))
 }
 
-func (v *Vacuum) RemoveManifest(ctx context.Context, named reference.Named, dgst digest.Digest, allTags []string) error {
+func (v *vacuum) RemoveManifest(ctx context.Context, named reference.Named, dgst digest.Digest, allTags []string) error {
+	if err := dgst.Validate(); err != nil {
+		return fmt.Errorf("invalid digest: %s %w", dgst, err)
+	}
+
 	for _, tag := range allTags {
 		// delete repositories/{named}/_manifests/tags/{tag}/index/{algorithm}/{hex_digest}/*
 		tagIndexEntryPath := v.layout.RepositoryManifestTagIndexEntryPath(named, tag, dgst)
@@ -51,6 +121,6 @@ func (v *Vacuum) RemoveManifest(ctx context.Context, named reference.Named, dgst
 	return v.driver.Delete(ctx, v.layout.RepositoryManifestRevisionPath(named, dgst))
 }
 
-func (v *Vacuum) RemoveRepository(ctx context.Context, name reference.Named) error {
+func (v *vacuum) RemoveRepository(ctx context.Context, name reference.Named) error {
 	return v.driver.Delete(ctx, v.layout.RepositoryPath(name))
 }

@@ -8,6 +8,7 @@ import (
 	io "io"
 
 	courier "github.com/octohelm/courier/pkg/courier"
+	statuserror "github.com/octohelm/courier/pkg/statuserror"
 	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
 	content "github.com/octohelm/crkit/pkg/content"
 )
@@ -34,6 +35,28 @@ func (CancelBlobUpload) ResponseContent() any {
 
 func (CancelBlobUpload) ResponseData() *courier.NoContent {
 	return new(courier.NoContent)
+}
+
+func init() {
+	R.Register(courier.NewRouter(&Catalog{}))
+}
+
+func (Catalog) ResponseContent() any {
+	return new(map[string][]string)
+}
+
+func (Catalog) ResponseData() *map[string][]string {
+	return new(map[string][]string)
+}
+
+func (Catalog) ResponseErrors() []error {
+	return []error{
+		&statuserror.Descriptor{
+			Code:    statuserror.ErrCodeFor[content.ErrNotImplemented](),
+			Message: "not implemented: {Reason}",
+			Status:  501,
+		},
+	}
 }
 
 func init() {

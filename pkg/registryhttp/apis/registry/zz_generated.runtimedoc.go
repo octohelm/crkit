@@ -29,6 +29,16 @@ func (v *CancelBlobUpload) RuntimeDoc(names ...string) ([]string, bool) {
 	return []string{}, true
 }
 
+func (v *Catalog) RuntimeDoc(names ...string) ([]string, bool) {
+	if len(names) > 0 {
+		switch names[0] {
+		}
+
+		return nil, false
+	}
+	return []string{}, true
+}
+
 func (v *CreateBlobUpload) RuntimeDoc(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
