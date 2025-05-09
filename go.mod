@@ -13,7 +13,7 @@ require (
 	github.com/go-courier/logr v0.3.2
 	github.com/innoai-tech/infra v0.0.0-20250428094659-52c75ca0d8f7
 	github.com/innoai-tech/openapi-playground v0.0.0-20250422032150-6455c64a7612 // indirect
-	github.com/octohelm/courier v0.0.0-20250416054450-c6bcc185d5c3
+	github.com/octohelm/courier v0.0.0-20250509064945-7227de3e348d
 	github.com/octohelm/enumeration v0.0.0-20250115091102-ddf41951d733
 	github.com/octohelm/gengo v0.0.0-20250418031154-d14a228621d4
 	github.com/octohelm/kubepkgspec v0.0.0-20250417113059-3a0b7b2c59f4
