@@ -27,7 +27,7 @@ require (
 	github.com/distribution/reference v0.6.0
 	github.com/go-json-experiment/json v0.0.0-20250417205406-170dfdcf87d1
 	github.com/gobwas/glob v0.2.3
-	github.com/google/go-containerregistry v0.20.3
+	github.com/google/go-containerregistry v0.20.4
 	github.com/google/uuid v1.6.0
 	github.com/octohelm/exp v0.0.0-20250423100159-9c03fb1725b0
 	github.com/opencontainers/go-digest v1.0.0
