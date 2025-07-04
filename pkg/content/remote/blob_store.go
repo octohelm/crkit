@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 
 	"github.com/distribution/reference"
 	"github.com/octohelm/courier/pkg/courier"
@@ -57,17 +58,49 @@ func (bs *blobStore) Open(ctx context.Context, dgst digest.Digest) (r io.ReadClo
 	req.Name = content.Name(bs.named.Name())
 	req.Digest = content.Digest(dgst)
 
-	pr, pw := io.Pipe()
+	return &blobReader{
+		GetBlob: req,
+		ctx:     ctx,
+		client:  bs.client,
+	}, nil
+}
 
-	go func() {
-		defer pw.Close()
+type blobReader struct {
+	*registry.GetBlob
+	ctx    context.Context
+	client courier.Client
 
-		if _, err := bs.client.Do(ctx, req).Into(pw); err != nil {
-			return
-		}
-	}()
+	pr   *io.PipeReader
+	once sync.Once
+	err  atomic.Pointer[error]
+}
 
-	return pr, nil
+func (b *blobReader) Read(p []byte) (int, error) {
+	b.once.Do(func() {
+		pr, pw := io.Pipe()
+		b.pr = pr
+
+		go func() {
+			defer pw.Close()
+
+			if _, err := b.client.Do(b.ctx, b.GetBlob).Into(pw); err != nil {
+				b.err.Store(&err)
+			}
+		}()
+	})
+
+	if err := b.err.Load(); err != nil {
+		return -1, *err
+	}
+
+	return b.pr.Read(p)
+}
+
+func (b *blobReader) Close() error {
+	if b.pr != nil {
+		return b.pr.Close()
+	}
+	return nil
 }
 
 var _ content.Remover = &blobStore{}
