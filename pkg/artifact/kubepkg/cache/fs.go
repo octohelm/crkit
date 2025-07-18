@@ -2,14 +2,13 @@ package cache
 
 import (
 	"errors"
-	"io"
-	"os"
-	"path/filepath"
-
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/cache"
 	"github.com/google/go-containerregistry/pkg/v1/tarball"
 	"github.com/opencontainers/go-digest"
+	"io"
+	"os"
+	"path"
 )
 
 type fscache struct {
@@ -46,7 +45,7 @@ type layer struct {
 func (l *layer) create(h v1.Hash) (io.WriteCloser, error) {
 	tmpPath := injestpath(l.path, h)
 
-	if err := os.MkdirAll(filepath.Dir(tmpPath), 0o700); err != nil {
+	if err := os.MkdirAll(path.Dir(tmpPath), 0o700); err != nil {
 		return nil, err
 	}
 
@@ -88,7 +87,7 @@ func (w *writer) Close() error {
 		return errors.New("digest not match")
 	}
 
-	if err := os.MkdirAll(filepath.Dir(w.cachePath), 0o700); err != nil {
+	if err := os.MkdirAll(path.Dir(w.cachePath), 0o700); err != nil {
 		return err
 	}
 
@@ -170,10 +169,10 @@ func (fs *fscache) Delete(h v1.Hash) error {
 	return err
 }
 
-func cachepath(path string, h v1.Hash) string {
-	return filepath.Join(path, "blobs", h.Algorithm, h.Hex)
+func cachepath(pathname string, h v1.Hash) string {
+	return path.Join(pathname, "blobs", h.Algorithm, h.Hex)
 }
 
-func injestpath(path string, h v1.Hash) string {
-	return filepath.Join(path, "injests", h.Hex)
+func injestpath(pathname string, h v1.Hash) string {
+	return path.Join(pathname, "injests", h.Hex)
 }

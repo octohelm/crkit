@@ -3,7 +3,7 @@ package fs
 import (
 	"context"
 	"fmt"
-	"path/filepath"
+	"path"
 	"sync"
 	"time"
 
@@ -117,7 +117,7 @@ func (bw *blobWriter) Commit(ctx context.Context, expected manifestv1.Descriptor
 }
 
 func (bw *blobWriter) cleanUpload(ctx context.Context) error {
-	return bw.workspace.Delete(ctx, filepath.Dir(bw.path))
+	return bw.workspace.Delete(ctx, path.Dir(bw.path))
 }
 
 func (bw *blobWriter) moveBlob(ctx context.Context, desc *manifestv1.Descriptor) error {

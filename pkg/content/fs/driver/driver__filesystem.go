@@ -6,12 +6,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/octohelm/unifs/pkg/filesystem"
 	"io"
 	"io/fs"
 	"os"
-	"path/filepath"
-
-	"github.com/octohelm/unifs/pkg/filesystem"
+	"path"
 )
 
 func FromFileSystem(fs filesystem.FileSystem) Driver {
@@ -39,7 +38,7 @@ func (d *driver) WalkDir(ctx context.Context, path string, fn fs.WalkDirFunc) er
 }
 
 func (w *driver) Move(ctx context.Context, oldPath string, newPath string) error {
-	if err := filesystem.MkdirAll(ctx, w.fs, filepath.Dir(newPath)); err != nil {
+	if err := filesystem.MkdirAll(ctx, w.fs, path.Dir(newPath)); err != nil {
 		return err
 	}
 	return w.fs.Rename(ctx, oldPath, newPath)
@@ -72,8 +71,8 @@ func (d *driver) PutContent(ctx context.Context, path string, contents []byte) e
 	return writer.Commit(ctx)
 }
 
-func (d *driver) Writer(ctx context.Context, path string, append bool) (FileWriter, error) {
-	dir := filepath.Dir(path)
+func (d *driver) Writer(ctx context.Context, pathname string, append bool) (FileWriter, error) {
+	dir := path.Dir(pathname)
 	if dir != "" {
 		if err := filesystem.MkdirAll(ctx, d.fs, dir); err != nil {
 			return nil, err
@@ -88,7 +87,7 @@ func (d *driver) Writer(ctx context.Context, path string, append bool) (FileWrit
 		flag |= os.O_TRUNC
 	}
 
-	file, err := d.fs.OpenFile(ctx, path, flag, 0o666)
+	file, err := d.fs.OpenFile(ctx, pathname, flag, 0o666)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +103,7 @@ func (d *driver) Writer(ctx context.Context, path string, append bool) (FileWrit
 		offset = n
 	}
 
-	return &fileWriter{driver: d, path: path, file: file, written: offset, bw: bufio.NewWriter(file)}, nil
+	return &fileWriter{driver: d, path: pathname, file: file, written: offset, bw: bufio.NewWriter(file)}, nil
 }
 
 type fileWriter struct {

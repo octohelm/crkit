@@ -1,6 +1,6 @@
 module github.com/octohelm/crkit
 
-go 1.24.4
+go 1.24.5
 
 tool github.com/octohelm/crkit/internal/cmd/crkit
 
@@ -11,22 +11,22 @@ tool (
 
 require (
 	github.com/go-courier/logr v0.3.2
-	github.com/innoai-tech/infra v0.0.0-20250703075817-5146c534b956
-	github.com/innoai-tech/openapi-playground v0.0.0-20250624093833-6727740c68de // indirect
-	github.com/octohelm/courier v0.0.0-20250704062509-2ced01d0483d
+	github.com/innoai-tech/infra v0.0.0-20250711051916-203918f623de
+	github.com/innoai-tech/openapi-playground v0.0.0-20250704100217-a0c62af5366b // indirect
+	github.com/octohelm/courier v0.0.0-20250709084559-8e79357f00d0
 	github.com/octohelm/enumeration v0.0.0-20250115091102-ddf41951d733
 	github.com/octohelm/exp v0.0.0-20250610043704-ec5e24647f61
-	github.com/octohelm/gengo v0.0.0-20250418031154-d14a228621d4
-	github.com/octohelm/kubepkgspec v0.0.0-20250626030619-22850620e641
-	github.com/octohelm/unifs v0.0.0-20250704030712-ae6a1507060d
-	github.com/octohelm/x v0.0.0-20250409031213-9c254440c2b8
+	github.com/octohelm/gengo v0.0.0-20250711045910-061ca3315825
+	github.com/octohelm/kubepkgspec v0.0.0-20250708074535-569736de4b19
+	github.com/octohelm/unifs v0.0.0-20250718023709-4c432fd297c1
+	github.com/octohelm/x v0.0.0-20250711043442-cd4ae88da273
 )
 
 require (
 	github.com/containerd/containerd v1.7.27
 	github.com/containerd/platforms v0.2.1
 	github.com/distribution/reference v0.6.0
-	github.com/go-json-experiment/json v0.0.0-20250626171732-1a886bd29d1b
+	github.com/go-json-experiment/json v0.0.0-20250709061156-d2cd4771eb1b
 	github.com/gobwas/glob v0.2.3
 	github.com/google/go-containerregistry v0.20.6
 	github.com/google/uuid v1.6.0
@@ -118,14 +118,14 @@ require (
 	go.opentelemetry.io/proto/otlp v1.7.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.2 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
-	golang.org/x/crypto v0.39.0 // indirect
-	golang.org/x/mod v0.25.0 // indirect
-	golang.org/x/net v0.41.0 // indirect
+	golang.org/x/crypto v0.40.0 // indirect
+	golang.org/x/mod v0.26.0 // indirect
+	golang.org/x/net v0.42.0 // indirect
 	golang.org/x/oauth2 v0.30.0 // indirect
-	golang.org/x/sync v0.15.0 // indirect
-	golang.org/x/sys v0.33.0 // indirect
-	golang.org/x/term v0.32.0 // indirect
-	golang.org/x/text v0.26.0 // indirect
+	golang.org/x/sync v0.16.0 // indirect
+	golang.org/x/sys v0.34.0 // indirect
+	golang.org/x/term v0.33.0 // indirect
+	golang.org/x/text v0.27.0 // indirect
 	golang.org/x/time v0.12.0 // indirect
 	golang.org/x/tools v0.34.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20250603155806-513f23925822 // indirect
@@ -136,7 +136,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/api v0.33.2 // indirect
 	k8s.io/apiextensions-apiserver v0.33.2 // indirect
-	k8s.io/apimachinery v0.33.2 // indirect
+	k8s.io/apimachinery v0.33.3 // indirect
 	k8s.io/client-go v0.33.2 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
 	k8s.io/utils v0.0.0-20250604170112-4c0f3b243397 // indirect

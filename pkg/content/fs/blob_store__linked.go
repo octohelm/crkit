@@ -3,17 +3,15 @@ package fs
 import (
 	"context"
 	"fmt"
-	"io"
-	"io/fs"
-	"iter"
-	"os"
-	"path/filepath"
-	"strings"
-
 	"github.com/distribution/reference"
 	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
 	"github.com/octohelm/crkit/pkg/content"
 	"github.com/opencontainers/go-digest"
+	"io"
+	"io/fs"
+	"iter"
+	"os"
+	"path"
 )
 
 func newLinkedBlobStore(w *workspace, named reference.Named) *linkedBlobStore {
@@ -91,27 +89,27 @@ func (lbs *linkedBlobStore) LinkedDigests(ctx context.Context) iter.Seq2[content
 			return yield(named, err)
 		}
 
-		if err := lbs.workspace.WalkDir(ctx, lbs.linkDirFunc(), func(path string, d fs.DirEntry, err error) error {
+		if err := lbs.workspace.WalkDir(ctx, lbs.linkDirFunc(), func(pathname string, d fs.DirEntry, err error) error {
 			if err != nil {
 				return err
 			}
 
-			if path == "." || d.IsDir() {
+			if pathname == "." || d.IsDir() {
 				return nil
 			}
 
 			// {alg}/{hex}/link
-			dir, base := filepath.Split(path)
+			dir, base := path.Split(pathname)
 			if base != "link" {
 				return nil
 			}
 
-			parentDir, hex := filepath.Split(strings.TrimSuffix(dir, string(filepath.Separator)))
-			alg := filepath.Base(strings.TrimSuffix(parentDir, string(filepath.Separator)))
+			parentDir, hex := path.Split(path.Clean(dir))
+			alg := path.Base(path.Clean(parentDir))
 
 			dgst := digest.NewDigestFromHex(alg, hex)
 			if err := dgst.Validate(); err != nil {
-				return fmt.Errorf("invalid linked digest of link path %s: %w", path, err)
+				return fmt.Errorf("invalid linked digest of link path %s: %w", pathname, err)
 			}
 
 			info, err := d.Info()

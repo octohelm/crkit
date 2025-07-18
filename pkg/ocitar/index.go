@@ -2,14 +2,13 @@ package ocitar
 
 import (
 	"encoding/json"
-	"io"
-	"path/filepath"
-
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/partial"
 	"github.com/google/go-containerregistry/pkg/v1/types"
 	"github.com/opencontainers/go-digest"
 	specv1 "github.com/opencontainers/image-spec/specs-go/v1"
+	"io"
+	"path"
 )
 
 func Index(opener Opener) (v1.ImageIndex, error) {
@@ -215,5 +214,5 @@ func (l *layer) Compressed() (io.ReadCloser, error) {
 }
 
 func layoutBlobsPath(hash v1.Hash) string {
-	return filepath.Join("blobs", hash.Algorithm, hash.Hex)
+	return path.Join("blobs", hash.Algorithm, hash.Hex)
 }

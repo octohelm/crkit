@@ -7,8 +7,7 @@ import (
 	"io/fs"
 	"iter"
 	"os"
-	"path/filepath"
-	"strings"
+	"path"
 	"time"
 
 	"github.com/google/uuid"
@@ -29,28 +28,28 @@ func (bs *blobStore) Digests(ctx context.Context) iter.Seq2[digest.Digest, error
 			return yield(named, err)
 		}
 
-		err := bs.workspace.WalkDir(ctx, bs.workspace.layout.BlobsPath(), func(path string, d fs.DirEntry, err error) error {
+		err := bs.workspace.WalkDir(ctx, bs.workspace.layout.BlobsPath(), func(pathname string, d fs.DirEntry, err error) error {
 			if err != nil {
 				return err
 			}
 
-			if path == "." || d.IsDir() {
+			if pathname == "." || d.IsDir() {
 				return nil
 			}
 
-			dir, base := filepath.Split(path)
+			dir, base := path.Split(pathname)
 			if base != "data" {
 				return nil
 			}
 
-			parentDir, hex := filepath.Split(strings.TrimSuffix(dir, string(filepath.Separator)))
-			alg := filepath.Dir(strings.TrimSuffix(parentDir, string(filepath.Separator)))
+			parentDir, hex := path.Split(path.Clean(dir))
+			alg := path.Dir(path.Clean(parentDir))
 
 			dgst := digest.NewDigestFromHex(alg, hex)
 			if err := dgst.Validate(); err != nil {
-				return fmt.Errorf("invalid digest of data path %s: %w", path, err)
+				return fmt.Errorf("invalid digest of data path %s: %w", pathname, err)
 			}
-			
+
 			if !yieldNamed(dgst, nil) {
 				return fs.SkipAll
 			}

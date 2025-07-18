@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io/fs"
 	"iter"
-	"path/filepath"
+	"path"
 	"strings"
 
 	"github.com/opencontainers/go-digest"
@@ -45,18 +45,18 @@ func (n *namespace) RepositoryNames(ctx context.Context) iter.Seq2[reference.Nam
 			return yield(named, err)
 		}
 
-		err := n.workspace.WalkDir(ctx, n.workspace.layout.RepositorysPath(), func(path string, d fs.DirEntry, err error) error {
+		err := n.workspace.WalkDir(ctx, n.workspace.layout.RepositorysPath(), func(pathname string, d fs.DirEntry, err error) error {
 			if err != nil {
 				return err
 			}
 
-			if path == "." {
+			if pathname == "." {
 				return nil
 			}
 
 			if d.IsDir() {
-				if base := filepath.Base(path); base == "_manifests" {
-					name := strings.TrimSuffix(path, "/_manifests")
+				if base := path.Base(pathname); base == "_manifests" {
+					name := strings.TrimSuffix(pathname, "/_manifests")
 
 					named, err := reference.WithName(name)
 					if err != nil {

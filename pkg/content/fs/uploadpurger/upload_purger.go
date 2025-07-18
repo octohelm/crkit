@@ -5,7 +5,7 @@ import (
 	"errors"
 	"io/fs"
 	"iter"
-	"path/filepath"
+	"path"
 	"time"
 
 	"github.com/go-courier/logr"
@@ -89,15 +89,15 @@ func (r *UploadPurger) blobUploads(ctx context.Context) iter.Seq2[*blobUpload, e
 			return yield(bu, nil)
 		}
 
-		err := r.driver.WalkDir(ctx, layout.Default.UploadPath(), func(path string, d fs.DirEntry, err error) error {
-			if path == "." {
+		err := r.driver.WalkDir(ctx, layout.Default.UploadPath(), func(pathname string, d fs.DirEntry, err error) error {
+			if pathname == "." {
 				return nil
 			}
 
 			if d.IsDir() {
 				bu := &blobUpload{}
-				bu.id = path
-				bu.path = filepath.Dir(layout.Default.UploadDataPath(bu.id))
+				bu.id = pathname
+				bu.path = path.Dir(layout.Default.UploadDataPath(bu.id))
 
 				content, _ := r.driver.GetContent(ctx, layout.Default.UploadStartedAtPath(bu.id))
 				if len(content) > 0 {

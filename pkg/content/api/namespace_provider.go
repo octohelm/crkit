@@ -2,20 +2,17 @@ package api
 
 import (
 	"context"
-	"log/slog"
-	"os"
-	"path/filepath"
-
 	"github.com/go-courier/logr"
-	contentfs "github.com/octohelm/crkit/pkg/content/fs"
-	contentproxy "github.com/octohelm/crkit/pkg/content/proxy"
-
 	"github.com/octohelm/crkit/pkg/content"
+	contentfs "github.com/octohelm/crkit/pkg/content/fs"
 	"github.com/octohelm/crkit/pkg/content/fs/driver"
+	contentproxy "github.com/octohelm/crkit/pkg/content/proxy"
 	contentremote "github.com/octohelm/crkit/pkg/content/remote"
 	"github.com/octohelm/unifs/pkg/filesystem"
 	"github.com/octohelm/unifs/pkg/filesystem/api"
 	"github.com/octohelm/unifs/pkg/strfmt"
+	"log/slog"
+	"path"
 )
 
 // +gengo:injectable:provider
@@ -31,17 +28,12 @@ type NamespaceProvider struct {
 
 func (s *NamespaceProvider) beforeInit(ctx context.Context) error {
 	if s.Content.Backend.IsZero() {
-		cwd, err := os.Getwd()
-		if err != nil {
-			return err
-		}
 
-		endpoint, err := strfmt.ParseEndpoint("file://" + filepath.Join(cwd, ".tmp/container-registry"))
-		if err != nil {
-			return err
+		s.Content.Backend = strfmt.Endpoint{
+			Scheme:   "file",
+			Hostname: ".",
+			Path:     path.Join("blobs", "content"),
 		}
-
-		s.Content.Backend = *endpoint
 	}
 
 	return nil

@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"path/filepath"
+	"path"
 	"sync"
 
 	"github.com/containerd/containerd/images"
@@ -82,7 +82,7 @@ func (w *ociTarWriter) writeToTarWithDigest(dgst v1.Hash, size int64, r io.Reade
 	}()
 
 	return w.writeToTar(tar.Header{
-		Name: filepath.Join("blobs", dgst.Algorithm, dgst.Hex),
+		Name: path.Join("blobs", dgst.Algorithm, dgst.Hex),
 		Size: size,
 	}, r)
 }
@@ -184,7 +184,7 @@ func (w *ociTarWriter) writeManifest(m manifest, scope *v1.Descriptor) error {
 	}
 
 	return w.writeToTar(tar.Header{
-		Name: filepath.Join("blobs", dgst.Algorithm, dgst.Hex),
+		Name: path.Join("blobs", dgst.Algorithm, dgst.Hex),
 		Size: int64(len(raw)),
 	}, bytes.NewReader(raw))
 }

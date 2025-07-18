@@ -1,7 +1,7 @@
 package kubepkg
 
 import (
-	"path/filepath"
+	"path"
 	"strings"
 	"text/template"
 
@@ -35,8 +35,8 @@ func (t *templateRenamer) Rename(repo name.Repository) string {
 
 	ctx := map[string]any{
 		"registry":  repo.RegistryStr(),
-		"namespace": filepath.Dir(repo.RepositoryStr()),
-		"name":      filepath.Base(repo.Name()),
+		"namespace": path.Dir(repo.RepositoryStr()),
+		"name":      path.Base(repo.Name()),
 	}
 
 	if err := t.Execute(b, ctx); err == nil {

@@ -3,7 +3,7 @@ package ocitar
 import (
 	"io"
 	"os"
-	"path/filepath"
+	"path"
 	"testing"
 
 	v1 "github.com/google/go-containerregistry/pkg/v1"
@@ -26,7 +26,7 @@ func TestOciTar(t *testing.T) {
 	})
 	testingx.Expect(t, err, testingx.BeNil[error]())
 
-	filename := filepath.Join(d, "x.tar")
+	filename := path.Join(d, "x.tar")
 
 	t.Run("should write", func(t *testing.T) {
 		f, err := os.OpenFile(filename, os.O_TRUNC|os.O_WRONLY|os.O_CREATE, 0o600)
