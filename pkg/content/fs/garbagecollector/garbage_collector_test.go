@@ -21,12 +21,14 @@ import (
 	"github.com/octohelm/crkit/pkg/content/collect"
 	"github.com/octohelm/crkit/pkg/content/fs/garbagecollector"
 	"github.com/octohelm/crkit/pkg/registryhttp/apis"
-	"github.com/octohelm/unifs/pkg/strfmt"
 	"github.com/octohelm/unifs/pkg/units"
 	"github.com/octohelm/x/testing/bdd"
 )
 
 func TestGarbageCollector(t *testing.T) {
+	_ = os.RemoveAll(".tmp")
+	_ = os.Mkdir(".tmp", os.ModePerm)
+
 	ctx, d := testingutil.BuildContext(t, func(d *struct {
 		otel.Otel
 
@@ -38,13 +40,9 @@ func TestGarbageCollector(t *testing.T) {
 		d.LogLevel = "debug"
 		d.LogFormat = "text"
 
-		tmp := t.TempDir()
-
-		t.Cleanup(func() {
-			_ = os.RemoveAll(tmp)
-		})
-
-		d.Content.Backend = *bdd.Must(strfmt.ParseEndpoint("file://" + tmp))
+		d.Content.Backend.Scheme = "file"
+		d.Content.Backend.Hostname = "."
+		d.Content.Backend.Path = ".tmp"
 	})
 
 	injector := configuration.ContextInjectorFromContext(ctx)

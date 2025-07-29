@@ -2,9 +2,9 @@ package garbagecollector
 
 import (
 	"context"
+	"github.com/octohelm/x/sync/singleflight"
 	"time"
 
-	"github.com/go-courier/logr"
 	"github.com/innoai-tech/infra/pkg/agent"
 	"github.com/innoai-tech/infra/pkg/cron"
 	"github.com/octohelm/crkit/pkg/content"
@@ -72,16 +72,21 @@ func (a *GarbageCollector) afterInit(ctx context.Context) error {
 		return nil
 	}
 
+	sfg := singleflight.Group[string]{}
+
 	a.Host("Mark & Sweep", func(ctx context.Context) error {
 		for range xiter.Merge(
 			xiter.Of(time.Now()),
 			a.Period.Times(ctx),
 		) {
 			a.Go(ctx, func(ctx context.Context) error {
-				ctx, l := logr.FromContext(ctx).Start(ctx, "removing")
-				defer l.End()
+				err, _ := sfg.Do("mark", func() error {
+					defer sfg.Forget("mark")
 
-				return a.MarkAndSweepExcludeModifiedIn(ctx, time.Duration(a.ExcludeModifiedIn))
+					return a.MarkAndSweepExcludeModifiedIn(ctx, time.Duration(a.ExcludeModifiedIn))
+				})
+
+				return err
 			})
 		}
 

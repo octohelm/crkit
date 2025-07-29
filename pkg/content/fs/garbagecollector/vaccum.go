@@ -6,6 +6,7 @@ import (
 	"github.com/go-courier/logr"
 	"log/slog"
 	"os"
+	"path"
 
 	"github.com/distribution/reference"
 	"github.com/octohelm/crkit/pkg/content/fs/driver"
@@ -17,6 +18,7 @@ type Vacuum interface {
 	RemoveBlob(ctx context.Context, dgst digest.Digest) error
 	RemoveLayer(ctx context.Context, named reference.Named, dgst digest.Digest) error
 	RemoveManifest(ctx context.Context, named reference.Named, dgst digest.Digest, allTags []string) error
+	RemoveRepository(ctx context.Context, named reference.Named) error
 }
 
 func NewVacuum(driver driver.Driver, dryRun bool) Vacuum {
@@ -72,6 +74,19 @@ func (m *maybeVacuum) RemoveManifest(ctx context.Context, named reference.Named,
 	return m.vacuum.RemoveManifest(ctx, named, dgst, allTags)
 }
 
+func (m *maybeVacuum) RemoveRepository(ctx context.Context, named reference.Named) error {
+	logr.FromContext(ctx).
+		WithValues(
+			slog.String("repository", named.Name()),
+		).
+		Info("removing")
+	if m.dryRun {
+		return nil
+	}
+
+	return m.vacuum.RemoveRepository(ctx, named)
+}
+
 type vacuum struct {
 	driver driver.Driver
 	layout layout.Layout
@@ -83,7 +98,7 @@ func (v *vacuum) RemoveBlob(ctx context.Context, dgst digest.Digest) error {
 	}
 
 	// delete blobs/{algorithm}/{hex_digest_prefix_2}/{hex_digest}/data
-	return v.driver.Delete(ctx, v.layout.BlobDataPath(dgst))
+	return v.driver.Delete(ctx, path.Dir(v.layout.BlobDataPath(dgst)))
 }
 
 func (v *vacuum) RemoveLayer(ctx context.Context, named reference.Named, dgst digest.Digest) error {
@@ -92,7 +107,7 @@ func (v *vacuum) RemoveLayer(ctx context.Context, named reference.Named, dgst di
 	}
 
 	// delete repositories/{name}/_layers/{algorithm}/{hex_digest}/link
-	return v.driver.Delete(ctx, v.layout.RepositoryLayerLinkPath(named, dgst))
+	return v.driver.Delete(ctx, path.Dir(v.layout.RepositoryLayerLinkPath(named, dgst)))
 }
 
 func (v *vacuum) RemoveManifest(ctx context.Context, named reference.Named, dgst digest.Digest, allTags []string) error {

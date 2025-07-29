@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/octohelm/x/ptr"
 	"log/slog"
 	"time"
 
@@ -13,6 +12,7 @@ import (
 	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
 	"github.com/octohelm/crkit/pkg/content"
 	"github.com/octohelm/crkit/pkg/content/fs/driver"
+	"github.com/octohelm/x/ptr"
 	"github.com/opencontainers/go-digest"
 )
 
@@ -41,7 +41,6 @@ func MarkAndSweepExcludeModifiedIn(
 	c := &collector{
 		Vacuum:    NewVacuum(d, dryRun),
 		namespace: namespace,
-		used:      map[digest.Digest]struct{}{},
 		recentlyActivated: func(modTime time.Time) bool {
 			return modTime.After(stabled)
 		},
@@ -52,28 +51,47 @@ func MarkAndSweepExcludeModifiedIn(
 
 type collector struct {
 	Vacuum
+
 	namespace         content.Namespace
-	used              map[digest.Digest]struct{}
 	recentlyActivated func(modTime time.Time) bool
+
+	blobUsed map[digest.Digest]struct{}
+	refUsed  map[string]map[digest.Digest]struct{}
 }
 
-func (c *collector) count(dgst digest.Digest) {
-	c.used[dgst] = struct{}{}
+func (c *collector) mark(named reference.Named, dgst digest.Digest) {
+	if c.blobUsed == nil {
+		c.blobUsed = map[digest.Digest]struct{}{}
+	}
+	c.blobUsed[dgst] = struct{}{}
+
+	if c.refUsed == nil {
+		c.refUsed = map[string]map[digest.Digest]struct{}{}
+	}
+
+	name := named.Name()
+	if c.refUsed[name] == nil {
+		c.refUsed[name] = map[digest.Digest]struct{}{}
+	}
+	c.refUsed[name][dgst] = struct{}{}
 }
 
 func (c *collector) referenced(dgst digest.Digest) bool {
-	_, ok := c.used[dgst]
+	_, ok := c.blobUsed[dgst]
 	return ok
 }
 
-func (c *collector) referencedOrRecentlyActivated(ld content.LinkedDigest) bool {
+func (c *collector) referencedOrRecentlyActivated(named reference.Named, ld content.LinkedDigest) bool {
 	if c.recentlyActivated(ld.ModTime) {
-		c.count(ld.Digest)
-
+		c.mark(named, ld.Digest)
 		return true
 	}
 
-	_, ok := c.used[ld.Digest]
+	repoUsed, ok := c.refUsed[named.Name()]
+	if !ok {
+		return false
+	}
+	_, ok = repoUsed[ld.Digest]
 	return ok
 }
 
@@ -106,6 +124,8 @@ func (c *collector) MarkAndSweep(pctx context.Context, repositoryNameIterable co
 			return fmt.Errorf("failed to remove blob %s: %w", d, err)
 		}
 	}
+
+	l.Info("all done")
 
 	return nil
 }
@@ -161,7 +181,7 @@ func (c *collector) markAndSweepRepository(ctx context.Context, named reference.
 			return fmt.Errorf("failed to get tag %s: %w", tag, err)
 		}
 
-		if err := c.markManifest(ctx, manifestService, d.Digest); err != nil {
+		if err := c.markManifest(ctx, named, manifestService, d.Digest); err != nil {
 			return fmt.Errorf("failed to mark manifests %s: %w", tag, err)
 		}
 	}
@@ -176,7 +196,7 @@ func (c *collector) markAndSweepRepository(ctx context.Context, named reference.
 			slog.String("manifest", string(ld.Digest)),
 		).Info("checking")
 
-		if c.referencedOrRecentlyActivated(ld) {
+		if c.referencedOrRecentlyActivated(named, ld) {
 			continue
 		}
 
@@ -195,7 +215,7 @@ func (c *collector) markAndSweepRepository(ctx context.Context, named reference.
 			slog.String("layer", string(ld.Digest)),
 		).Debug("checking")
 
-		if c.referencedOrRecentlyActivated(ld) {
+		if c.referencedOrRecentlyActivated(named, ld) {
 			continue
 		}
 
@@ -207,7 +227,7 @@ func (c *collector) markAndSweepRepository(ctx context.Context, named reference.
 	return nil
 }
 
-func (c *collector) markManifest(ctx context.Context, manifestService content.ManifestService, manifestDigest digest.Digest) error {
+func (c *collector) markManifest(ctx context.Context, named reference.Named, manifestService content.ManifestService, manifestDigest digest.Digest) error {
 	if manifestDigest == "" {
 		return nil
 	}
@@ -217,12 +237,12 @@ func (c *collector) markManifest(ctx context.Context, manifestService content.Ma
 		return err
 	}
 
-	c.count(manifestDigest)
+	c.mark(named, manifestDigest)
 
 	switch m.Type() {
 	case manifestv1.DockerMediaTypeManifestList, manifestv1.MediaTypeImageIndex:
 		for d := range m.References() {
-			if err := c.markManifest(ctx, manifestService, d.Digest); err != nil {
+			if err := c.markManifest(ctx, named, manifestService, d.Digest); err != nil {
 				// skip for partial cached
 				if errors.As(err, ptr.Ptr(&content.ErrManifestUnknownRevision{})) {
 					continue
@@ -232,7 +252,7 @@ func (c *collector) markManifest(ctx context.Context, manifestService content.Ma
 		}
 	default:
 		for d := range m.References() {
-			c.count(d.Digest)
+			c.mark(named, d.Digest)
 		}
 	}
 
