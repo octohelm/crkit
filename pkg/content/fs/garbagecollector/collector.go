@@ -158,17 +158,17 @@ func (c *collector) markAndSweepRepository(ctx context.Context, named reference.
 
 		d, err := tagService.Get(ctx, tag)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to get tag %s: %w", tag, err)
 		}
 
 		if err := c.markManifest(ctx, manifestService, d.Digest); err != nil {
-			return err
+			return fmt.Errorf("failed to mark manifests %s: %w", tag, err)
 		}
 	}
 
 	for ld, err := range manifestDigestIterable.LinkedDigests(ctx) {
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to get linked digest: %w", err)
 		}
 
 		l.WithValues(
