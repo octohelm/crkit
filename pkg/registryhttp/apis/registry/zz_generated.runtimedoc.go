@@ -39,6 +39,18 @@ func (v *Catalog) RuntimeDoc(names ...string) ([]string, bool) {
 	return []string{}, true
 }
 
+func (v *CatalogResponse) RuntimeDoc(names ...string) ([]string, bool) {
+	if len(names) > 0 {
+		switch names[0] {
+		case "Repositories":
+			return []string{}, true
+		}
+
+		return nil, false
+	}
+	return []string{}, true
+}
+
 func (v *CreateBlobUpload) RuntimeDoc(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {

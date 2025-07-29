@@ -21,5 +21,9 @@ func (r *Catalog) Output(ctx context.Context) (any, error) {
 	if err != nil {
 		return nil, err
 	}
-	return map[string][]string{"repositories": names}, nil
+	return &CatalogResponse{Repositories: names}, nil
+}
+
+type CatalogResponse struct {
+	Repositories []string `json:"repositories"`
 }

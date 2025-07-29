@@ -9,6 +9,9 @@ func (v *Executor) RuntimeDoc(names ...string) ([]string, bool) {
 		switch names[0] {
 		case "ExcludeModifiedIn":
 			return []string{}, true
+		case "DryRun":
+			return []string{}, true
+
 		}
 
 		return nil, false

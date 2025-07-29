@@ -42,11 +42,11 @@ func init() {
 }
 
 func (Catalog) ResponseContent() any {
-	return new(map[string][]string)
+	return new(CatalogResponse)
 }
 
-func (Catalog) ResponseData() *map[string][]string {
-	return new(map[string][]string)
+func (Catalog) ResponseData() *CatalogResponse {
+	return new(CatalogResponse)
 }
 
 func (Catalog) ResponseErrors() []error {

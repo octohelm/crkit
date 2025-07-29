@@ -2,12 +2,14 @@ package remote
 
 import (
 	"context"
+	"iter"
 	"net/url"
 	"strings"
 
 	"github.com/distribution/reference"
 	"github.com/octohelm/courier/pkg/courier"
 	"github.com/octohelm/crkit/pkg/content"
+	"github.com/octohelm/crkit/pkg/registryhttp/apis/registry"
 )
 
 func WithClient(c courier.Client) Option {
@@ -61,6 +63,26 @@ func (n *namespace) Repository(ctx context.Context, named reference.Named) (cont
 		named:  named,
 		client: n.client,
 	}, nil
+}
+
+var _ content.RepositoryNameIterable = &namespace{}
+
+func (n *namespace) RepositoryNames(ctx context.Context) iter.Seq2[reference.Named, error] {
+	return func(yield func(reference.Named, error) bool) {
+		req := &registry.Catalog{}
+
+		x, _, err := Do(ctx, n.client, req)
+		if err != nil {
+			yield(nil, err)
+			return
+		}
+
+		for _, name := range x.Repositories {
+			if !yield(reference.WithName(name)) {
+				return
+			}
+		}
+	}
 }
 
 type repository struct {
