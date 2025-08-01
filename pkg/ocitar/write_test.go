@@ -6,7 +6,7 @@ import (
 	"path"
 	"testing"
 
-	v1 "github.com/google/go-containerregistry/pkg/v1"
+	containerregistryv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/partial"
 	"github.com/google/go-containerregistry/pkg/v1/random"
 	testingx "github.com/octohelm/x/testing"
@@ -21,7 +21,7 @@ func TestOciTar(t *testing.T) {
 	index, err := random.Index(10, 5, 2)
 	testingx.Expect(t, err, testingx.BeNil[error]())
 
-	expectImages, err := partial.FindImages(index, func(desc v1.Descriptor) bool {
+	expectImages, err := partial.FindImages(index, func(desc containerregistryv1.Descriptor) bool {
 		return true
 	})
 	testingx.Expect(t, err, testingx.BeNil[error]())
@@ -42,7 +42,7 @@ func TestOciTar(t *testing.T) {
 			})
 			testingx.Expect(t, err, testingx.BeNil[error]())
 
-			images, err := partial.FindImages(idx, func(desc v1.Descriptor) bool {
+			images, err := partial.FindImages(idx, func(desc containerregistryv1.Descriptor) bool {
 				return true
 			})
 			testingx.Expect(t, err, testingx.BeNil[error]())

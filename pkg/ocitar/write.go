@@ -3,13 +3,14 @@ package ocitar
 import (
 	"archive/tar"
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"io"
 	"path"
 	"sync"
 
 	"github.com/containerd/containerd/images"
+	"github.com/go-json-experiment/json"
+	"github.com/go-json-experiment/json/jsontext"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/partial"
 )
@@ -31,6 +32,15 @@ type ociTarWriter struct {
 	*tar.Writer
 
 	blobs sync.Map
+
+	containsMultiArch bool
+	dockerManifests   []*dockerManifest
+}
+
+type dockerManifest struct {
+	Config   string
+	RepoTags []string
+	Layers   []string
 }
 
 func (w *ociTarWriter) writeRootIndex(idx v1.ImageIndex) error {
@@ -43,15 +53,15 @@ func (w *ociTarWriter) writeRootIndex(idx v1.ImageIndex) error {
 		return err
 	}
 
-	b := &bytes.Buffer{}
-	if err := json.Indent(b, raw, "", "  "); err != nil {
+	indexRaw, err := jsontext.AppendFormat(nil, raw, jsontext.WithIndent("  "))
+	if err != nil {
 		return err
 	}
 
 	if err := w.writeToTar(tar.Header{
 		Name: "index.json",
-		Size: int64(b.Len()),
-	}, b); err != nil {
+		Size: int64(len(indexRaw)),
+	}, bytes.NewBuffer(indexRaw)); err != nil {
 		return err
 	}
 
@@ -60,6 +70,21 @@ func (w *ociTarWriter) writeRootIndex(idx v1.ImageIndex) error {
 		Size: int64(len(ociLayoutRaw)),
 	}, bytes.NewBuffer(ociLayoutRaw)); err != nil {
 		return err
+	}
+
+	if !w.containsMultiArch && len(w.dockerManifests) > 0 {
+		b := &bytes.Buffer{}
+
+		if err := json.MarshalWrite(b, w.dockerManifests, jsontext.WithIndent("  ")); err != nil {
+			return err
+		}
+
+		if err := w.writeToTar(tar.Header{
+			Name: "manifest.json",
+			Size: int64(b.Len()),
+		}, b); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -110,14 +135,18 @@ func (w *ociTarWriter) writeDeps(m manifest, scope *v1.Descriptor) error {
 }
 
 func (w *ociTarWriter) writeChildren(idx v1.ImageIndex, scope *v1.Descriptor) error {
+	index, err := idx.IndexManifest()
+	if err != nil {
+		return fmt.Errorf("resolve index manifests failed, %T: %w", idx, err)
+	}
+
 	children, err := partial.Manifests(idx)
 	if err != nil {
 		return fmt.Errorf("resolve manifests failed, %T: %w", idx, err)
 	}
 
-	index, err := idx.IndexManifest()
-	if err != nil {
-		return fmt.Errorf("resolve index manifests failed, %T: %w", idx, err)
+	if len(children) > 1 {
+		w.containsMultiArch = true
 	}
 
 	for i, child := range children {
@@ -151,6 +180,27 @@ func (w *ociTarWriter) writeChild(child partial.Describable, scope *v1.Descripto
 }
 
 func (w *ociTarWriter) writeLayers(img v1.Image, scope *v1.Descriptor) error {
+	if !w.containsMultiArch && scope != nil && scope.Annotations != nil {
+		m, err := img.Manifest()
+		if err != nil {
+			return fmt.Errorf("resolve manifest failed, %w", err)
+		}
+
+		imgName := scope.Annotations[images.AnnotationImageName]
+
+		if imgName != "" {
+			dm := &dockerManifest{
+				RepoTags: []string{imgName},
+				Config:   path.Join("blobs", m.Config.Digest.Algorithm, m.Config.Digest.Hex),
+				Layers:   make([]string, 0, len(m.Layers)),
+			}
+			for _, l := range m.Layers {
+				dm.Layers = append(dm.Layers, path.Join("blobs", l.Digest.Algorithm, l.Digest.Hex))
+			}
+			w.dockerManifests = append(w.dockerManifests, dm)
+		}
+	}
+
 	ls, err := img.Layers()
 	if err != nil {
 		return fmt.Errorf("resolve layers failed: %w", err)
