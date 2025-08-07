@@ -2,16 +2,17 @@ package ocitar
 
 import (
 	"encoding/json"
-	v1 "github.com/google/go-containerregistry/pkg/v1"
+	"io"
+	"path"
+
+	googlecontainerregistryv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/partial"
 	"github.com/google/go-containerregistry/pkg/v1/types"
 	"github.com/opencontainers/go-digest"
 	specv1 "github.com/opencontainers/image-spec/specs-go/v1"
-	"io"
-	"path"
 )
 
-func Index(opener Opener) (v1.ImageIndex, error) {
+func Index(opener Opener) (googlecontainerregistryv1.ImageIndex, error) {
 	tr := &tarReader{opener: opener}
 
 	r, err := tr.Open("index.json")
@@ -23,8 +24,8 @@ func Index(opener Opener) (v1.ImageIndex, error) {
 
 type index struct {
 	o             FileOpener
-	d             v1.Descriptor
-	indexManifest *v1.IndexManifest
+	d             googlecontainerregistryv1.Descriptor
+	indexManifest *googlecontainerregistryv1.IndexManifest
 	raw           []byte
 }
 
@@ -41,7 +42,7 @@ func (i *index) MediaType() (types.MediaType, error) {
 	return types.OCIImageIndex, nil
 }
 
-func (i *index) Digest() (v1.Hash, error) {
+func (i *index) Digest() (googlecontainerregistryv1.Hash, error) {
 	return i.d.Digest, nil
 }
 
@@ -49,7 +50,7 @@ func (i *index) Size() (int64, error) {
 	return i.d.Size, nil
 }
 
-func (i *index) IndexManifest() (*v1.IndexManifest, error) {
+func (i *index) IndexManifest() (*googlecontainerregistryv1.IndexManifest, error) {
 	return i.indexManifest, nil
 }
 
@@ -57,7 +58,7 @@ func (i *index) RawManifest() ([]byte, error) {
 	return i.raw, nil
 }
 
-func (i *index) Image(h v1.Hash) (v1.Image, error) {
+func (i *index) Image(h googlecontainerregistryv1.Hash) (googlecontainerregistryv1.Image, error) {
 	for _, d := range i.indexManifest.Manifests {
 		if d.MediaType.IsImage() && d.Digest == h {
 			f, err := i.o.Open(layoutBlobsPath(h))
@@ -70,7 +71,7 @@ func (i *index) Image(h v1.Hash) (v1.Image, error) {
 	return nil, &ErrNotFound{Digest: h}
 }
 
-func (i *index) ImageIndex(h v1.Hash) (v1.ImageIndex, error) {
+func (i *index) ImageIndex(h googlecontainerregistryv1.Hash) (googlecontainerregistryv1.ImageIndex, error) {
 	for _, d := range i.indexManifest.Manifests {
 		if d.MediaType.IsIndex() && d.Digest == h {
 			f, err := i.o.Open(layoutBlobsPath(h))
@@ -85,7 +86,7 @@ func (i *index) ImageIndex(h v1.Hash) (v1.ImageIndex, error) {
 	}
 }
 
-func openAsIndexReader(o FileOpener, r io.ReadCloser) (v1.ImageIndex, error) {
+func openAsIndexReader(o FileOpener, r io.ReadCloser) (googlecontainerregistryv1.ImageIndex, error) {
 	defer r.Close()
 
 	i := &index{o: o}
@@ -100,12 +101,12 @@ func openAsIndexReader(o FileOpener, r io.ReadCloser) (v1.ImageIndex, error) {
 
 	i.raw = data
 	i.d.Size = int64(len(data))
-	i.d.Digest = v1.Hash{
+	i.d.Digest = googlecontainerregistryv1.Hash{
 		Algorithm: string(dgst.Algorithm()),
 		Hex:       dgst.Hex(),
 	}
 
-	indexManifest := &v1.IndexManifest{}
+	indexManifest := &googlecontainerregistryv1.IndexManifest{}
 	if err := json.Unmarshal(i.raw, indexManifest); err != nil {
 		return nil, err
 	}
@@ -114,7 +115,7 @@ func openAsIndexReader(o FileOpener, r io.ReadCloser) (v1.ImageIndex, error) {
 	return i, nil
 }
 
-func openAsImageReader(o FileOpener, r io.ReadCloser) (v1.Image, error) {
+func openAsImageReader(o FileOpener, r io.ReadCloser) (googlecontainerregistryv1.Image, error) {
 	defer r.Close()
 
 	raw, err := io.ReadAll(r)
@@ -127,7 +128,7 @@ func openAsImageReader(o FileOpener, r io.ReadCloser) (v1.Image, error) {
 		return nil, err
 	}
 
-	configName := v1.Hash{
+	configName := googlecontainerregistryv1.Hash{
 		Algorithm: string(m.Config.Digest.Algorithm()),
 		Hex:       m.Config.Digest.Hex(),
 	}
@@ -170,11 +171,11 @@ func (i *image) RawManifest() ([]byte, error) {
 	return i.raw, nil
 }
 
-func (i *image) LayerByDigest(hash v1.Hash) (partial.CompressedLayer, error) {
+func (i *image) LayerByDigest(hash googlecontainerregistryv1.Hash) (partial.CompressedLayer, error) {
 	for _, l := range i.m.Layers {
 		if l.Digest.String() == hash.String() {
 			return &layer{
-				d: v1.Descriptor{
+				d: googlecontainerregistryv1.Descriptor{
 					MediaType:    types.MediaType(l.MediaType),
 					ArtifactType: l.ArtifactType,
 					Digest:       hash,
@@ -193,7 +194,7 @@ func (i *image) LayerByDigest(hash v1.Hash) (partial.CompressedLayer, error) {
 }
 
 type layer struct {
-	d      v1.Descriptor
+	d      googlecontainerregistryv1.Descriptor
 	opener Opener
 }
 
@@ -205,7 +206,7 @@ func (l *layer) Size() (int64, error) {
 	return l.d.Size, nil
 }
 
-func (l *layer) Digest() (v1.Hash, error) {
+func (l *layer) Digest() (googlecontainerregistryv1.Hash, error) {
 	return l.d.Digest, nil
 }
 
@@ -213,6 +214,6 @@ func (l *layer) Compressed() (io.ReadCloser, error) {
 	return l.opener()
 }
 
-func layoutBlobsPath(hash v1.Hash) string {
+func layoutBlobsPath(hash googlecontainerregistryv1.Hash) string {
 	return path.Join("blobs", hash.Algorithm, hash.Hex)
 }

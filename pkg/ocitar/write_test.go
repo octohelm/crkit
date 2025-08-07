@@ -47,6 +47,18 @@ func TestOciTar(t *testing.T) {
 			})
 			testingx.Expect(t, err, testingx.BeNil[error]())
 			testingx.Expect(t, len(images), testingx.Be(len(expectImages)))
+
+			t.Run("should write diff", func(t *testing.T) {
+				filenameDiff := path.Join(d, "x.diff.tar")
+
+				f, err := os.OpenFile(filenameDiff, os.O_TRUNC|os.O_WRONLY|os.O_CREATE, 0o600)
+				testingx.Expect(t, err, testingx.BeNil[error]())
+
+				err = Write(f, index, ExcludeImageIndex(idx))
+				testingx.Expect(t, err, testingx.BeNil[error]())
+				_ = f.Close()
+			})
 		})
+
 	})
 }
