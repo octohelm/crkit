@@ -59,6 +59,5 @@ func TestOciTar(t *testing.T) {
 				_ = f.Close()
 			})
 		})
-
 	})
 }

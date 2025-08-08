@@ -26,6 +26,7 @@ func ExcludeImageIndex(imageIndex googlecontainerregistryv1.ImageIndex) WriteOpt
 
 			w.writtenBlobs.Store(o.Digest, struct{}{})
 		}
+
 		return nil
 	}
 }

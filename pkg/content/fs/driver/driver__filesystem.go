@@ -6,11 +6,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/octohelm/unifs/pkg/filesystem"
 	"io"
 	"io/fs"
 	"os"
 	"path"
+
+	"github.com/octohelm/unifs/pkg/filesystem"
 )
 
 func FromFileSystem(fs filesystem.FileSystem) Driver {

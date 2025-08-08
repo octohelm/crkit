@@ -2,6 +2,9 @@ package api
 
 import (
 	"context"
+	"log/slog"
+	"path"
+
 	"github.com/go-courier/logr"
 	"github.com/octohelm/crkit/pkg/content"
 	contentfs "github.com/octohelm/crkit/pkg/content/fs"
@@ -11,8 +14,6 @@ import (
 	"github.com/octohelm/unifs/pkg/filesystem"
 	"github.com/octohelm/unifs/pkg/filesystem/api"
 	"github.com/octohelm/unifs/pkg/strfmt"
-	"log/slog"
-	"path"
 )
 
 // +gengo:injectable:provider
@@ -28,7 +29,6 @@ type NamespaceProvider struct {
 
 func (s *NamespaceProvider) beforeInit(ctx context.Context) error {
 	if s.Content.Backend.IsZero() {
-
 		s.Content.Backend = strfmt.Endpoint{
 			Scheme:   "file",
 			Hostname: ".",

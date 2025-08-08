@@ -2,8 +2,9 @@ package garbagecollector
 
 import (
 	"context"
-	"github.com/octohelm/x/sync/singleflight"
 	"time"
+
+	"github.com/octohelm/x/sync/singleflight"
 
 	"github.com/innoai-tech/infra/pkg/agent"
 	"github.com/innoai-tech/infra/pkg/cron"

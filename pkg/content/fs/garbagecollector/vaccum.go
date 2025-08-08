@@ -3,10 +3,11 @@ package garbagecollector
 import (
 	"context"
 	"fmt"
-	"github.com/go-courier/logr"
 	"log/slog"
 	"os"
 	"path"
+
+	"github.com/go-courier/logr"
 
 	"github.com/distribution/reference"
 	"github.com/octohelm/crkit/pkg/content/fs/driver"

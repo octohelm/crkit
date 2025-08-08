@@ -18,13 +18,13 @@ func References(m partial.Describable) iter.Seq2[*googlecontainerregistryv1.Desc
 			}
 
 			for _, c := range children {
-				for m, err := range References(c) {
-					if !yield(m, err) {
+				for sub, err := range References(c) {
+					if !yield(sub, err) {
 						return
 					}
 				}
 
-				if yield(partial.Descriptor(c)) {
+				if !yield(partial.Descriptor(c)) {
 					return
 				}
 			}

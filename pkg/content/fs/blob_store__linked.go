@@ -3,15 +3,16 @@ package fs
 import (
 	"context"
 	"fmt"
-	"github.com/distribution/reference"
-	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
-	"github.com/octohelm/crkit/pkg/content"
-	"github.com/opencontainers/go-digest"
 	"io"
 	"io/fs"
 	"iter"
 	"os"
 	"path"
+
+	"github.com/distribution/reference"
+	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
+	"github.com/octohelm/crkit/pkg/content"
+	"github.com/opencontainers/go-digest"
 )
 
 func newLinkedBlobStore(w *workspace, named reference.Named) *linkedBlobStore {

@@ -2,13 +2,14 @@ package cache
 
 import (
 	"errors"
+	"io"
+	"os"
+	"path"
+
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/cache"
 	"github.com/google/go-containerregistry/pkg/v1/tarball"
 	"github.com/opencontainers/go-digest"
-	"io"
-	"os"
-	"path"
 )
 
 type fscache struct {

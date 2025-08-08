@@ -1,13 +1,14 @@
 package proxy_test
 
 import (
-	"github.com/distribution/reference"
 	randv2 "math/rand/v2"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/distribution/reference"
 
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/registry"
