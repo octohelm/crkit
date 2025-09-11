@@ -21,12 +21,12 @@ func Catalogs(ctx context.Context, ns content.Namespace) (catalogs []string, err
 	for n, e := range i.RepositoryNames(ctx) {
 		if e != nil {
 			err = e
-			return
+			return catalogs, err
 		}
 		catalogs = append(catalogs, n.Name())
 	}
 
-	return
+	return catalogs, err
 }
 
 func TagRevisions(ctx context.Context, tagService content.TagService, tag string) (digests []digest.Digest, err error) {
@@ -38,12 +38,12 @@ func TagRevisions(ctx context.Context, tagService content.TagService, tag string
 	for d, e := range i.TagRevisions(ctx, tag) {
 		if e != nil {
 			err = e
-			return
+			return digests, err
 		}
 		digests = append(digests, d.Digest)
 	}
 
-	return
+	return digests, err
 }
 
 func Manifests(ctx context.Context, manifestService content.ManifestService) (digests []digest.Digest, err error) {
@@ -54,11 +54,11 @@ func Manifests(ctx context.Context, manifestService content.ManifestService) (di
 	for linkedDigest, e := range i.LinkedDigests(ctx) {
 		if e != nil {
 			err = e
-			return
+			return digests, err
 		}
 		digests = append(digests, linkedDigest.Digest)
 	}
-	return
+	return digests, err
 }
 
 func Layers(ctx context.Context, blobStore content.BlobStore) (digests []digest.Digest, err error) {
@@ -69,11 +69,11 @@ func Layers(ctx context.Context, blobStore content.BlobStore) (digests []digest.
 	for d, e := range i.LinkedDigests(ctx) {
 		if e != nil {
 			err = e
-			return
+			return digests, err
 		}
 		digests = append(digests, d.Digest)
 	}
-	return
+	return digests, err
 }
 
 func Blobs(ctx context.Context, ns content.Namespace) (digests []digest.Digest, err error) {
@@ -88,9 +88,9 @@ func Blobs(ctx context.Context, ns content.Namespace) (digests []digest.Digest, 
 	for dgst, e := range i.Digests(ctx) {
 		if e != nil {
 			err = e
-			return
+			return digests, err
 		}
 		digests = append(digests, dgst)
 	}
-	return
+	return digests, err
 }

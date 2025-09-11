@@ -35,7 +35,7 @@ actions: go: golang.#Project & {
 		"-X \(module)/internal/version.version=\(version)",
 	]
 	env: {
-		GOEXPERIMENT: "rangefunc"
+		GOEXPERIMENT: "jsonv2,greenteagc"
 	}
 }
 

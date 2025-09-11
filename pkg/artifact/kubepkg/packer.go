@@ -400,5 +400,5 @@ func intersection[E comparable](a []E, b []E) (c []E) {
 		}
 	}
 
-	return
+	return c
 }

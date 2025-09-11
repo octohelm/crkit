@@ -28,11 +28,6 @@ import (
 		//  
 		config: CRKIT_METRIC_COLLECT_INTERVAL_SECONDS: string | *"0"
 
-		// cron job 配置
-		// 支持 标准格式
-		// 也支持 @every {duration} 等语义化格式 
-		config: CRKIT_UPLOAD_CACHE_CRON: string | *"@every 3s"
-
 		// Remote container registry endpoint 
 		config: CRKIT_REMOTE_ENDPOINT: string | *""
 
@@ -42,8 +37,35 @@ import (
 		// Remote container registry password 
 		config: CRKIT_REMOTE_PASSWORD: string | *""
 
-		// 地址
-		config: CRKIT_CONTENT_BACKEND: string
+		// 地址 
+		config: CRKIT_CONTENT_BACKEND: string | *""
+
+		// Overwrite username when not empty 
+		config: CRKIT_CONTENT_USERNAME_OVERWRITE: string | *""
+
+		// Overwrite password when not empty 
+		config: CRKIT_CONTENT_PASSWORD_OVERWRITE: string | *""
+
+		// Overwrite path when not empty 
+		config: CRKIT_CONTENT_PATH_OVERWRITE: string | *""
+
+		// Overwrite extra when not empty 
+		config: CRKIT_CONTENT_EXTRA_OVERWRITE: string | *""
+
+		//  
+		config: CRKIT_NO_CACHE: string | *"false"
+
+		//  
+		config: CRKIT_UPLOAD_PURGER_EXPIRES_IN: string | *"2h0m0s"
+
+		//  
+		config: CRKIT_UPLOAD_PURGER_PERIOD: string | *"@every 10m"
+
+		//  
+		config: CRKIT_GARBAGE_COLLECTOR_PERIOD: string | *"@midnight"
+
+		//  
+		config: CRKIT_GARBAGE_COLLECTOR_EXCLUDE_MODIFIED_IN: string | *"1h0m0s"
 
 		// Enable debug mode 
 		config: CRKIT_ENABLE_DEBUG: string | *"false"
