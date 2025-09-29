@@ -53,8 +53,8 @@ github.com/felixge/httpsnoop v1.0.4 h1:NFTV2Zj1bL4mc9sqWACXbQFVBBg2W3GPvqp8/ESS2
 github.com/felixge/httpsnoop v1.0.4/go.mod h1:m8KPJKqk1gH5J9DgRY2ASl2lWCfGKXixSwevea8zH2U=
 github.com/fxamacker/cbor/v2 v2.9.0 h1:NpKPmjDBgUfBms6tr6JZkTHtfFGcMKsw3eGcmD/sapM=
 github.com/fxamacker/cbor/v2 v2.9.0/go.mod h1:vM4b+DJCtHn+zz7h3FFp/hDAI9WNWCsZj23V5ytsSxQ=
-github.com/go-courier/logr v0.3.2 h1:zzh5t9BFtZ6IjALisEbWQy11WPMa259wgQRYM8K4fVc=
-github.com/go-courier/logr v0.3.2/go.mod h1:ojcyR9ttwhxczm8iABg/ekFwLlzvGaJVLyqWLhL7woM=
+github.com/go-courier/logr v0.4.0 h1:lusq0YPQEaFg00KHD7U+UCv2X+bNDkXuQH0EC0+eiUE=
+github.com/go-courier/logr v0.4.0/go.mod h1:gGFDAos7HfFH4eDX4+1O1YfFxk3d6KYHg0NkcFxZ11Q=
 github.com/go-ini/ini v1.67.0 h1:z6ZrTEZqSWOTyH2FlglNbNgARyHG8oLW9gMELqKr06A=
 github.com/go-ini/ini v1.67.0/go.mod h1:ByCAeIL28uOIIG0E3PJtZPDL8WnHpFKFOtgjp+3Ies8=
 github.com/go-json-experiment/json v0.0.0-20250910080747-cc2cfa0554c3 h1:02WINGfSX5w0Mn+F28UyRoSt9uvMhKguwWMlOAh6U/0=
@@ -179,8 +179,8 @@ github.com/octohelm/kubepkgspec v0.0.0-20250901023429-765c2619c982 h1:afMVzFzEPj
 github.com/octohelm/kubepkgspec v0.0.0-20250901023429-765c2619c982/go.mod h1:3xS9tfckh0+V3Q0sFgcaQyW+PfdXpAb1MKisVBwaV+M=
 github.com/octohelm/unifs v0.0.0-20250909021328-29364e184e61 h1:gktsxqFPLtIWFc9BiG7ALiVon7yGafn15cPw1rdtiio=
 github.com/octohelm/unifs v0.0.0-20250909021328-29364e184e61/go.mod h1:NHiTeLDyofDWSz3ysIZUWJQRNRF7Q9iOnyY5yNd7uyU=
-github.com/octohelm/x v0.0.0-20250905103750-d1a271ae07dd h1:R+jqiDdAWxe+F9ld5WLAXK9kCUBJDLmViov+P5VAerM=
-github.com/octohelm/x v0.0.0-20250905103750-d1a271ae07dd/go.mod h1:V0ZpkPrXZQIT8QUQwFM/tc021/aq/d/XljpUT7/H9OQ=
+github.com/octohelm/x v0.0.0-20250928045151-6a49847969fd h1:4gJawfUu4zRdr2pLPbCykwgAaWrGMaGk0d+BlvlrnyY=
+github.com/octohelm/x v0.0.0-20250928045151-6a49847969fd/go.mod h1:tNHVsZ6Mlblz1qua9b8ztOlBwGPQ/Q8uV1WAqisJ6uM=
 github.com/onsi/ginkgo/v2 v2.23.4 h1:ktYTpKJAVZnDT4VjxSbiBenUjmlL/5QkBEocaWXiQus=
 github.com/onsi/ginkgo/v2 v2.23.4/go.mod h1:Bt66ApGPBFzHyR+JO10Zbt0Gsp4uWxu5mIOTusL46e8=
 github.com/onsi/gomega v1.38.1 h1:FaLA8GlcpXDwsb7m0h2A9ew2aTk3vnZMlzFgg5tz/pk=

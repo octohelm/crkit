@@ -10,7 +10,7 @@ tool (
 )
 
 require (
-	github.com/go-courier/logr v0.3.2
+	github.com/go-courier/logr v0.4.0
 	github.com/innoai-tech/infra v0.0.0-20250909061154-b7f75973e9b6
 	github.com/innoai-tech/openapi-playground v0.0.0-20250821051843-bef438562f2d // indirect
 	github.com/octohelm/courier v0.0.0-20250911025954-866a054d768f
@@ -19,7 +19,7 @@ require (
 	github.com/octohelm/gengo v0.0.0-20250909020815-1e94629296bc
 	github.com/octohelm/kubepkgspec v0.0.0-20250901023429-765c2619c982
 	github.com/octohelm/unifs v0.0.0-20250909021328-29364e184e61
-	github.com/octohelm/x v0.0.0-20250905103750-d1a271ae07dd
+	github.com/octohelm/x v0.0.0-20250928045151-6a49847969fd
 )
 
 require (
