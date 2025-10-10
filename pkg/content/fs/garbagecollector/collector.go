@@ -8,10 +8,10 @@ import (
 	"time"
 
 	"github.com/distribution/reference"
-	"github.com/go-courier/logr"
 	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
 	"github.com/octohelm/crkit/pkg/content"
 	"github.com/octohelm/crkit/pkg/content/fs/driver"
+	"github.com/octohelm/x/logr"
 	"github.com/octohelm/x/ptr"
 	"github.com/opencontainers/go-digest"
 )

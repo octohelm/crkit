@@ -7,7 +7,7 @@ import (
 	"os"
 	"path"
 
-	"github.com/go-courier/logr"
+	"github.com/octohelm/x/logr"
 
 	"github.com/distribution/reference"
 	"github.com/octohelm/crkit/pkg/content/fs/driver"

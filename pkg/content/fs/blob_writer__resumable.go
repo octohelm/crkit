@@ -10,7 +10,7 @@ import (
 	"path"
 	"strconv"
 
-	"github.com/go-courier/logr"
+	"github.com/octohelm/x/logr"
 )
 
 func (bw *blobWriter) resumeDigestIfNeed(ctx context.Context) error {
