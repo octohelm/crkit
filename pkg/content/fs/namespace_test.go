@@ -2,29 +2,30 @@ package fs_test
 
 import (
 	"fmt"
+	randv2 "math/rand/v2"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"strings"
 	"testing"
 
-	randv2 "math/rand/v2"
-
 	"github.com/distribution/reference"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/v1/random"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
+
 	"github.com/innoai-tech/infra/pkg/configuration"
 	"github.com/innoai-tech/infra/pkg/configuration/testingutil"
 	"github.com/innoai-tech/infra/pkg/otel"
 	"github.com/octohelm/courier/pkg/courierhttp/handler/httprouter"
+	"github.com/octohelm/unifs/pkg/strfmt"
+	"github.com/octohelm/unifs/pkg/units"
+	"github.com/octohelm/x/testing/bdd"
+
 	"github.com/octohelm/crkit/pkg/content"
 	contentapi "github.com/octohelm/crkit/pkg/content/api"
 	"github.com/octohelm/crkit/pkg/content/collect"
 	"github.com/octohelm/crkit/pkg/registryhttp/apis"
-	"github.com/octohelm/unifs/pkg/strfmt"
-	"github.com/octohelm/unifs/pkg/units"
-	"github.com/octohelm/x/testing/bdd"
 )
 
 func FuzzNamespace(f *testing.F) {

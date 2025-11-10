@@ -9,11 +9,13 @@ import (
 	"strings"
 	"testing"
 
-	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
-	"github.com/octohelm/crkit/pkg/content/fs/layout"
+	"github.com/opencontainers/go-digest"
+
 	"github.com/octohelm/unifs/pkg/filesystem/local"
 	"github.com/octohelm/x/testing/bdd"
-	"github.com/opencontainers/go-digest"
+
+	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
+	"github.com/octohelm/crkit/pkg/content/fs/layout"
 )
 
 func TestBlobStore(t *testing.T) {

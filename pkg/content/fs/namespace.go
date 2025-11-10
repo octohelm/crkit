@@ -8,12 +8,13 @@ import (
 	"path"
 	"strings"
 
+	"github.com/distribution/reference"
 	"github.com/opencontainers/go-digest"
 
-	"github.com/distribution/reference"
+	"github.com/octohelm/unifs/pkg/filesystem"
+
 	"github.com/octohelm/crkit/pkg/content"
 	"github.com/octohelm/crkit/pkg/content/fs/layout"
-	"github.com/octohelm/unifs/pkg/filesystem"
 )
 
 func NewNamespace(fs filesystem.FileSystem) content.Namespace {

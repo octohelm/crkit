@@ -7,12 +7,13 @@ import (
 	"os"
 	"path"
 
+	"github.com/distribution/reference"
+	"github.com/opencontainers/go-digest"
+
 	"github.com/octohelm/x/logr"
 
-	"github.com/distribution/reference"
 	"github.com/octohelm/crkit/pkg/content/fs/driver"
 	"github.com/octohelm/crkit/pkg/content/fs/layout"
-	"github.com/opencontainers/go-digest"
 )
 
 type Vacuum interface {

@@ -2,7 +2,6 @@ package kubepkg
 
 import (
 	"context"
-	_ "embed"
 	"encoding/json"
 	"io"
 	"net/http/httptest"
@@ -17,11 +16,17 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/mutate"
 	"github.com/google/go-containerregistry/pkg/v1/random"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
-	"github.com/octohelm/crkit/pkg/artifact/kubepkg/cache"
-	"github.com/octohelm/crkit/pkg/ocitar"
+
 	kubepkgv1alpha1 "github.com/octohelm/kubepkgspec/pkg/apis/kubepkg/v1alpha1"
 	testingx "github.com/octohelm/x/testing"
 	"github.com/octohelm/x/testing/bdd"
+
+	"github.com/octohelm/crkit/pkg/artifact/kubepkg/cache"
+	"github.com/octohelm/crkit/pkg/ocitar"
+)
+
+import (
+	_ "embed"
 )
 
 //go:embed testdata/example.kubepkg.json

@@ -4,6 +4,7 @@ import (
 	"github.com/octohelm/courier/pkg/courier"
 	"github.com/octohelm/courier/pkg/courierhttp"
 	"github.com/octohelm/courier/pkg/courierhttp/handler/httprouter"
+
 	"github.com/octohelm/crkit/pkg/registryhttp/apis/registry"
 )
 

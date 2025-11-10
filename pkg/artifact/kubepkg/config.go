@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 	"sync"
 
-	"github.com/octohelm/crkit/pkg/artifact"
 	kubepkgv1alpha1 "github.com/octohelm/kubepkgspec/pkg/apis/kubepkg/v1alpha1"
+
+	"github.com/octohelm/crkit/pkg/artifact"
 )
 
 const (

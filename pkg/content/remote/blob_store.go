@@ -14,14 +14,16 @@ import (
 	"sync/atomic"
 
 	"github.com/distribution/reference"
+	"github.com/opencontainers/go-digest"
+
 	"github.com/octohelm/courier/pkg/courier"
 	"github.com/octohelm/courier/pkg/statuserror"
+	"github.com/octohelm/unifs/pkg/units"
+
 	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
 	"github.com/octohelm/crkit/pkg/content"
 	contentutil "github.com/octohelm/crkit/pkg/content/util"
 	"github.com/octohelm/crkit/pkg/registryhttp/apis/registry"
-	"github.com/octohelm/unifs/pkg/units"
-	"github.com/opencontainers/go-digest"
 )
 
 type blobStore struct {

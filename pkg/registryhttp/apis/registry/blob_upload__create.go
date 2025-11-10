@@ -6,10 +6,12 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/opencontainers/go-digest"
+
 	"github.com/octohelm/courier/pkg/courierhttp"
+
 	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
 	"github.com/octohelm/crkit/pkg/content"
-	"github.com/opencontainers/go-digest"
 )
 
 // CreateBlobUpload

@@ -11,9 +11,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/opencontainers/go-digest"
+
 	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
 	"github.com/octohelm/crkit/pkg/content"
-	"github.com/opencontainers/go-digest"
 )
 
 type blobStore struct {

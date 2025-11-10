@@ -3,9 +3,11 @@ package registry
 import (
 	"context"
 
-	"github.com/octohelm/courier/pkg/courierhttp"
-	"github.com/octohelm/crkit/pkg/content"
 	"github.com/opencontainers/go-digest"
+
+	"github.com/octohelm/courier/pkg/courierhttp"
+
+	"github.com/octohelm/crkit/pkg/content"
 )
 
 type DeleteBlob struct {

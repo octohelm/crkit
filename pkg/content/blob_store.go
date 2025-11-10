@@ -5,8 +5,9 @@ import (
 	"io"
 	"iter"
 
-	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
 	"github.com/opencontainers/go-digest"
+
+	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
 )
 
 type BlobStore interface {

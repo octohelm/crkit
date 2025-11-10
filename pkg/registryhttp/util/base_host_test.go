@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/distribution/reference"
+
 	testingx "github.com/octohelm/x/testing"
 )
 

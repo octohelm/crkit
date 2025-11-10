@@ -6,11 +6,13 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/opencontainers/go-digest"
+
 	"github.com/octohelm/courier/pkg/courierhttp"
+
 	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
 	"github.com/octohelm/crkit/pkg/content"
 	contentutil "github.com/octohelm/crkit/pkg/content/util"
-	"github.com/opencontainers/go-digest"
 )
 
 // +gengo:injectable

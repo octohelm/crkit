@@ -3,11 +3,11 @@ package v1
 import (
 	"fmt"
 
-	"github.com/octohelm/courier/pkg/validator"
-
-	"github.com/octohelm/courier/pkg/validator/taggedunion"
 	"github.com/opencontainers/go-digest"
 	specv1 "github.com/opencontainers/image-spec/specs-go/v1"
+
+	"github.com/octohelm/courier/pkg/validator"
+	"github.com/octohelm/courier/pkg/validator/taggedunion"
 )
 
 type Payload struct {

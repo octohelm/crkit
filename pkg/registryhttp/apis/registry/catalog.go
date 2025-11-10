@@ -3,10 +3,10 @@ package registry
 import (
 	"context"
 
+	"github.com/octohelm/courier/pkg/courierhttp"
+
 	"github.com/octohelm/crkit/pkg/content"
 	"github.com/octohelm/crkit/pkg/content/collect"
-
-	"github.com/octohelm/courier/pkg/courierhttp"
 )
 
 // +gengo:injectable

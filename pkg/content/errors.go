@@ -3,8 +3,9 @@ package content
 import (
 	"fmt"
 
-	"github.com/octohelm/courier/pkg/statuserror"
 	"github.com/opencontainers/go-digest"
+
+	"github.com/octohelm/courier/pkg/statuserror"
 )
 
 type ErrNotImplemented struct {

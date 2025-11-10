@@ -6,10 +6,12 @@ import (
 	"io"
 
 	"github.com/distribution/reference"
+	"github.com/opencontainers/go-digest"
+
+	"github.com/octohelm/x/ptr"
+
 	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
 	"github.com/octohelm/crkit/pkg/content"
-	"github.com/octohelm/x/ptr"
-	"github.com/opencontainers/go-digest"
 )
 
 type proxyBlobStore struct {

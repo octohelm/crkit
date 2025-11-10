@@ -4,8 +4,9 @@ import (
 	"context"
 	"errors"
 
-	"github.com/octohelm/crkit/pkg/content"
 	"github.com/opencontainers/go-digest"
+
+	"github.com/octohelm/crkit/pkg/content"
 )
 
 func Catalogs(ctx context.Context, ns content.Namespace) (catalogs []string, err error) {

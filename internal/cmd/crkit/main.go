@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/innoai-tech/infra/pkg/cli"
+
 	"github.com/octohelm/crkit/internal/version"
 )
 

@@ -7,8 +7,10 @@ import (
 	"testing"
 
 	v1 "github.com/google/go-containerregistry/pkg/v1"
-	"github.com/octohelm/crkit/pkg/ocitar"
+
 	testingx "github.com/octohelm/x/testing"
+
+	"github.com/octohelm/crkit/pkg/ocitar"
 )
 
 func TestPacker(t *testing.T) {

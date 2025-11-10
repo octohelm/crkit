@@ -7,9 +7,10 @@ import (
 	"os"
 
 	"github.com/distribution/reference"
+	"github.com/opencontainers/go-digest"
+
 	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
 	"github.com/octohelm/crkit/pkg/content"
-	"github.com/opencontainers/go-digest"
 )
 
 var _ content.TagService = &tagService{}

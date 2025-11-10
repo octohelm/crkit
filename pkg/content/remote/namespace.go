@@ -7,7 +7,9 @@ import (
 	"strings"
 
 	"github.com/distribution/reference"
+
 	"github.com/octohelm/courier/pkg/courier"
+
 	"github.com/octohelm/crkit/pkg/content"
 	"github.com/octohelm/crkit/pkg/registryhttp/apis/registry"
 )

@@ -6,7 +6,10 @@ import (
 
 	"github.com/innoai-tech/infra/devpkg/gengo"
 	"github.com/innoai-tech/infra/pkg/cli"
+	"github.com/octohelm/gengo/pkg/format"
+)
 
+import (
 	_ "github.com/octohelm/courier/devpkg/clientgen"
 	_ "github.com/octohelm/courier/devpkg/injectablegen"
 	_ "github.com/octohelm/courier/devpkg/operatorgen"
@@ -18,12 +21,15 @@ import (
 var App = cli.NewApp("devtool", "dev")
 
 func init() {
-	c := &struct {
+	cli.AddTo(App, &struct {
 		cli.C `name:"gen"`
 		gengo.Gengo
-	}{}
+	}{})
 
-	cli.AddTo(App, c)
+	cli.AddTo(App, &struct {
+		cli.C `name:"fmt"`
+		format.Project
+	}{})
 }
 
 func main() {

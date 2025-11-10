@@ -4,9 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/octohelm/x/logr"
+
 	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
 	"github.com/octohelm/crkit/pkg/content"
-	"github.com/octohelm/x/logr"
 )
 
 type proxyTagService struct {

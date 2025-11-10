@@ -7,10 +7,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/opencontainers/go-digest"
+
 	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
 	"github.com/octohelm/crkit/pkg/content"
 	"github.com/octohelm/crkit/pkg/content/fs/driver"
-	"github.com/opencontainers/go-digest"
 )
 
 type blobWriter struct {

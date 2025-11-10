@@ -1,9 +1,10 @@
 package fs
 
 import (
+	"github.com/octohelm/unifs/pkg/filesystem"
+
 	"github.com/octohelm/crkit/pkg/content/fs/driver"
 	"github.com/octohelm/crkit/pkg/content/fs/layout"
-	"github.com/octohelm/unifs/pkg/filesystem"
 )
 
 func newWorkspace(fs filesystem.FileSystem, layout layout.Layout) *workspace {

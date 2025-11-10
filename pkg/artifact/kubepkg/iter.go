@@ -7,8 +7,9 @@ import (
 	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
-	kubepkgv1alpha1 "github.com/octohelm/kubepkgspec/pkg/apis/kubepkg/v1alpha1"
 	specv1 "github.com/opencontainers/image-spec/specs-go/v1"
+
+	kubepkgv1alpha1 "github.com/octohelm/kubepkgspec/pkg/apis/kubepkg/v1alpha1"
 )
 
 func KubePkg(idx v1.ImageIndex) (*kubepkgv1alpha1.KubePkg, error) {

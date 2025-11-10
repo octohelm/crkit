@@ -10,10 +10,12 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/empty"
 	"github.com/google/go-containerregistry/pkg/v1/mutate"
 	"github.com/google/go-containerregistry/pkg/v1/partial"
-	"github.com/octohelm/crkit/pkg/artifact"
+	specv1 "github.com/opencontainers/image-spec/specs-go/v1"
+
 	kubepkgv1alpha1 "github.com/octohelm/kubepkgspec/pkg/apis/kubepkg/v1alpha1"
 	"github.com/octohelm/kubepkgspec/pkg/workload"
-	specv1 "github.com/opencontainers/image-spec/specs-go/v1"
+
+	"github.com/octohelm/crkit/pkg/artifact"
 )
 
 const (

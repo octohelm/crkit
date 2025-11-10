@@ -5,15 +5,16 @@ import (
 	"log/slog"
 	"path"
 
+	"github.com/octohelm/unifs/pkg/filesystem"
+	"github.com/octohelm/unifs/pkg/filesystem/api"
+	"github.com/octohelm/unifs/pkg/strfmt"
+	"github.com/octohelm/x/logr"
+
 	"github.com/octohelm/crkit/pkg/content"
 	contentfs "github.com/octohelm/crkit/pkg/content/fs"
 	"github.com/octohelm/crkit/pkg/content/fs/driver"
 	contentproxy "github.com/octohelm/crkit/pkg/content/proxy"
 	contentremote "github.com/octohelm/crkit/pkg/content/remote"
-	"github.com/octohelm/unifs/pkg/filesystem"
-	"github.com/octohelm/unifs/pkg/filesystem/api"
-	"github.com/octohelm/unifs/pkg/strfmt"
-	"github.com/octohelm/x/logr"
 )
 
 // +gengo:injectable:provider

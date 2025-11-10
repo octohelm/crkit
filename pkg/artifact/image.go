@@ -5,13 +5,13 @@ import (
 	"encoding/json"
 	"sync/atomic"
 
-	"github.com/octohelm/crkit/pkg/ociutil"
-
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/partial"
 	"github.com/google/go-containerregistry/pkg/v1/types"
 	"github.com/opencontainers/go-digest"
 	specv1 "github.com/opencontainers/image-spec/specs-go/v1"
+
+	"github.com/octohelm/crkit/pkg/ociutil"
 )
 
 func WithAnnotations(annotations map[string]string) Option {
