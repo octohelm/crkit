@@ -12,8 +12,9 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: extractions/setup-just@v3
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version: '^1.25'
+          check-latest: true
 
       - run: just test-race

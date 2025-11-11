@@ -18,7 +18,6 @@ import (
 	"github.com/innoai-tech/infra/pkg/configuration/testingutil"
 	"github.com/innoai-tech/infra/pkg/otel"
 	"github.com/octohelm/courier/pkg/courierhttp/handler/httprouter"
-	"github.com/octohelm/unifs/pkg/strfmt"
 	"github.com/octohelm/unifs/pkg/units"
 	"github.com/octohelm/x/testing/bdd"
 
@@ -39,6 +38,11 @@ func FuzzNamespace(f *testing.F) {
 	}
 
 	f.Fuzz(func(t *testing.T, idx int) {
+		tmp := t.TempDir()
+		t.Cleanup(func() {
+			_ = os.RemoveAll(tmp)
+		})
+
 		img := images[idx]
 
 		layerN := 1
@@ -52,13 +56,8 @@ func FuzzNamespace(f *testing.F) {
 			contentapi.NamespaceProvider
 		},
 		) {
-			tmp := t.TempDir()
-
-			t.Cleanup(func() {
-				_ = os.RemoveAll(tmp)
-			})
-
-			d.Content.Backend = *bdd.Must(strfmt.ParseEndpoint("file://" + tmp))
+			d.Content.Backend.Scheme = "file"
+			d.Content.Backend.Path = tmp
 		})
 
 		injector := configuration.ContextInjectorFromContext(ctx)
