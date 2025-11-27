@@ -9,8 +9,8 @@ tool (
 
 // +gengo:import:group=0_controlled
 require (
-	github.com/innoai-tech/infra v0.0.0-20251117072537-a08c8881cdcb
-	github.com/innoai-tech/openapi-playground v0.0.0-20251124073257-c6ea46be9b32 // indirect
+	github.com/innoai-tech/infra v0.0.0-20251127015830-22ceb4486015
+	github.com/innoai-tech/openapi-playground v0.0.0-20251127014822-02b09270952f // indirect
 	github.com/octohelm/courier v0.0.0-20251010073531-57524a0631a3
 	github.com/octohelm/enumeration v0.0.0-20251117072411-c5ede10316bf
 	github.com/octohelm/exp v0.0.0-20250610043704-ec5e24647f61
@@ -97,7 +97,6 @@ require (
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
 	github.com/philhofer/fwd v1.2.0 // indirect
-	github.com/pkg/errors v0.9.1 // indirect
 	github.com/prometheus/client_golang v1.23.2 // indirect
 	github.com/prometheus/client_model v0.6.2 // indirect
 	github.com/prometheus/common v0.67.4 // indirect
