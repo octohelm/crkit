@@ -7,7 +7,7 @@ import (
 	"io"
 	"path"
 
-	"github.com/containerd/containerd/images"
+	"github.com/containerd/containerd/v2/core/images"
 	"github.com/go-json-experiment/json"
 	"github.com/go-json-experiment/json/jsontext"
 	googlecontainerregistryv1 "github.com/google/go-containerregistry/pkg/v1"
