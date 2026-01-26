@@ -2,6 +2,7 @@ package remote
 
 import (
 	"context"
+	"errors"
 	"maps"
 	"slices"
 	"strconv"
@@ -11,6 +12,7 @@ import (
 	"github.com/opencontainers/go-digest"
 
 	"github.com/octohelm/courier/pkg/courier"
+	"github.com/octohelm/courier/pkg/statuserror"
 
 	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
 	"github.com/octohelm/crkit/pkg/content"
@@ -63,6 +65,15 @@ func (ms *manifestService) Info(ctx context.Context, dgst digest.Digest) (*manif
 
 	_, meta, err := Do(ctx, ms.client, req)
 	if err != nil {
+		errd := &statuserror.Descriptor{}
+		if errors.As(err, &errd) {
+			if errd.StatusCode() == 404 {
+				return nil, &content.ErrManifestUnknownRevision{
+					Name:     ms.named.Name(),
+					Revision: dgst,
+				}
+			}
+		}
 		return nil, err
 	}
 
@@ -85,5 +96,6 @@ func (ms *manifestService) Get(ctx context.Context, dgst digest.Digest) (manifes
 	if err != nil {
 		return nil, err
 	}
+
 	return p, nil
 }

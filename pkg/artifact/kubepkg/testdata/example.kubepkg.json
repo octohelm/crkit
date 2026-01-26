@@ -24,7 +24,7 @@
       "web": {
         "image": {
           "name": "docker.io/library/nginx",
-          "tag": "1.25.0-alpine",
+          "tag": "1.25.0",
           "pullPolicy": "IfNotPresent",
           "platforms": [
             "linux/amd64",
@@ -55,6 +55,16 @@
             "index.html": "<div>hello</div>"
           }
         }
+      }
+    },
+    "images": {
+      "side": {
+        "name": "docker.io/library/nginx",
+        "tag": "1.24.0",
+        "platforms": [
+          "linux/amd64",
+          "linux/arm64"
+        ]
       }
     }
   }

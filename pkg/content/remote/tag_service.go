@@ -2,12 +2,17 @@ package remote
 
 import (
 	"context"
+	"errors"
+	"maps"
+	"slices"
 	"strconv"
+	"strings"
 
 	"github.com/distribution/reference"
 	"github.com/opencontainers/go-digest"
 
 	"github.com/octohelm/courier/pkg/courier"
+	"github.com/octohelm/courier/pkg/statuserror"
 
 	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
 	"github.com/octohelm/crkit/pkg/content"
@@ -23,11 +28,21 @@ var _ content.TagService = &tagService{}
 
 func (ts *tagService) Get(ctx context.Context, tag string) (*manifestv1.Descriptor, error) {
 	req := &registry.HeadManifest{}
+	req.Accept = strings.Join(slices.Collect(maps.Keys((&manifestv1.Payload{}).Mapping())), ",")
 	req.Name = content.Name(ts.named.Name())
 	req.Reference = content.Reference(tag)
 
 	_, meta, err := Do(ctx, ts.client, req)
 	if err != nil {
+		errd := &statuserror.Descriptor{}
+		if errors.As(err, &errd) {
+			if errd.StatusCode() == 404 {
+				return nil, &content.ErrTagUnknown{
+					Name: ts.named.Name(),
+					Tag:  tag,
+				}
+			}
+		}
 		return nil, err
 	}
 

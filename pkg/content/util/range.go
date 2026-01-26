@@ -15,22 +15,21 @@ func ParseRange(s string) (*Range, error) {
 		return nil, ErrInvalidRange
 	}
 
-	r := &Range{}
+	start, errStart := strconv.ParseInt(parts[0], 10, 64)
+	end, errEnd := strconv.ParseInt(parts[1], 10, 64)
 
-	start, err := strconv.ParseInt(parts[0], 10, 64)
-	if err != nil {
+	if errStart != nil || errEnd != nil {
 		return nil, ErrInvalidRange
 	}
 
-	end, err := strconv.ParseInt(parts[1], 10, 64)
-	if err != nil {
+	if start < 0 || end < start {
 		return nil, ErrInvalidRange
 	}
 
-	r.Start = start
-	r.Length = end + 1 - r.Start
-
-	return r, nil
+	return &Range{
+		Start:  start,
+		Length: end - start + 1,
+	}, nil
 }
 
 type Range struct {

@@ -21,9 +21,9 @@ type CreateBlobUpload struct {
 
 	NameScoped
 
-	ContentLength int            `name:"Content-Length,omitempty" in:"header"`
-	ContentType   string         `name:"Content-Type,omitempty" in:"header"`
-	Digest        content.Digest `name:"digest,omitempty" in:"query"`
+	ContentLength int            `name:"Content-Length,omitzero" in:"header"`
+	ContentType   string         `name:"Content-Type,omitzero" in:"header"`
+	Digest        content.Digest `name:"digest,omitzero" in:"query"`
 	Blob          io.ReadCloser  `in:"body"`
 }
 

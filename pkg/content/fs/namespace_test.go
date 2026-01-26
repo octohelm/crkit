@@ -10,137 +10,172 @@ import (
 	"testing"
 
 	"github.com/distribution/reference"
-	"github.com/google/go-containerregistry/pkg/name"
-	"github.com/google/go-containerregistry/pkg/v1/random"
-	"github.com/google/go-containerregistry/pkg/v1/remote"
-
 	"github.com/innoai-tech/infra/pkg/configuration"
 	"github.com/innoai-tech/infra/pkg/configuration/testingutil"
 	"github.com/innoai-tech/infra/pkg/otel"
 	"github.com/octohelm/courier/pkg/courierhttp/handler/httprouter"
-	"github.com/octohelm/unifs/pkg/units"
-	"github.com/octohelm/x/testing/bdd"
-
 	"github.com/octohelm/crkit/pkg/content"
 	contentapi "github.com/octohelm/crkit/pkg/content/api"
 	"github.com/octohelm/crkit/pkg/content/collect"
+	contentremote "github.com/octohelm/crkit/pkg/content/remote"
+	"github.com/octohelm/crkit/pkg/oci/remote"
 	"github.com/octohelm/crkit/pkg/registryhttp/apis"
+	"github.com/octohelm/unifs/pkg/units"
+	"github.com/octohelm/x/testing/bdd"
+
+	"github.com/octohelm/crkit/pkg/oci"
+	"github.com/octohelm/crkit/pkg/oci/random"
 )
 
 func FuzzNamespace(f *testing.F) {
-	images := []remote.Taggable{
-		bdd.Must(random.Image(int64(units.BinarySize(int64(randv2.IntN(10)))*units.MiB), 5)),
-		bdd.Must(random.Index(int64(units.BinarySize(int64(randv2.IntN(10)))*units.MiB), 5, 2)),
-	}
-
-	for i := range images {
+	for i := range 2 {
 		f.Add(i)
 	}
 
-	f.Fuzz(func(t *testing.T, idx int) {
-		tmp := t.TempDir()
-		t.Cleanup(func() {
-			_ = os.RemoveAll(tmp)
-		})
+	f.Fuzz(func(t *testing.T, i int) {
+		b := bdd.FromT(t)
 
-		img := images[idx]
-
-		layerN := 1
-		if idx > 0 {
-			layerN = 3
-		}
-
-		ctx, _ := testingutil.BuildContext(t, func(d *struct {
-			otel.Otel
-
-			contentapi.NamespaceProvider
-		},
-		) {
-			d.Content.Backend.Scheme = "file"
-			d.Content.Backend.Path = tmp
-		})
-
-		injector := configuration.ContextInjectorFromContext(ctx)
-
-		s := bdd.MustDo(func() (*httptest.Server, error) {
-			h, err := httprouter.New(apis.R, "registry")
-			if err != nil {
-				return nil, err
-			}
-
-			return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-				if strings.HasSuffix(req.URL.Path, "/") {
-					req.URL.Path = req.URL.Path[0 : len(req.URL.Path)-1]
+		b.Given("local fs namespace", func(b bdd.T) {
+			manifestN, image := bdd.DoValues(b, func() (int, oci.Manifest, error) {
+				switch i {
+				case 1:
+					img, err := random.Image(int64(units.BinarySize(int64(randv2.IntN(50)))*units.MiB), 5)
+					return 1, img, err
 				}
-				fmt.Println(req.Method, req.URL.String())
-				h.ServeHTTP(w, req.WithContext(injector.InjectContext(req.Context())))
-			})), nil
-		})
-		t.Cleanup(s.Close)
+				idx, err := random.Index(int64(units.BinarySize(int64(randv2.IntN(50)))*units.MiB), 5, 2)
+				return 3, idx, err
+			})
 
-		reg := bdd.Must(name.NewRegistry(strings.TrimPrefix(s.URL, "http://"), name.Insecure))
+			ctx, _ := testingutil.BuildContext(t, func(d *struct {
+				otel.Otel
+				contentapi.NamespaceProvider
+			},
+			) {
+				tmp := b.TempDir()
+				t.Cleanup(func() {
+					_ = os.RemoveAll(tmp)
+				})
 
-		t.Run("GIVEN an artifact", bdd.GivenT(func(b bdd.T) {
-			ns, _ := content.NamespaceFromContext(ctx)
+				d.Content.Backend.Scheme = "file"
+				d.Content.Backend.Path = tmp
+			})
 
-			repo := reg.Repo("test", "manifest")
-			ref := repo.Tag("latest")
+			s := bdd.DoValue(t, func() (*httptest.Server, error) {
+				injector := configuration.ContextInjectorFromContext(ctx)
 
-			named, _ := reference.WithName("test/manifest")
+				h, err := httprouter.New(apis.R, "registry")
+				if err != nil {
+					return nil, err
+				}
 
-			b.When("push this image to container registry", func(b bdd.T) {
-				b.Then("success pushed",
-					bdd.NoError(remote.Push(ref, img)),
-				)
+				return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+					if strings.HasSuffix(req.URL.Path, "/") {
+						req.URL.Path = req.URL.Path[0 : len(req.URL.Path)-1]
+					}
 
-				catalogs := bdd.Must(collect.Catalogs(ctx, ns))
-				b.Then("got catalogs",
-					bdd.Equal([]string{named.Name()}, catalogs),
-				)
+					fmt.Println(req.Method, req.URL.String())
 
-				manifests := bdd.Must(bdd.Must(ns.Repository(ctx, named)).Manifests(ctx))
+					h.ServeHTTP(w, req.WithContext(injector.InjectContext(req.Context())))
+				})), nil
+			})
+			t.Cleanup(s.Close)
 
-				revisions := bdd.Must(collect.Manifests(ctx, manifests))
-				b.Then("got digests same as pushed",
-					bdd.Equal(layerN, len(revisions)),
-				)
+			reg := bdd.Must(contentremote.New(ctx, contentremote.Registry{
+				Endpoint: s.URL,
+			}))
 
-				b.When("pull and push as v1", func(b bdd.T) {
-					img1 := bdd.Must(remote.Image(ref))
+			remoteRepo := bdd.DoValue(t, func() (content.Repository, error) {
+				named, err := reference.WithName("test/manifest")
+				if err != nil {
+					return nil, err
+				}
+				return reg.Repository(ctx, named)
+			})
 
-					err := remote.Push(ref.Tag("v1"), img1)
-					b.Then("success",
-						bdd.NoError(err),
-					)
+			b.Given("an artifact", func(b bdd.T) {
+				ns, _ := content.NamespaceFromContext(ctx)
 
-					repository := bdd.Must(ns.Repository(ctx, content.Name("test/manifest")))
-					tags := bdd.Must(repository.Tags(ctx))
-
-					b.Then("could got two tags",
-						bdd.Equal(
-							[]string{
-								"latest", "v1",
-							},
-							bdd.Must(tags.All(ctx)),
+				b.When("push this image to container registry", func(b bdd.T) {
+					b.Then("success pushed",
+						bdd.NoError(
+							remote.Push(ctx, image, remoteRepo, "latest"),
 						),
 					)
 
-					b.When("remove tag", func(b bdd.T) {
-						b.Then("success",
-							bdd.NoError(tags.Untag(ctx, "latest")),
-						)
+					b.Then("got catalogs",
+						bdd.EqualDoValue(
+							[]string{remoteRepo.Named().Name()},
+							func() ([]string, error) {
+								return collect.Catalogs(ctx, ns)
+							}),
+					)
 
-						b.Then("could got two tags",
-							bdd.Equal(
-								[]string{
-									"v1",
-								},
-								bdd.Must(tags.All(ctx)),
+					b.Then("got digests same as pushed",
+						bdd.EqualDoValue(manifestN, func() (int, error) {
+							repo, err := ns.Repository(ctx, remoteRepo.Named())
+							if err != nil {
+								return -1, err
+							}
+
+							manifests, err := repo.Manifests(ctx)
+							if err != nil {
+								return -1, err
+							}
+
+							revisions, err := collect.Manifests(ctx, manifests)
+							if err != nil {
+								return -1, err
+							}
+							return len(revisions), nil
+						}),
+					)
+
+					b.When("pull and push as v1", func(b bdd.T) {
+						imagePushed := bdd.DoValue(b, func() (oci.Manifest, error) {
+							return remote.Manifest(ctx, remoteRepo, "latest")
+						})
+
+						b.Then("success",
+							bdd.NoError(
+								remote.Push(ctx, imagePushed, remoteRepo, "v1"),
 							),
 						)
+
+						tags := bdd.DoValue(b, func() (content.TagService, error) {
+							return remoteRepo.Tags(ctx)
+						})
+
+						b.Then("could got two tags",
+							bdd.EqualDoValue(
+								[]string{
+									"latest",
+									"v1",
+								},
+								func() ([]string, error) {
+									return tags.All(ctx)
+								},
+							),
+						)
+
+						b.When("remove tag", func(b bdd.T) {
+							b.Then("success",
+								bdd.NoError(
+									tags.Untag(ctx, "latest"),
+								),
+							)
+
+							b.Then("could got two tags",
+								bdd.EqualDoValue(
+									[]string{"v1"},
+									func() ([]string, error) {
+										return tags.All(ctx)
+									},
+								),
+							)
+						})
 					})
 				})
 			})
-		}))
+		})
 	})
 }

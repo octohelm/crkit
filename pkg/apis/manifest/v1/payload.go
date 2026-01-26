@@ -4,17 +4,19 @@ import (
 	"fmt"
 
 	"github.com/opencontainers/go-digest"
-	specv1 "github.com/opencontainers/image-spec/specs-go/v1"
+	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 
 	"github.com/octohelm/courier/pkg/validator"
 	"github.com/octohelm/courier/pkg/validator/taggedunion"
 )
 
-type Payload struct {
-	Manifest `json:"-"`
-
-	raw  []byte
-	dgst digest.Digest
+func FromBytes(raw []byte) (*Payload, error) {
+	p := &Payload{}
+	// must be use UnmarshalJSON direct to avoid trim end \n
+	if err := p.UnmarshalJSON(raw); err != nil {
+		return nil, err
+	}
+	return p, nil
 }
 
 func From(media Manifest) (*Payload, error) {
@@ -36,16 +38,23 @@ func From(media Manifest) (*Payload, error) {
 	return nil, fmt.Errorf("invalid media %s", media.Type())
 }
 
+type Payload struct {
+	Manifest `json:"-"`
+
+	raw  []byte
+	dgst digest.Digest
+}
+
 func (Payload) Discriminator() string {
 	return "mediaType"
 }
 
 func (Payload) Mapping() map[string]any {
 	return map[string]any{
-		specv1.MediaTypeImageManifest: Manifest(&OciManifest{}),
-		specv1.MediaTypeImageIndex:    Manifest(&OciIndex{}),
-		DockerMediaTypeManifest:       Manifest(&DockerManifest{}),
-		DockerMediaTypeManifestList:   Manifest(&DockerManifestList{}),
+		ocispecv1.MediaTypeImageManifest: Manifest(&OciManifest{}),
+		ocispecv1.MediaTypeImageIndex:    Manifest(&OciIndex{}),
+		DockerMediaTypeManifest:          Manifest(&DockerManifest{}),
+		DockerMediaTypeManifestList:      Manifest(&DockerManifestList{}),
 	}
 }
 

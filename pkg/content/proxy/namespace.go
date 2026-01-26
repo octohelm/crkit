@@ -15,8 +15,8 @@ type namespace struct {
 	remote content.Namespace
 }
 
-func NewProxyFallbackRegistry(ctx context.Context, registry content.Namespace, remoteRegistry remote.Registry) (content.Namespace, error) {
-	r, err := remote.New(ctx, remoteRegistry)
+func NewProxyFallbackRegistry(ctx context.Context, registry content.Namespace, rr remote.RegistryResolver) (content.Namespace, error) {
+	r, err := remote.New(ctx, rr)
 	if err != nil {
 		return nil, err
 	}

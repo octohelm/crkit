@@ -1,41 +1,26 @@
 package kubepkg
 
 import (
-	"encoding/json"
-	"sync"
+	"fmt"
+
+	"github.com/go-json-experiment/json"
+	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 
 	kubepkgv1alpha1 "github.com/octohelm/kubepkgspec/pkg/apis/kubepkg/v1alpha1"
 
-	"github.com/octohelm/crkit/pkg/artifact"
+	"github.com/octohelm/crkit/pkg/oci"
+	"github.com/octohelm/crkit/pkg/oci/mutate"
+	"github.com/octohelm/crkit/pkg/oci/partial"
 )
 
-const (
-	IndexArtifactType = "application/vnd.kubepkg+index"
-	ArtifactType      = "application/vnd.kubepkg+type"
-	ConfigMediaType   = "application/vnd.kubepkg.config.v1+json"
-)
+func WithConfig(base oci.Image, kubePkg *kubepkgv1alpha1.KubePkg) (oci.Image, error) {
+	configRaw, err := json.Marshal(kubePkg, json.Deterministic(true))
+	if err != nil {
+		return nil, fmt.Errorf("marshal kubepkg failed: %s", err)
+	}
 
-var _ artifact.Config = &Config{}
-
-type Config struct {
-	KubePkg *kubepkgv1alpha1.KubePkg
-
-	once sync.Once
-	raw  []byte
-	err  error
-}
-
-func (*Config) ArtifactType() (string, error) {
-	return ArtifactType, nil
-}
-
-func (*Config) ConfigMediaType() (string, error) {
-	return ConfigMediaType, nil
-}
-
-func (c *Config) RawConfigFile() ([]byte, error) {
-	c.once.Do(func() {
-		c.raw, c.err = json.Marshal(c.KubePkg)
-	})
-	return c.raw, c.err
+	return mutate.WithConfig(
+		base,
+		partial.BlobFromBytes(configRaw, ocispecv1.Descriptor{MediaType: ConfigMediaType}),
+	)
 }

@@ -14,7 +14,7 @@ type HeadManifest struct {
 
 	NameScoped
 
-	Accept    string            `name:"Accept,omitempty" in:"header"`
+	Accept    string            `name:"Accept,omitzero" in:"header"`
 	Reference content.Reference `name:"reference" in:"path"`
 }
 

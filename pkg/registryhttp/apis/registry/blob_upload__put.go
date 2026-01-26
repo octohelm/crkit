@@ -24,7 +24,7 @@ type PutBlobUpload struct {
 	ID string `name:"id" in:"path"`
 
 	ContentRange  contentutil.Range `name:"Content-Range,omitzero" in:"header"`
-	ContentLength int64             `name:"Content-Length,omitempty" in:"header"`
+	ContentLength int64             `name:"Content-Length,omitzero" in:"header"`
 
 	Digest content.Digest `name:"digest" in:"query"`
 	Chunk  io.ReadCloser  `in:"body"`

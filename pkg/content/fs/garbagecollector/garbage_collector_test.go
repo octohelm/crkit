@@ -1,22 +1,14 @@
 package garbagecollector_test
 
 import (
-	"net/http"
-	"net/http/httptest"
 	"os"
-	"strings"
 	"testing"
 	"time"
 
 	"github.com/distribution/reference"
-	"github.com/google/go-containerregistry/pkg/name"
-	"github.com/google/go-containerregistry/pkg/v1/random"
-	"github.com/google/go-containerregistry/pkg/v1/remote"
 
-	"github.com/innoai-tech/infra/pkg/configuration"
 	"github.com/innoai-tech/infra/pkg/configuration/testingutil"
 	"github.com/innoai-tech/infra/pkg/otel"
-	"github.com/octohelm/courier/pkg/courierhttp/handler/httprouter"
 	"github.com/octohelm/unifs/pkg/units"
 	"github.com/octohelm/x/testing/bdd"
 
@@ -24,7 +16,8 @@ import (
 	contentapi "github.com/octohelm/crkit/pkg/content/api"
 	"github.com/octohelm/crkit/pkg/content/collect"
 	"github.com/octohelm/crkit/pkg/content/fs/garbagecollector"
-	"github.com/octohelm/crkit/pkg/registryhttp/apis"
+	"github.com/octohelm/crkit/pkg/oci/random"
+	"github.com/octohelm/crkit/pkg/oci/remote"
 )
 
 func TestGarbageCollector(t *testing.T) {
@@ -47,27 +40,10 @@ func TestGarbageCollector(t *testing.T) {
 		d.Content.Backend.Path = ".tmp"
 	})
 
-	injector := configuration.ContextInjectorFromContext(ctx)
-
-	s := bdd.MustDo(func() (*httptest.Server, error) {
-		h, err := httprouter.New(apis.R, "registry")
-		if err != nil {
-			return nil, err
-		}
-
-		return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-			if strings.HasSuffix(req.URL.Path, "/") {
-				req.URL.Path = req.URL.Path[0 : len(req.URL.Path)-1]
-			}
-			h.ServeHTTP(w, req.WithContext(injector.InjectContext(req.Context())))
-		})), nil
-	})
-
-	reg := bdd.Must(name.NewRegistry(strings.TrimPrefix(s.URL, "http://"), name.Insecure))
 	ns, _ := content.NamespaceFromContext(ctx)
-	named, _ := reference.WithName("test/manifest")
 
-	repository := bdd.Must(ns.Repository(ctx, named))
+	repository := bdd.Must(ns.Repository(ctx, bdd.Must(reference.WithName("test/manifest"))))
+
 	tagService := bdd.Must(repository.Tags(ctx))
 	manifestService := bdd.Must(repository.Manifests(ctx))
 	blobsStore := bdd.Must(repository.Blobs(ctx))
@@ -75,16 +51,14 @@ func TestGarbageCollector(t *testing.T) {
 	b := bdd.FromT(t)
 
 	b.Given("an index artifact", func(b bdd.T) {
-		tagged := reg.Repo("test", "manifest").Tag("latest")
-
-		index := bdd.Must(random.Index(int64(1*units.MiB), 5, 2))
+		idx := bdd.Must(random.Index(int64(1*units.MiB), 5, 2))
 		manifestsN := 2 /* manifests */ + 1 /* index */
 		layersN := (5 /* layers */ + 1 /* config */) * 2
 		blobsN := manifestsN + layersN
 
-		b.When("push with tag latest to registry", func(b bdd.T) {
+		b.When("push with tag latest", func(b bdd.T) {
 			b.Then("success pushed",
-				bdd.NoError(remote.Push(tagged, index)),
+				bdd.NoError(remote.Push(ctx, idx, repository, "latest")),
 			)
 
 			b.Then("tag revisions and manifests/layers and blobs got single size",
@@ -95,11 +69,11 @@ func TestGarbageCollector(t *testing.T) {
 			)
 
 			b.Given("another index artifact", func(b bdd.T) {
-				index2 := bdd.Must(random.Index(int64(1*units.MiB), 5, 2))
+				idx2 := bdd.Must(random.Index(int64(1*units.MiB), 5, 2))
 
 				b.When("push another image to container registry", func(b bdd.T) {
 					b.Then("success pushed",
-						bdd.NoError(remote.Push(tagged, index2)),
+						bdd.NoError(remote.Push(ctx, idx2, repository, "latest")),
 					)
 
 					b.Then("tag revisions and manifests/layers and blobs got double size",

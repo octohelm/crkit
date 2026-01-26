@@ -1,0 +1,21 @@
+-- manifest.json --
+{
+  "schemaVersion": 2,
+  "mediaType": "application/vnd.oci.image.index.v1+json",
+  "artifactType": "application/vnd.content+index",
+  "manifests": [
+    {
+      "mediaType": "application/vnd.oci.image.manifest.v1+json",
+      "digest": "sha256:04d7f23174986a693b12af6e29f7f961218a1c9e7d6331f9926e55371ba790de",
+      "size": 288,
+      "platform": {
+        "architecture": "amd64",
+        "os": "linux"
+      }
+    }
+  ],
+  "annotations": {
+    "org.opencontainers.image.base.name": "x/image",
+    "org.opencontainers.image.ref.name": "v1.0.0"
+  }
+}

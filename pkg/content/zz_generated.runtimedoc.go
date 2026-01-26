@@ -57,8 +57,11 @@ func (v *ErrBlobUploadUnknown) RuntimeDoc(names ...string) ([]string, bool) {
 func (v *ErrManifestBlobUnknown) RuntimeDoc(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
+		case "Name":
+			return []string{}, true
 		case "Digest":
 			return []string{}, true
+
 		}
 
 		return nil, false
@@ -72,21 +75,6 @@ func (v *ErrManifestNameInvalid) RuntimeDoc(names ...string) ([]string, bool) {
 		case "Name":
 			return []string{}, true
 		case "Reason":
-			return []string{}, true
-
-		}
-
-		return nil, false
-	}
-	return []string{}, true
-}
-
-func (v *ErrManifestUnknown) RuntimeDoc(names ...string) ([]string, bool) {
-	if len(names) > 0 {
-		switch names[0] {
-		case "Name":
-			return []string{}, true
-		case "Tag":
 			return []string{}, true
 
 		}
@@ -163,8 +151,11 @@ func (v *ErrRepositoryUnknown) RuntimeDoc(names ...string) ([]string, bool) {
 func (v *ErrTagUnknown) RuntimeDoc(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
+		case "Name":
+			return []string{}, true
 		case "Tag":
 			return []string{}, true
+
 		}
 
 		return nil, false

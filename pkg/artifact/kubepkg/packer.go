@@ -2,185 +2,124 @@ package kubepkg
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"iter"
-	"sort"
+	"maps"
+	"slices"
 	"strings"
-	"sync"
 
-	"github.com/containerd/containerd/v2/core/images"
-	"github.com/google/go-containerregistry/pkg/name"
-	v1 "github.com/google/go-containerregistry/pkg/v1"
-	"github.com/google/go-containerregistry/pkg/v1/cache"
-	"github.com/google/go-containerregistry/pkg/v1/empty"
-	"github.com/google/go-containerregistry/pkg/v1/mutate"
-	"github.com/google/go-containerregistry/pkg/v1/partial"
-	"github.com/google/go-containerregistry/pkg/v1/remote"
-	specv1 "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/containerd/platforms"
+	"github.com/distribution/reference"
+	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 
 	kubepkgv1alpha1 "github.com/octohelm/kubepkgspec/pkg/apis/kubepkg/v1alpha1"
 	"github.com/octohelm/kubepkgspec/pkg/object"
 	"github.com/octohelm/kubepkgspec/pkg/workload"
+	syncx "github.com/octohelm/x/sync"
 
-	"github.com/octohelm/crkit/pkg/artifact"
-	"github.com/octohelm/crkit/pkg/ociutil"
+	"github.com/octohelm/crkit/pkg/artifact/kubepkg/renamer"
+	"github.com/octohelm/crkit/pkg/content"
+	"github.com/octohelm/crkit/pkg/oci"
+	"github.com/octohelm/crkit/pkg/oci/empty"
+	"github.com/octohelm/crkit/pkg/oci/mutate"
+	"github.com/octohelm/crkit/pkg/oci/remote"
 )
 
 const (
 	AnnotationImageName           = "kubepkg.image.name"
+	AnnotationImageRef            = "kubepkg.image.ref"
 	AnnotationSourceBaseImageName = "kubepkg.source.image.base.name"
 )
 
 type Packer struct {
-	Registry        Registry
-	Renamer         Renamer
+	Namespace content.Namespace
+
+	Renamer         renamer.Renamer
 	WithAnnotations []string
 	ImageOnly       bool
 
-	CreatePuller func(ref name.Reference, options ...remote.Option) (*remote.Puller, error)
+	Platforms []string
 
-	Cache        cache.Cache
-	Platforms    []string
-	sourceImages sync.Map
+	images syncx.Map[string, string]
 }
 
-func (p *Packer) SupportedPlatforms(supportedPlatform []string) iter.Seq[v1.Platform] {
-	if len(p.Platforms) == 0 {
-		return func(yield func(v1.Platform) bool) {
-			for _, platform := range supportedPlatform {
-				p, _ := v1.ParsePlatform(platform)
-				if p != nil {
-					if !yield(*p) {
-						return
-					}
-				}
-			}
-		}
-	}
-
-	supportedPlatforms := map[string]bool{}
-	for _, platform := range supportedPlatform {
-		supportedPlatforms[platform] = true
-	}
-
-	return func(yield func(v1.Platform) bool) {
-		for _, platform := range p.Platforms {
-			if len(supportedPlatforms) > 0 {
-				_, supported := supportedPlatforms[platform]
-				if !supported {
-					continue
-				}
-			}
-
-			p, _ := v1.ParsePlatform(platform)
-			if p != nil {
-				if !yield(*p) {
-					return
-				}
-			}
-		}
-	}
-}
-
-func (p *Packer) Repository(repoName string) (name.Repository, error) {
-	if registry := p.Registry; registry != nil {
-		return registry.Repo(repoName), nil
-	}
-	return name.NewRepository(repoName)
-}
-
-func (p *Packer) Puller(ref name.Reference, options ...remote.Option) (*remote.Puller, error) {
-	puller, err := p.CreatePuller(ref, options...)
-	if err != nil {
-		return nil, err
-	}
-	return puller, nil
-}
-
-func (p *Packer) Image(i v1.Image) v1.Image {
-	if c := p.Cache; c != nil {
-		return cache.Image(i, c)
-	}
-	return i
-}
-
-func (p *Packer) PackAsIndex(ctx context.Context, kpkg *kubepkgv1alpha1.KubePkg) (v1.ImageIndex, error) {
-	kubePkgIndex, err := p.PackAsKubePkgIndex(ctx, kpkg)
+func (p *Packer) PackAsIndex(ctx context.Context, kpkg *kubepkgv1alpha1.KubePkg) (oci.Index, error) {
+	kubePkgIndex, err := p.Pack(ctx, kpkg)
 	if err != nil {
 		return nil, err
 	}
 
-	var finalIndex v1.ImageIndex = empty.Index
+	finalIndex := empty.Index
 
 	namespace := kpkg.Namespace
 	if namespace == "" {
 		namespace = "default"
 	}
 
-	r, err := p.Repository(fmt.Sprintf("%s/artifact-kubepkg-%s", namespace, kpkg.Name))
+	named, err := reference.ParseNormalizedNamed(fmt.Sprintf("%s/artifact-kubepkg-%s", namespace, kpkg.Name))
 	if err != nil {
 		return nil, err
 	}
 
-	idx, err := kubePkgIndex.IndexManifest()
+	idx, err := kubePkgIndex.Value(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	imageNames := make([]string, 0)
-	imageIndexes := make(map[string]v1.ImageIndex)
+	imageIndexes := make(map[string]oci.Index)
+	artifacts := make(map[string]struct{})
 
 	for _, desc := range idx.Manifests {
+		// skip kubepkg
 		if desc.ArtifactType == ArtifactType {
 			continue
 		}
 
-		if desc.MediaType.IsImage() && len(desc.Annotations) > 0 {
-			imageName := desc.Annotations[AnnotationImageName]
-			sourceRepo := desc.Annotations[AnnotationSourceBaseImageName]
+		if oci.IsImage(desc.MediaType) && len(desc.Annotations) > 0 && desc.Platform != nil {
+			sourceNamed, err := reference.ParseNormalizedNamed(desc.Annotations[AnnotationSourceBaseImageName])
+			if err != nil {
+				return nil, err
+			}
 
-			repo, err := p.Repository(sourceRepo)
+			imageName := desc.Annotations[AnnotationImageName]
+			imageRef := desc.Annotations[AnnotationImageRef]
+
+			imageRepo, err := p.Namespace.Repository(ctx, sourceNamed)
 			if err != nil {
 				return nil, err
 			}
 
 			if _, ok := imageIndexes[imageName]; !ok {
-				imageNames = append(imageNames, imageName)
 				imageIndexes[imageName] = empty.Index
 			}
 
-			puller, err := p.Puller(repo.Digest(desc.Digest.String()))
+			fmt.Println(imageRepo.Named().Name(), imageRef, platforms.Format(*desc.Platform))
+
+			img, err := remote.Manifest(ctx, imageRepo, imageRef)
 			if err != nil {
 				return nil, err
 			}
 
-			resolvedDesc, err := puller.Get(ctx, repo.Digest(desc.Digest.String()))
+			d, err := img.Descriptor(ctx)
 			if err != nil {
 				return nil, err
 			}
 
-			img, err := resolvedDesc.Image()
+			if d.ArtifactType != "" {
+				artifacts[imageName] = struct{}{}
+			}
+
+			imageIndex, err := mutate.AppendManifests(imageIndexes[imageName], img)
 			if err != nil {
 				return nil, err
 			}
 
-			if artifactType, err := ociutil.ArtifactType(img); err == nil {
-				desc.ArtifactType = artifactType
-				img = ociutil.Artifact(img, artifactType)
-			}
-
-			index, err := p.appendManifests(imageIndexes[imageName], p.Image(img), &desc, nil)
-			if err != nil {
-				return nil, err
-			}
-
-			imageIndexes[imageName] = index
+			imageIndexes[imageName] = imageIndex
 		}
 	}
 
-	sort.Strings(imageNames)
-
-	for _, imageName := range imageNames {
+	for _, imageName := range slices.Sorted(maps.Keys(imageIndexes)) {
 		nameAndTag := strings.Split(imageName, ":")
 		if len(nameAndTag) != 2 {
 			return nil, fmt.Errorf("invalid image name %s", nameAndTag)
@@ -188,28 +127,43 @@ func (p *Packer) PackAsIndex(ctx context.Context, kpkg *kubepkgv1alpha1.KubePkg)
 
 		index := imageIndexes[imageName]
 
-		if p.ImageOnly && len(imageNames) == 1 {
-			ann, err := p.pickAnnotations(kpkg.Annotations)
+		if p.ImageOnly && len(imageIndexes) == 1 {
+			ann, err := p.includedAnnotations(kpkg.Annotations)
 			if err != nil {
 				return nil, err
 			}
-			index = mutate.Annotations(index, ann).(v1.ImageIndex)
+			index, err = mutate.WithAnnotations(index, ann)
+			if err != nil {
+				return nil, err
+			}
 		}
 
-		finalIndex, err = p.appendManifests(finalIndex, index, nil, &kubepkgv1alpha1.Image{
-			Name: nameAndTag[0],
-			Tag:  nameAndTag[1],
-		})
+		index, err = mutate.AnnotateOpenContainerImageName(index, nameAndTag[0], nameAndTag[1])
+		if err != nil {
+			return nil, err
+		}
+
+		if _, ok := artifacts[imageName]; !ok {
+			// only no-artifact could be ctr/docker imported
+			index, err = mutate.AnnotateContainerdImageName(index, imageName)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		finalIndex, err = mutate.AppendManifests(finalIndex, index)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	if !p.ImageOnly {
-		finalIndex, err = p.appendManifests(finalIndex, kubePkgIndex, nil, &kubepkgv1alpha1.Image{
-			Name: p.ImageName(r),
-			Tag:  kpkg.Spec.Version,
-		})
+		kubePkgIndex, err = mutate.AnnotateOpenContainerImageName(kubePkgIndex, p.ImageName(named.String()), kpkg.Spec.Version)
+		if err != nil {
+			return nil, err
+		}
+
+		finalIndex, err = mutate.AppendManifests(finalIndex, kubePkgIndex)
 		if err != nil {
 			return nil, err
 		}
@@ -218,32 +172,14 @@ func (p *Packer) PackAsIndex(ctx context.Context, kpkg *kubepkgv1alpha1.KubePkg)
 	return finalIndex, nil
 }
 
-func (p *Packer) pickAnnotations(annotations map[string]string) (map[string]string, error) {
-	picked := map[string]string{}
-
-	if len(annotations) > 0 && len(p.WithAnnotations) > 0 {
-		glob, err := Compile(p.WithAnnotations)
-		if err != nil {
-			return nil, err
-		}
-
-		for k, v := range annotations {
-			if glob.Match(k) {
-				picked[k] = v
-			}
-		}
-
-	}
-	return picked, nil
-}
-
-func (p *Packer) PackAsKubePkgIndex(ctx context.Context, kpkg *kubepkgv1alpha1.KubePkg) (v1.ImageIndex, error) {
-	ann, err := p.pickAnnotations(kpkg.Annotations)
+func (p *Packer) Pack(ctx context.Context, kpkg *kubepkgv1alpha1.KubePkg) (oci.Index, error) {
+	annotations, err := p.includedAnnotations(kpkg.Annotations)
 	if err != nil {
 		return nil, err
 	}
 
-	ann[specv1.AnnotationRefName] = kpkg.Spec.Version
+	// kubepkg version as image tag
+	annotations[ocispecv1.AnnotationRefName] = kpkg.Spec.Version
 
 	workloadImages := workload.Images(func(yield func(object.Object) bool) {
 		if !yield(kpkg) {
@@ -261,146 +197,209 @@ func (p *Packer) PackAsKubePkgIndex(ctx context.Context, kpkg *kubepkgv1alpha1.K
 		}
 	}
 
-	var kubepkgIdx v1.ImageIndex = empty.Index
+	kubepkgIdx, err := mutate.WithArtifactType(empty.Index, IndexArtifactType)
+	if err != nil {
+		return nil, err
+	}
 
 	for image := range workloadImages {
-		repo, err := p.Repository(image.Name)
+		named, err := reference.ParseNormalizedNamed(image.Name)
 		if err != nil {
 			return nil, err
 		}
 
-		image.Name = p.ImageName(repo)
+		// maybe renamed
+		image.Name = p.ImageName(named.String())
+		// force delete for versioned resolved
 		image.Digest = ""
 
-		for platform := range p.SupportedPlatforms(image.Platforms) {
-			puller, err := p.CreatePuller(repo.Tag(image.Tag), remote.WithPlatform(platform))
-			if err != nil {
-				return nil, err
-			}
-
-			desc, err := puller.Get(ctx, repo.Tag(image.Tag))
-			if err != nil {
-				return nil, err
-			}
-
-			img, err := desc.Image()
-			if err != nil {
-				return nil, err
-			}
-
-			d, err := partial.Descriptor(img)
-			if err != nil {
-				return nil, err
-			}
-
-			if artifactType, err := ociutil.ArtifactType(img); err == nil {
-				d.ArtifactType = artifactType
-
-				img = ociutil.Artifact(img, artifactType)
-			}
-
-			if d.Platform == nil {
-				d.Platform = &platform
-			}
-
-			if d.Annotations == nil {
-				d.Annotations = map[string]string{}
-			}
-
-			d.Annotations[AnnotationSourceBaseImageName] = p.SourceImageName(image.Name)
-
-			kubepkgIdx, err = p.appendManifests(kubepkgIdx, p.Image(img), d, image)
-			if err != nil {
-				return nil, err
-			}
-		}
-	}
-
-	kubepkgArtifact, err := artifact.Artifact(empty.Image, &Config{KubePkg: kpkg}, artifact.WithAnnotations(ann))
-	if err != nil {
-		return nil, err
-	}
-
-	kubepkgIdx, err = p.appendManifests(kubepkgIdx, kubepkgArtifact, nil, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return artifact.IndexWithArtifactType(kubepkgIdx, IndexArtifactType, artifact.WithAnnotations(ann))
-}
-
-func (p *Packer) appendManifests(idx v1.ImageIndex, source partial.Describable, desc *v1.Descriptor, image *kubepkgv1alpha1.Image) (v1.ImageIndex, error) {
-	if desc == nil {
-		d, err := partial.Descriptor(source)
+		repo, err := p.Namespace.Repository(ctx, named)
 		if err != nil {
 			return nil, err
 		}
-		desc = d
-	}
 
-	add := mutate.IndexAddendum{
-		Add:        source,
-		Descriptor: *desc,
-	}
+		for platform := range p.SupportedPlatforms(image.Platforms) {
+			m, err := remote.Manifest(ctx, repo, image.Tag)
+			if err != nil {
+				return nil, fmt.Errorf("pull manifest failed: %w", err)
+			}
 
-	if image != nil {
-		if add.Annotations == nil {
-			add.Annotations = map[string]string{}
-		}
+			img, _, err := p.resolveMatchedImage(ctx, m, named, platform)
+			if err != nil {
+				return nil, fmt.Errorf("resolve image failed: %w", err)
+			}
 
-		if image.Name != "" {
-			add.Annotations[specv1.AnnotationBaseImageName] = image.Name
+			img, err = mutate.WithAnnotations(img, map[string]string{
+				AnnotationSourceBaseImageName: p.SourceImageName(image.Name),
+				AnnotationImageName:           image.FullName(),
+			})
+			if err != nil {
+				return nil, err
+			}
 
-			add.Annotations[AnnotationImageName] = image.FullName()
+			img, err = mutate.AnnotateOpenContainerImageName(img, image.Name, image.Tag)
+			if err != nil {
+				return nil, err
+			}
 
-			if add.ArtifactType == "" {
-				add.Annotations[images.AnnotationImageName] = image.FullName()
+			kubepkgIdx, err = mutate.AppendManifests(kubepkgIdx, img)
+			if err != nil {
+				return nil, fmt.Errorf("append image failed: %w", err)
 			}
 		}
+	}
 
-		if image.Tag != "" {
-			add.Annotations[specv1.AnnotationRefName] = image.Tag
+	kubepkgArtifact, err := p.kubepkgArtifact(ctx, kpkg, annotations)
+	if err != nil {
+		return nil, err
+	}
+
+	kubepkgIdx, err = mutate.AppendManifests(kubepkgIdx, kubepkgArtifact)
+	if err != nil {
+		return nil, err
+	}
+
+	return mutate.WithAnnotations(kubepkgIdx, annotations)
+}
+
+func (p *Packer) kubepkgArtifact(ctx context.Context, kpkg *kubepkgv1alpha1.KubePkg, annotations map[string]string) (oci.Image, error) {
+	kubepkgArtifact, err := mutate.With(empty.Image,
+		func(base oci.Image) (oci.Image, error) {
+			return WithConfig(base, kpkg)
+		},
+		func(base oci.Image) (oci.Image, error) {
+			return mutate.WithAnnotations(base, annotations)
+		},
+		func(base oci.Image) (oci.Image, error) {
+			return mutate.WithArtifactType(base, ArtifactType)
+		},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("create kubepkg artifact failed: %w", err)
+	}
+	return kubepkgArtifact, nil
+}
+
+func (p *Packer) resolveMatchedImage(ctx context.Context, m oci.Manifest, named reference.Named, platform ocispecv1.Platform) (oci.Image, bool, error) {
+	d, err := m.Descriptor(ctx)
+	if err != nil {
+		return nil, false, fmt.Errorf("read descriptor failed: %w", err)
+	}
+
+	matcher := platforms.NewMatcher(platform)
+
+	switch x := m.(type) {
+	case oci.Image:
+		if d.Platform != nil {
+			if matcher.Match(*d.Platform) {
+				i, err := mutate.WithPlatform(x, platforms.Format(platform))
+				if err != nil {
+					return nil, false, err
+				}
+				i, err = mutate.WithAnnotations(i, map[string]string{
+					// remain origin digest for pull
+					AnnotationImageRef: string(d.Digest),
+				})
+				if err != nil {
+					return nil, false, err
+				}
+
+				return i, true, nil
+			}
+		}
+	case oci.Index:
+		for sub, err := range x.Manifests(ctx) {
+			if err != nil {
+				return nil, false, fmt.Errorf("iter manifest failed: %w", err)
+			}
+			i, ok, _ := p.resolveMatchedImage(ctx, sub, named, platform)
+			if ok {
+				return i, true, nil
+			}
 		}
 	}
 
-	return mutate.AppendManifests(idx, add), nil
+	return nil, false, fmt.Errorf("%w: %s of %s", ErrPlatformNotMatched, platform, named)
+}
+
+var ErrPlatformNotMatched = errors.New("platform no matched")
+
+func (p *Packer) ImageName(srcName string) (name string) {
+	defer func() {
+		p.images.Store(name, srcName)
+	}()
+
+	if p.Renamer != nil {
+		return p.Renamer.Rename(srcName)
+	}
+
+	if strings.HasPrefix(srcName, "index.docker.io/") {
+		return "docker.io/" + srcName[len("index.docker.io/"):]
+	}
+
+	return srcName
 }
 
 func (p *Packer) SourceImageName(name string) string {
-	if v, ok := p.sourceImages.Load(name); ok {
-		return v.(string)
+	if srcName, ok := p.images.Load(name); ok {
+		return srcName
 	}
 	return name
 }
 
-func (p *Packer) ImageName(repoName name.Repository) (name string) {
-	defer func() {
-		p.sourceImages.Store(name, repoName.String())
-	}()
-
-	if p.Renamer != nil {
-		return p.Renamer.Rename(repoName)
-	}
-	if strings.HasPrefix(repoName.String(), "index.docker.io/") {
-		return "docker.io/" + repoName.RepositoryStr()
-	}
-	return repoName.String()
-}
-
-func intersection[E comparable](a []E, b []E) (c []E) {
-	includes := map[E]bool{}
-	for i := range a {
-		includes[a[i]] = true
-	}
-
-	c = make([]E, 0, len(a)+len(b))
-	for i := range b {
-		x := b[i]
-
-		if _, ok := includes[x]; ok {
-			c = append(c, x)
+func (p *Packer) SupportedPlatforms(supportedPlatform []string) iter.Seq[ocispecv1.Platform] {
+	if len(p.Platforms) == 0 {
+		return func(yield func(ocispecv1.Platform) bool) {
+			for _, platform := range supportedPlatform {
+				p, err := platforms.Parse(platform)
+				if err == nil {
+					if !yield(p) {
+						return
+					}
+				}
+			}
 		}
 	}
 
-	return c
+	supportedPlatforms := map[string]bool{}
+	for _, platform := range supportedPlatform {
+		supportedPlatforms[platform] = true
+	}
+
+	return func(yield func(ocispecv1.Platform) bool) {
+		for _, platform := range p.Platforms {
+			if len(supportedPlatforms) > 0 {
+				_, supported := supportedPlatforms[platform]
+				if !supported {
+					continue
+				}
+			}
+
+			p, err := platforms.Parse(platform)
+			if err == nil {
+				if !yield(p) {
+					return
+				}
+			}
+		}
+	}
+}
+
+func (p *Packer) includedAnnotations(annotations map[string]string) (map[string]string, error) {
+	picked := map[string]string{}
+
+	if len(annotations) > 0 && len(p.WithAnnotations) > 0 {
+		glob, err := Compile(p.WithAnnotations)
+		if err != nil {
+			return nil, err
+		}
+
+		for k, v := range annotations {
+			if glob.Match(k) {
+				picked[k] = v
+			}
+		}
+	}
+
+	return picked, nil
 }

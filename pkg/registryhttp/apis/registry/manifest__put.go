@@ -48,7 +48,7 @@ func (req *PutManifest) Output(ctx context.Context) (any, error) {
 	}
 
 	return courierhttp.Wrap[any](nil,
-		courierhttp.WithStatusCode(200),
+		courierhttp.WithStatusCode(201),
 		courierhttp.WithMetadata("Docker-Content-Digest", d.String()),
 	), nil
 }

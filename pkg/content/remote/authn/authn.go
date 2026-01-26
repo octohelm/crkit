@@ -17,10 +17,10 @@ import (
 
 type Token struct {
 	TokenType    string `json:"token_type"`
-	ExpiresIn    int    `json:"expires_in,omitempty"`
+	ExpiresIn    int    `json:"expires_in,omitzero"`
 	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token,omitempty"`
-	Scope        string `json:"scope,omitempty"`
+	RefreshToken string `json:"refresh_token,omitzero"`
+	Scope        string `json:"scope,omitzero"`
 
 	ExpiredAt time.Time `json:"-"`
 }
@@ -36,7 +36,7 @@ type Authn struct {
 }
 
 func (a *Authn) exchangeToken(ctx context.Context, realm *url.URL) (*Token, error) {
-	c := client.GetShortConnClientContext(ctx)
+	c := client.GetReasonableClientContext(ctx)
 
 	req, err := http.NewRequest(http.MethodGet, realm.String(), nil)
 	if err != nil {
@@ -64,7 +64,7 @@ func (a *Authn) exchangeToken(ctx context.Context, realm *url.URL) (*Token, erro
 
 		if tok.AccessToken == "" {
 			tok2 := &struct {
-				Token string `json:"token,omitempty"`
+				Token string `json:"token,omitzero"`
 			}{}
 
 			if err := json.Unmarshal(data, tok2); err != nil {
@@ -96,7 +96,7 @@ func (a *Authn) getToken(ctx context.Context, name string, actions []string) (*T
 	scope := fmt.Sprintf("repository:%s:%s", name, strings.Join(actions, ","))
 
 	getToken, _ := a.scopeTokens.LoadOrStore(scope, sync.OnceValues(func() (*Token, error) {
-		c := client.GetShortConnClientContext(ctx)
+		c := client.GetReasonableClientContext(ctx)
 
 		req, err := http.NewRequest(http.MethodGet, a.CheckEndpoint, nil)
 		if err != nil {
@@ -129,7 +129,7 @@ func (a *Authn) getToken(ctx context.Context, name string, actions []string) (*T
 							}
 							realmUrl.RawQuery = q.Encode()
 
-							return a.exchangeToken(context.Background(), realmUrl)
+							return a.exchangeToken(ctx, realmUrl)
 						}
 					}
 				}

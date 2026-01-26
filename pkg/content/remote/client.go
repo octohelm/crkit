@@ -2,11 +2,18 @@ package remote
 
 import (
 	"context"
+	"fmt"
+	"log/slog"
+	"net/http"
 	"net/url"
+	"time"
 
-	"github.com/innoai-tech/infra/pkg/http/middleware"
+	"go.opentelemetry.io/contrib/propagators/b3"
+	"go.opentelemetry.io/otel/propagation"
+
 	"github.com/octohelm/courier/pkg/courier"
 	"github.com/octohelm/courier/pkg/courierhttp/client"
+	"github.com/octohelm/x/logr"
 
 	"github.com/octohelm/crkit/pkg/content/remote/authn"
 )
@@ -40,7 +47,7 @@ func (c *Client) Init(ctx context.Context) error {
 			c.c = &client.Client{
 				Endpoint: u.String(),
 				HttpTransports: []client.HttpTransport{
-					middleware.NewLogRoundTripper(),
+					newLogRoundTripper(),
 					a.AsHttpTransport(),
 				},
 			}
@@ -48,7 +55,7 @@ func (c *Client) Init(ctx context.Context) error {
 			c.c = &client.Client{
 				Endpoint: u.String(),
 				HttpTransports: []client.HttpTransport{
-					middleware.NewLogRoundTripper(),
+					newLogRoundTripper(),
 				},
 			}
 		}
@@ -74,4 +81,65 @@ func Do[Data any, Op interface{ ResponseData() *Data }](ctx context.Context, c c
 
 	meta, err := c.Do(ctx, req, metas...).Into(resp)
 	return resp, meta, err
+}
+
+func newLogRoundTripper() func(roundTripper http.RoundTripper) http.RoundTripper {
+	return func(roundTripper http.RoundTripper) http.RoundTripper {
+		return &logRoundTripper{
+			nextRoundTripper: roundTripper,
+		}
+	}
+}
+
+type logRoundTripper struct {
+	nextRoundTripper http.RoundTripper
+}
+
+func (rt *logRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+	startedAt := time.Now()
+
+	ctx := req.Context()
+
+	// inject b3 form context
+	b3.New().Inject(ctx, propagation.HeaderCarrier(req.Header))
+
+	resp, err := rt.nextRoundTripper.RoundTrip(req.WithContext(ctx))
+
+	cost := time.Since(startedAt)
+
+	l := logr.FromContext(ctx).WithValues(
+		slog.Any("http.url", omitAuthorization(req.URL)),
+		slog.Any("http.method", req.Method),
+		slog.Any("http.client.duration", cost.String()),
+	)
+
+	if resp != nil {
+		l = l.WithValues(
+			slog.Any("http.status_code", resp.StatusCode),
+			slog.Any("http.proto", resp.Proto),
+		)
+	}
+
+	if req.ContentLength > 0 {
+		l = l.WithValues(
+			slog.Any("http.content-type", req.Header.Get("Content-Type")),
+			slog.Any("http.response_content_length", int(req.ContentLength)),
+		)
+	}
+
+	if err != nil {
+		l.Warn(fmt.Errorf("http request failed: %w", err))
+	}
+
+	return resp, err
+}
+
+func omitAuthorization(u *url.URL) string {
+	query := u.Query()
+
+	query.Del("authorization")
+	query.Del("x-param-header-Authorization")
+
+	u.RawQuery = query.Encode()
+	return u.String()
 }

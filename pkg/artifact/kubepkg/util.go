@@ -54,3 +54,21 @@ func (r rule) Match(s string) bool {
 	}
 	return r.glob.Match(s)
 }
+
+func intersection[E comparable](a []E, b []E) (c []E) {
+	includes := map[E]bool{}
+	for i := range a {
+		includes[a[i]] = true
+	}
+
+	c = make([]E, 0, len(a)+len(b))
+	for i := range b {
+		x := b[i]
+
+		if _, ok := includes[x]; ok {
+			c = append(c, x)
+		}
+	}
+
+	return c
+}

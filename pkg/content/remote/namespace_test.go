@@ -9,11 +9,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/distribution/reference"
 	"github.com/go-json-experiment/json"
-	"github.com/google/go-containerregistry/pkg/name"
-	"github.com/google/go-containerregistry/pkg/registry"
-	"github.com/google/go-containerregistry/pkg/v1/random"
-	"github.com/google/go-containerregistry/pkg/v1/remote"
 
 	"github.com/innoai-tech/infra/pkg/configuration"
 	"github.com/innoai-tech/infra/pkg/configuration/testingutil"
@@ -25,25 +22,30 @@ import (
 
 	"github.com/octohelm/crkit/pkg/content"
 	contentapi "github.com/octohelm/crkit/pkg/content/api"
+	contentremote "github.com/octohelm/crkit/pkg/content/remote"
 	"github.com/octohelm/crkit/pkg/content/remote/authn"
+	contenttestutil "github.com/octohelm/crkit/pkg/content/testutil"
+	"github.com/octohelm/crkit/pkg/oci"
+	"github.com/octohelm/crkit/pkg/oci/random"
+	"github.com/octohelm/crkit/pkg/oci/remote"
 	"github.com/octohelm/crkit/pkg/registryhttp/apis"
 )
 
 func FuzzRemoteNamespace(f *testing.F) {
-	images := []remote.Taggable{
-		bdd.Must(random.Image(int64(units.BinarySize(int64(randv2.IntN(50)))*units.MiB), randv2.Int64N(5))),
-		bdd.Must(random.Index(int64(units.BinarySize(int64(randv2.IntN(50)))*units.MiB), randv2.Int64N(5), 2)),
+	manifests := []oci.Manifest{
+		bdd.Must(random.Image(int64(units.BinarySize(int64(randv2.IntN(50)))*units.MiB), 5)),
+		bdd.Must(random.Index(int64(units.BinarySize(int64(randv2.IntN(50)))*units.MiB), 5, 2)),
 	}
 
-	for i := range images {
+	for i := range manifests {
 		f.Add(i)
 	}
 
 	f.Fuzz(func(t *testing.T, idx int) {
-		img := images[idx]
+		src := manifests[idx]
 
 		remoteRegistry := bdd.MustDo(func() (remoteRegistry *httptest.Server, err error) {
-			rh := registry.New()
+			rh := contenttestutil.NewRegistry(t)
 
 			remoteRegistry = httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 				if req.URL.Path == "/auth/token" {
@@ -110,25 +112,26 @@ func FuzzRemoteNamespace(f *testing.F) {
 		})
 		t.Cleanup(registryServer.Close)
 
-		reg := bdd.Must(name.NewRegistry(strings.TrimPrefix(registryServer.URL, "http://"), name.Insecure))
+		reg := bdd.Must(contentremote.New(ctx, contentremote.Registry{
+			Endpoint: registryServer.URL,
+		}))
 
 		t.Run("GIVEN an artifact", bdd.GivenT(func(b bdd.T) {
 			ns, _ := content.NamespaceFromContext(ctx)
 
-			repo := reg.Repo("test", "manifest")
-			ref := repo.Tag("latest")
+			named := bdd.Must(reference.WithName("test/manifest"))
+			repo := bdd.Must(reg.Repository(ctx, named))
 
 			b.When("push this image to container registry", func(b bdd.T) {
 				b.Then("success pushed",
-					bdd.NoError(remote.Push(ref, img)),
+					bdd.NoError(remote.Push(ctx, src, repo, "latest")),
 				)
 
 				b.When("pull and push as v1", func(b bdd.T) {
-					img1 := bdd.Must(remote.Image(ref))
+					imagePushed := bdd.Must(remote.Manifest(ctx, repo, "latest"))
 
-					err := remote.Push(ref.Tag("v1"), img1)
 					b.Then("success",
-						bdd.NoError(err),
+						bdd.NoError(remote.Push(ctx, imagePushed, repo, "v1")),
 					)
 
 					repository := bdd.Must(ns.Repository(ctx, content.Name("test/manifest")))

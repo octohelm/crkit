@@ -40,6 +40,15 @@ func (bs *blobStore) Info(ctx context.Context, dgst digest.Digest) (*manifestv1.
 
 	_, meta, err := Do(ctx, bs.client, req)
 	if err != nil {
+		errd := &statuserror.Descriptor{}
+		if errors.As(err, &errd) {
+			if errd.StatusCode() == 404 {
+				return nil, &content.ErrManifestBlobUnknown{
+					Name:   bs.named.Name(),
+					Digest: dgst,
+				}
+			}
+		}
 		return nil, err
 	}
 
@@ -142,7 +151,7 @@ func (bs *blobStore) Writer(ctx context.Context) (content.BlobWriter, error) {
 		chunk:     bytes.NewBuffer(nil),
 	}
 
-	if err := bw.syncFromMeta(meta); err != nil {
+	if err := bw.syncFromMeta(0, meta); err != nil {
 		return nil, err
 	}
 
@@ -202,7 +211,6 @@ func (bw *blobWriter) Write(p []byte) (int, error) {
 			return -1, err
 		}
 	}
-
 	return n, nil
 }
 
@@ -226,9 +234,10 @@ func (bw *blobWriter) Close() error {
 }
 
 func (bw *blobWriter) Commit(ctx context.Context, expect manifestv1.Descriptor) (*manifestv1.Descriptor, error) {
+	n := int64(bw.chunk.Len())
 	var req *http.Request
 
-	if n := int64(bw.chunk.Len()); n == 0 {
+	if n == 0 {
 		r, err := http.NewRequestWithContext(ctx, http.MethodPut, bw.endpoint(), nil)
 		if err != nil {
 			return nil, err
@@ -258,24 +267,28 @@ func (bw *blobWriter) Commit(ctx context.Context, expect manifestv1.Descriptor) 
 		return nil, err
 	}
 
+	if err := bw.syncFromMeta(n, meta); err != nil {
+		return nil, err
+	}
+
 	d := &manifestv1.Descriptor{}
 
 	d.Digest = digest.Digest(meta.Get("Docker-Content-Digest"))
 	d.Size = bw.Size(ctx)
-
-	if expect.Size > 0 {
-		if d.Size != expect.Size {
-			return nil, &content.ErrBlobInvalidLength{
-				Reason: fmt.Sprintf("expect %d, but got %d", expect.Size, d.Size),
-			}
-		}
-	}
 
 	if expect.Digest != "" {
 		if d.Digest != expect.Digest {
 			return nil, &content.ErrBlobInvalidDigest{
 				Digest: d.Digest,
 				Reason: fmt.Errorf("not match %s", expect.Digest),
+			}
+		}
+	}
+
+	if expect.Size > 0 {
+		if d.Size != expect.Size {
+			return nil, &content.ErrBlobInvalidLength{
+				Reason: fmt.Sprintf("expect %d, but got %d", expect.Size, d.Size),
 			}
 		}
 	}
@@ -324,9 +337,8 @@ func (bw *blobWriter) sendChunk(ctx context.Context, retry bool) error {
 	}
 
 	bw.chunk.Reset()
-	bw.written += n
 
-	return bw.syncFromMeta(meta)
+	return bw.syncFromMeta(n, meta)
 }
 
 func (bw *blobWriter) syncFromBlobUpload(ctx context.Context) error {
@@ -340,10 +352,10 @@ func (bw *blobWriter) syncFromBlobUpload(ctx context.Context) error {
 		return err
 	}
 
-	return bw.syncFromMeta(meta)
+	return bw.syncFromMeta(0, meta)
 }
 
-func (bw *blobWriter) syncFromMeta(meta courier.Metadata) error {
+func (bw *blobWriter) syncFromMeta(n int64, meta courier.Metadata) error {
 	if chunkMinLength := meta.Get("OCI-Chunk-Min-Length"); chunkMinLength != "" {
 		i, _ := strconv.ParseInt(chunkMinLength, 10, 64)
 		if i > 0 {
@@ -371,7 +383,13 @@ func (bw *blobWriter) syncFromMeta(meta courier.Metadata) error {
 		if err != nil {
 			return err
 		}
-		bw.written = r.Length
+
+		// skip 0-0
+		if next := r.Length; next > 1 {
+			bw.written = next
+		}
+	} else {
+		bw.written += n
 	}
 
 	return nil

@@ -1,0 +1,17 @@
+-- manifest.json --
+{
+  "schemaVersion": 2,
+  "mediaType": "application/vnd.oci.image.manifest.v1+json",
+  "config": {
+    "mediaType": "application/vnd.oci.image.config.v1+json",
+    "digest": "sha256:c1d8718ba6939bd5cba1fb02e0866a9ac9707dd50a85888732ee30a059461a20",
+    "size": 35
+  },
+  "layers": [
+    {
+      "mediaType": "text/plain",
+      "digest": "sha256:a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3",
+      "size": 3
+    }
+  ]
+}

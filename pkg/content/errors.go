@@ -46,20 +46,6 @@ func (err *ErrBlobInvalidLength) Error() string {
 	return fmt.Sprintf("blob invalid length: %s", err.Reason)
 }
 
-type ErrTagUnknown struct {
-	statuserror.NotFound
-
-	Tag string
-}
-
-func (ErrTagUnknown) ErrCode() string {
-	return "MANIFEST_UNKNOWN"
-}
-
-func (err *ErrTagUnknown) Error() string {
-	return fmt.Sprintf("unknown tag=%s", err.Tag)
-}
-
 type ErrRepositoryUnknown struct {
 	statuserror.NotFound
 
@@ -104,18 +90,18 @@ func (err *ErrRepositoryNameInvalid) Error() string {
 	return fmt.Sprintf("repository name %q invalid: %v", err.Name, err.Reason)
 }
 
-type ErrManifestUnknown struct {
+type ErrTagUnknown struct {
 	statuserror.NotFound
 
 	Name string
 	Tag  string
 }
 
-func (ErrManifestUnknown) ErrCode() string {
+func (ErrTagUnknown) ErrCode() string {
 	return "MANIFEST_UNKNOWN"
 }
 
-func (err *ErrManifestUnknown) Error() string {
+func (err *ErrTagUnknown) Error() string {
 	return fmt.Sprintf("unknown manifest name=%s tag=%s", err.Name, err.Tag)
 }
 
@@ -145,6 +131,7 @@ func (ErrManifestUnverified) Error() string {
 type ErrManifestBlobUnknown struct {
 	statuserror.NotFound
 
+	Name   string
 	Digest digest.Digest
 }
 
@@ -153,7 +140,7 @@ func (ErrManifestBlobUnknown) ErrCode() string {
 }
 
 func (err *ErrManifestBlobUnknown) Error() string {
-	return fmt.Sprintf("unknown blob %v on manifest", err.Digest)
+	return fmt.Sprintf("unknown manifest name=%s digest=%s", err.Name, err.Digest)
 }
 
 type ErrManifestNameInvalid struct {

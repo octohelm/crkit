@@ -29,7 +29,8 @@ func newLinkedBlobStore(w *workspace, named reference.Named) *linkedBlobStore {
 			return w.layout.RepositoryLayersPath(named)
 		},
 		errUnknownFunc: func(dgst digest.Digest) error {
-			return &content.ErrBlobUnknown{
+			return &content.ErrManifestBlobUnknown{
+				Name:   named.Name(),
 				Digest: dgst,
 			}
 		},
