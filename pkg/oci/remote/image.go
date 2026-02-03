@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"io"
 	"iter"
+	"sync"
 
+	syncx "github.com/octohelm/x/sync"
+	"github.com/opencontainers/go-digest"
 	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 
 	"github.com/octohelm/crkit/pkg/content"
@@ -36,6 +39,21 @@ type image struct {
 	internal.Image
 
 	repo content.Repository
+
+	cached syncx.Map[digest.Digest, func() oci.Blob]
+}
+
+func (i *image) fetch(ctx context.Context, d ocispecv1.Descriptor) oci.Blob {
+	get, _ := i.cached.LoadOrStore(d.Digest, sync.OnceValue(func() oci.Blob {
+		return partial.BlobFromOpener(func(ctx context.Context) (io.ReadCloser, error) {
+			blobs, err := i.repo.Blobs(ctx)
+			if err != nil {
+				return nil, err
+			}
+			return blobs.Open(ctx, d.Digest)
+		}, d)
+	}))
+	return get()
 }
 
 func (i *image) Config(ctx context.Context) (oci.Blob, error) {
@@ -44,13 +62,7 @@ func (i *image) Config(ctx context.Context) (oci.Blob, error) {
 		return nil, err
 	}
 
-	return partial.BlobFromOpener(func(ctx context.Context) (io.ReadCloser, error) {
-		blobs, err := i.repo.Blobs(ctx)
-		if err != nil {
-			return nil, err
-		}
-		return blobs.Open(ctx, m.Config.Digest)
-	}, m.Config), nil
+	return i.fetch(ctx, m.Config), nil
 }
 
 func (i *image) Layers(ctx context.Context) iter.Seq2[oci.Blob, error] {
@@ -62,15 +74,7 @@ func (i *image) Layers(ctx context.Context) iter.Seq2[oci.Blob, error] {
 		}
 
 		for _, l := range img.Layers {
-			layer := partial.BlobFromOpener(func(ctx context.Context) (io.ReadCloser, error) {
-				blobs, err := i.repo.Blobs(ctx)
-				if err != nil {
-					return nil, err
-				}
-				return blobs.Open(ctx, l.Digest)
-			}, l)
-
-			if !yield(layer, nil) {
+			if !yield(i.fetch(ctx, l), nil) {
 				return
 			}
 		}

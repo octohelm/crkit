@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"io"
 	"iter"
+	"sync"
 
+	syncx "github.com/octohelm/x/sync"
+	"github.com/opencontainers/go-digest"
 	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 
 	"github.com/octohelm/crkit/pkg/content"
@@ -34,6 +37,8 @@ func pullAsIndex(ctx context.Context, repo content.Repository, desc ocispecv1.De
 type index struct {
 	internal.Index
 	repo content.Repository
+
+	cached syncx.Map[digest.Digest, func() (oci.Manifest, error)]
 }
 
 func (i *index) Manifests(ctx context.Context) iter.Seq2[oci.Manifest, error] {
@@ -45,7 +50,11 @@ func (i *index) Manifests(ctx context.Context) iter.Seq2[oci.Manifest, error] {
 		}
 
 		for _, md := range idx.Manifests {
-			if !yield(manifest(ctx, i.repo, md)) {
+			call, _ := i.cached.LoadOrStore(md.Digest, sync.OnceValues(func() (oci.Manifest, error) {
+				return manifest(ctx, i.repo, md)
+			}))
+
+			if !yield(call()) {
 				return
 			}
 		}

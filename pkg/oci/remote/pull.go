@@ -37,11 +37,19 @@ func Manifest(ctx context.Context, repo content.Repository, reference string) (o
 	return manifest(ctx, repo, d)
 }
 
-func manifest(ctx context.Context, repo content.Repository, d ocispecv1.Descriptor) (oci.Manifest, error) {
-	l := logr.FromContext(ctx).WithValues(
+func manifest(pctx context.Context, repo content.Repository, d ocispecv1.Descriptor) (finalM oci.Manifest, finalErr error) {
+	ctx, l := logr.FromContext(pctx).Start(pctx, "resolve manifest",
 		slog.String("repo.name", repo.Named().Name()),
 		slog.String("manifest.digest", string(d.Digest)),
 	)
+	defer l.End()
+	defer func() {
+		if finalErr != nil {
+			l.Error(finalErr)
+		} else {
+			l.Info("resolved")
+		}
+	}()
 
 	if d.Platform != nil {
 		l = l.WithValues(slog.Any("platform", platforms.Format(*d.Platform)))
@@ -60,8 +68,6 @@ func manifest(ctx context.Context, repo content.Repository, d ocispecv1.Descript
 	if err != nil {
 		return nil, err
 	}
-
-	l.WithValues(slog.String("manifest.media_type", m.Type())).Info("resolved")
 
 	switch m.Type() {
 	case ocispecv1.MediaTypeImageIndex, manifestv1.DockerMediaTypeManifestList:
