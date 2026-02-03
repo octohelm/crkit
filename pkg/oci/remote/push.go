@@ -215,6 +215,7 @@ func (p *pusher) pushBlob(ctx context.Context, b oci.Blob) error {
 
 	l = l.WithValues(
 		slog.Any("repo.name", p.repo.Named().Name()),
+		slog.Any("digest", d.Digest),
 		slog.Any("progress.total", d.Size),
 	)
 
