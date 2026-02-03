@@ -36,9 +36,13 @@ func (i *Index) Value(ctx context.Context) (ocispecv1.Index, error) {
 	return *i.idx, nil
 }
 
-func (i *Index) InitFromRaw(raw []byte, descs ...ocispecv1.Descriptor) error {
+func (i *Index) InitFromReader(r io.Reader, descs ...ocispecv1.Descriptor) error {
+	digester := digest.SHA256.Digester()
+	buf := bytes.NewBuffer(nil)
+
 	idx := &ocispecv1.Index{}
-	if err := json.Unmarshal(raw, idx); err != nil {
+
+	if err := json.UnmarshalRead(io.TeeReader(r, io.MultiWriter(buf, digester.Hash())), idx); err != nil {
 		return err
 	}
 
@@ -51,10 +55,11 @@ func (i *Index) InitFromRaw(raw []byte, descs ...ocispecv1.Descriptor) error {
 		}
 	}
 
-	if i.desc.Digest == "" {
-		i.desc.Digest = digest.FromBytes(raw)
-		i.desc.Size = int64(len(raw))
+	if d := digester.Digest(); d != i.desc.Digest {
+		i.desc.Digest = d
 	}
+
+	i.desc.Size = int64(buf.Len())
 
 	if len(idx.Annotations) > 0 {
 		if i.desc.Annotations == nil {
@@ -64,7 +69,7 @@ func (i *Index) InitFromRaw(raw []byte, descs ...ocispecv1.Descriptor) error {
 	}
 
 	i.idx = idx
-	i.raw = raw
+	i.raw = buf.Bytes()
 
 	return nil
 }

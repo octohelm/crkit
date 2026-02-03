@@ -18,12 +18,13 @@ func pullAsIndex(ctx context.Context, repo content.Repository, desc ocispecv1.De
 		repo: repo,
 	}
 
-	raw, err := internal.ReadAllFromOpener(ctx, open)
+	r, err := open(ctx)
 	if err != nil {
 		return nil, err
 	}
+	defer r.Close()
 
-	if err := idx.InitFromRaw(raw, desc); err != nil {
+	if err := idx.InitFromReader(r, desc); err != nil {
 		return nil, fmt.Errorf("init index %s failed: %w", desc.Digest, err)
 	}
 

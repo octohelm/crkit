@@ -43,6 +43,7 @@ func (pw *Writer) Observe(ctx context.Context) iter.Seq[int64] {
 		for {
 			select {
 			case <-pw.close:
+				return
 			case <-ctx.Done():
 				return
 			case <-ticker.C:

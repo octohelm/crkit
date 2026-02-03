@@ -6,7 +6,7 @@ import (
 	"io"
 	"log/slog"
 
-	"github.com/go-json-experiment/json"
+	"github.com/containerd/platforms"
 	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 
 	"github.com/octohelm/x/logr"
@@ -40,10 +40,16 @@ func Manifest(ctx context.Context, repo content.Repository, reference string) (o
 func manifest(ctx context.Context, repo content.Repository, d ocispecv1.Descriptor) (oci.Manifest, error) {
 	l := logr.FromContext(ctx).WithValues(
 		slog.String("repo.name", repo.Named().Name()),
-		slog.String("manifest", string(d.Digest)),
+		slog.String("manifest.digest", string(d.Digest)),
 	)
 
-	l.Info("resolving")
+	if d.Platform != nil {
+		l = l.WithValues(slog.Any("platform", platforms.Format(*d.Platform)))
+	}
+
+	if d.Size > 0 {
+		l = l.WithValues(slog.Any("manifest.size", d.Size))
+	}
 
 	manifests, err := repo.Manifests(ctx)
 	if err != nil {
@@ -54,6 +60,8 @@ func manifest(ctx context.Context, repo content.Repository, d ocispecv1.Descript
 	if err != nil {
 		return nil, err
 	}
+
+	l.WithValues(slog.String("manifest.media_type", m.Type())).Info("resolved")
 
 	switch m.Type() {
 	case ocispecv1.MediaTypeImageIndex, manifestv1.DockerMediaTypeManifestList:
@@ -70,7 +78,11 @@ func manifest(ctx context.Context, repo content.Repository, d ocispecv1.Descript
 }
 
 func asReadCloser(ctx context.Context, x manifestv1.Manifest) (io.ReadCloser, error) {
-	raw, err := json.Marshal(x)
+	p, err := manifestv1.From(x)
+	if err != nil {
+		return nil, err
+	}
+	raw, err := p.MarshalJSON()
 	if err != nil {
 		return nil, err
 	}

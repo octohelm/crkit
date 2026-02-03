@@ -14,17 +14,18 @@ import (
 	"github.com/octohelm/crkit/pkg/oci/partial"
 )
 
-func pullAsImage(ctx context.Context, repo content.Repository, desc ocispecv1.Descriptor, opener internal.Opener) (oci.Image, error) {
+func pullAsImage(ctx context.Context, repo content.Repository, desc ocispecv1.Descriptor, open internal.Opener) (oci.Image, error) {
 	img := &image{
 		repo: repo,
 	}
 
-	raw, err := internal.ReadAllFromOpener(ctx, opener)
+	r, err := open(ctx)
 	if err != nil {
 		return nil, err
 	}
+	defer r.Close()
 
-	if err := img.InitFromRaw(raw, desc); err != nil {
+	if err := img.InitFromReader(r, desc); err != nil {
 		return nil, fmt.Errorf("init image %s failed: %w", desc.Digest, err)
 	}
 

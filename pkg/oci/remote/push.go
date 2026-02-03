@@ -7,6 +7,7 @@ import (
 	"io"
 	"log/slog"
 
+	"github.com/containerd/platforms"
 	"github.com/distribution/reference"
 	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 
@@ -14,9 +15,9 @@ import (
 	"github.com/octohelm/x/ptr"
 
 	"github.com/octohelm/crkit/internal/pkg/progress"
-	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
 	"github.com/octohelm/crkit/pkg/content"
 	"github.com/octohelm/crkit/pkg/oci"
+	"github.com/octohelm/crkit/pkg/oci/internal"
 )
 
 func PushIndex(ctx context.Context, idx oci.Index, ns content.Namespace) error {
@@ -48,7 +49,7 @@ func PushIndex(ctx context.Context, idx oci.Index, ns content.Namespace) error {
 			}
 
 			if err := Push(ctx, m, repo, imageRef); err != nil {
-				return err
+				return fmt.Errorf("push %s %s failed: %w", imageName, imageRef, err)
 			}
 		}
 	}
@@ -61,7 +62,7 @@ func Push(pctx context.Context, m oci.Manifest, repo content.Repository, tag str
 		repo: repo,
 	}
 
-	ctx, l := logr.FromContext(pctx).Start(pctx, "Push")
+	ctx, l := logr.FromContext(pctx).Start(pctx, "Push", slog.Any("repo.name", p.repo.Named().Name()))
 	defer l.End()
 
 	if err := p.push(ctx, m); err != nil {
@@ -75,8 +76,12 @@ func Push(pctx context.Context, m oci.Manifest, repo content.Repository, tag str
 		}
 
 		if err := p.tag(ctx, tag, d); err != nil {
-			return err
+			return fmt.Errorf("tag %s@%s failed: %w", tag, d.Digest, err)
 		}
+
+		l.WithValues(
+			slog.Any("repo.tag", tag),
+		).Info("tagged")
 	}
 
 	return nil
@@ -115,6 +120,10 @@ func (p *pusher) pushIndex(ctx context.Context, idx oci.Index) error {
 		return err
 	}
 
+	l := logr.FromContext(ctx).WithValues(
+		slog.Any("manifest.disget", d.Digest),
+	)
+
 	manifests, err := p.repo.Manifests(ctx)
 	if err != nil {
 		return err
@@ -134,22 +143,21 @@ func (p *pusher) pushIndex(ctx context.Context, idx oci.Index) error {
 		}
 
 		if err := p.push(ctx, child); err != nil {
-			return err
+			return fmt.Errorf("push manifest failed: %w", err)
 		}
 	}
 
-	raw, err := idx.Raw(ctx)
+	m, err := internal.ToManifest(ctx, idx)
 	if err != nil {
 		return err
 	}
 
-	x, err := manifestv1.FromBytes(raw)
-	if err != nil {
-		return nil
-	}
-
-	if _, err := manifests.Put(ctx, x); err != nil {
+	if dgst, err := manifests.Put(ctx, m); err != nil {
 		return err
+	} else {
+		l.WithValues(
+			slog.Any("pushed.digest", dgst),
+		).Info("pushed")
 	}
 
 	return nil
@@ -159,6 +167,15 @@ func (p *pusher) pushImage(ctx context.Context, img oci.Image) error {
 	d, err := img.Descriptor(ctx)
 	if err != nil {
 		return err
+	}
+
+	l := logr.FromContext(ctx).WithValues(
+		slog.Any("manifest.disget", d.Digest),
+		slog.Any("manifest.size", d.Size),
+	)
+
+	if d.Platform != nil {
+		l = l.WithValues(slog.Any("platform", platforms.Format(*d.Platform)))
 	}
 
 	manifests, err := p.repo.Manifests(ctx)
@@ -188,18 +205,17 @@ func (p *pusher) pushImage(ctx context.Context, img oci.Image) error {
 		}
 	}
 
-	raw, err := img.Raw(ctx)
+	m, err := internal.ToManifest(ctx, img)
 	if err != nil {
 		return err
 	}
 
-	x, err := manifestv1.FromBytes(raw)
-	if err != nil {
-		return nil
-	}
-
-	if _, err := manifests.Put(ctx, x); err != nil {
+	if dgst, err := manifests.Put(ctx, m); err != nil {
 		return err
+	} else {
+		l.WithValues(
+			slog.Any("pushed.digest", dgst),
+		).Info("pushed")
 	}
 
 	return nil

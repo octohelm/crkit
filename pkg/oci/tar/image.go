@@ -17,12 +17,14 @@ func openAsImage(ctx context.Context, fileOpener FileOpener, desc ocispecv1.Desc
 		fileOpener: fileOpener,
 	}
 
-	raw, err := internal.ReadAllFromOpener(ctx, opener)
+	r, err := opener(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := img.InitFromRaw(raw, desc); err != nil {
+	defer r.Close()
+
+	if err := img.InitFromReader(r, desc); err != nil {
 		return nil, err
 	}
 

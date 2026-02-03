@@ -94,8 +94,6 @@ func (p *Packer) PackAsIndex(ctx context.Context, kpkg *kubepkgv1alpha1.KubePkg)
 				imageIndexes[imageName] = empty.Index
 			}
 
-			fmt.Println(imageRepo.Named().Name(), imageRef, platforms.Format(*desc.Platform))
-
 			img, err := remote.Manifest(ctx, imageRepo, imageRef)
 			if err != nil {
 				return nil, err
@@ -106,8 +104,26 @@ func (p *Packer) PackAsIndex(ctx context.Context, kpkg *kubepkgv1alpha1.KubePkg)
 				return nil, err
 			}
 
+			if d.MediaType == "" {
+				return nil, fmt.Errorf("invalid descriptor %s@%s", imageName, imageRef)
+			}
+
 			if d.ArtifactType != "" {
 				artifacts[imageName] = struct{}{}
+			}
+
+			if d.Platform != nil {
+				d.Platform = desc.Platform
+			}
+
+			if d.Platform == nil && desc.Platform != nil {
+				switch x := img.(type) {
+				case oci.Image:
+					img, err = mutate.WithPlatform(x, platforms.Format(*desc.Platform))
+					if err != nil {
+						return nil, err
+					}
+				}
 			}
 
 			imageIndex, err := mutate.AppendManifests(imageIndexes[imageName], img)
@@ -202,16 +218,28 @@ func (p *Packer) Pack(ctx context.Context, kpkg *kubepkgv1alpha1.KubePkg) (oci.I
 		return nil, err
 	}
 
+	added := map[string]struct{}{}
+
 	for image := range workloadImages {
+		fullName := image.FullName()
+
 		named, err := reference.ParseNormalizedNamed(image.Name)
 		if err != nil {
 			return nil, err
 		}
 
 		// maybe renamed
+		// if needed, always rename
 		image.Name = p.ImageName(named.String())
 		// force delete for versioned resolved
 		image.Digest = ""
+
+		// only one image could added
+		if _, ok := added[fullName]; ok {
+			continue
+		}
+
+		added[fullName] = struct{}{}
 
 		repo, err := p.Namespace.Repository(ctx, named)
 		if err != nil {

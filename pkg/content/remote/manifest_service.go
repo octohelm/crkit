@@ -3,6 +3,7 @@ package remote
 import (
 	"context"
 	"errors"
+	"fmt"
 	"maps"
 	"slices"
 	"strconv"
@@ -54,7 +55,13 @@ func (ms *manifestService) Put(ctx context.Context, m manifestv1.Manifest) (dige
 	if err != nil {
 		return "", err
 	}
-	return digest.Digest(meta.Get("Docker-Content-Digest")), nil
+
+	returns := digest.Digest(meta.Get("Docker-Content-Digest"))
+	if returns != dgst {
+		return "", fmt.Errorf("expect %s but got %s: %w", dgst, returns, &content.ErrManifestUnverified{})
+	}
+
+	return returns, nil
 }
 
 func (ms *manifestService) Info(ctx context.Context, dgst digest.Digest) (*manifestv1.Descriptor, error) {

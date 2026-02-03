@@ -69,12 +69,13 @@ func openAsIndex(ctx context.Context, fileOpener FileOpener, desc ocispecv1.Desc
 		fileOpener: fileOpener,
 	}
 
-	raw, err := internal.ReadAllFromOpener(ctx, opener)
+	r, err := opener(ctx)
 	if err != nil {
 		return nil, err
 	}
+	defer r.Close()
 
-	if err := idx.InitFromRaw(raw, desc); err != nil {
+	if err := idx.InitFromReader(r, desc); err != nil {
 		return nil, err
 	}
 

@@ -10,21 +10,22 @@ import (
 	"testing"
 
 	"github.com/distribution/reference"
+
 	"github.com/innoai-tech/infra/pkg/configuration"
 	"github.com/innoai-tech/infra/pkg/configuration/testingutil"
 	"github.com/innoai-tech/infra/pkg/otel"
 	"github.com/octohelm/courier/pkg/courierhttp/handler/httprouter"
+	"github.com/octohelm/unifs/pkg/units"
+	"github.com/octohelm/x/testing/bdd"
+
 	"github.com/octohelm/crkit/pkg/content"
 	contentapi "github.com/octohelm/crkit/pkg/content/api"
 	"github.com/octohelm/crkit/pkg/content/collect"
 	contentremote "github.com/octohelm/crkit/pkg/content/remote"
-	"github.com/octohelm/crkit/pkg/oci/remote"
-	"github.com/octohelm/crkit/pkg/registryhttp/apis"
-	"github.com/octohelm/unifs/pkg/units"
-	"github.com/octohelm/x/testing/bdd"
-
 	"github.com/octohelm/crkit/pkg/oci"
 	"github.com/octohelm/crkit/pkg/oci/random"
+	"github.com/octohelm/crkit/pkg/oci/remote"
+	"github.com/octohelm/crkit/pkg/registryhttp/apis"
 )
 
 func FuzzNamespace(f *testing.F) {

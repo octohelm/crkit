@@ -12,7 +12,6 @@ import (
 
 func FromBytes(raw []byte) (*Payload, error) {
 	p := &Payload{}
-	// must be use UnmarshalJSON direct to avoid trim end \n
 	if err := p.UnmarshalJSON(raw); err != nil {
 		return nil, err
 	}
@@ -43,6 +42,12 @@ type Payload struct {
 
 	raw  []byte
 	dgst digest.Digest
+}
+
+func (v *Payload) InitFromRaw(raw []byte, desc ocispecv1.Descriptor) error {
+	v.dgst = desc.Digest
+	v.raw = raw
+	return nil
 }
 
 func (Payload) Discriminator() string {

@@ -1,8 +1,10 @@
 package kubepkg
 
 import (
+	"io"
 	"log/slog"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	"github.com/distribution/reference"
@@ -19,6 +21,7 @@ import (
 	"github.com/octohelm/crkit/pkg/content"
 	contentremote "github.com/octohelm/crkit/pkg/content/remote"
 	contenttestutil "github.com/octohelm/crkit/pkg/content/testutil"
+	"github.com/octohelm/crkit/pkg/oci"
 	"github.com/octohelm/crkit/pkg/oci/empty"
 	"github.com/octohelm/crkit/pkg/oci/mutate"
 	"github.com/octohelm/crkit/pkg/oci/random"
@@ -40,27 +43,62 @@ func TestPacker(t *testing.T) {
 	s := httptest.NewServer(r)
 	t.Cleanup(s.Close)
 
-	ns := bdd.Must(contentremote.New(t.Context(), contentremote.RegistryHosts{
-		"docker.io": contentremote.RegistryHost{
-			Server: s.URL,
-		},
-		"cr.io": contentremote.RegistryHost{
-			Server: s.URL,
-		},
-	}))
+	ns := bdd.DoValue(t, func() (content.Namespace, error) {
+		return contentremote.New(t.Context(), contentremote.RegistryHosts{
+			"docker.io": contentremote.RegistryHost{
+				Server: s.URL,
+			},
+			"cr.io": contentremote.RegistryHost{
+				Server: s.URL,
+			},
+		})
+	})
 
 	b.Given("kubepkg related images", func(b bdd.T) {
-		named := bdd.Must(reference.ParseNormalizedNamed("docker.io/library/nginx"))
+		named := bdd.DoValue(b, func() (reference.Named, error) {
+			return reference.ParseNormalizedNamed("docker.io/library/nginx")
+		})
+
 		ctx := logr.LoggerInjectContext(b.Context(), logrslog.Logger(slog.Default()))
 
-		_ = bdd.MustDo(func() (content.Repository, error) {
-			repo := bdd.Must(ns.Repository(ctx, named))
+		_ = bdd.DoValue(b, func() (content.Repository, error) {
+			repo, err := ns.Repository(ctx, named)
+			if err != nil {
+				return nil, err
+			}
 
-			idx := bdd.Must(mutate.AppendManifests(
+			idx, err := mutate.With(
 				empty.Index,
-				bdd.Must(mutate.WithPlatform(bdd.Must(random.Image(10, 1)), "linux/amd64")),
-				bdd.Must(mutate.WithPlatform(bdd.Must(random.Image(10, 1)), "linux/arm64")),
-			))
+
+				func(base oci.Index) (oci.Index, error) {
+					amd64, err := mutate.With(empty.Image, func(base oci.Image) (oci.Image, error) {
+						img, err := random.Image(10, 2)
+						if err != nil {
+							return nil, err
+						}
+						return mutate.WithPlatform(img, "linux/amd64")
+					})
+					if err != nil {
+						return nil, err
+					}
+
+					arm64, err := mutate.With(empty.Image, func(base oci.Image) (oci.Image, error) {
+						img, err := random.Image(10, 2)
+						if err != nil {
+							return nil, err
+						}
+						return mutate.WithPlatform(img, "linux/arm64")
+					})
+					if err != nil {
+						return nil, err
+					}
+
+					return mutate.AppendManifests(base, amd64, arm64)
+				},
+			)
+			if err != nil {
+				return nil, err
+			}
 
 			if err := remote.Push(ctx, idx, repo, "1.25.0"); err != nil {
 				return nil, err
@@ -74,7 +112,7 @@ func TestPacker(t *testing.T) {
 		})
 
 		b.When("pack for single amd64", func(b bdd.T) {
-			kpkg := bdd.MustDo(func() (*kubepkgv1alpha1.KubePkg, error) {
+			kpkg := bdd.DoValue(b, func() (*kubepkgv1alpha1.KubePkg, error) {
 				kpkg := &kubepkgv1alpha1.KubePkg{}
 				if err := json.Unmarshal(kubepkgExample, kpkg); err != nil {
 					return nil, err
@@ -90,10 +128,12 @@ func TestPacker(t *testing.T) {
 				},
 			}
 
-			i, err := p.Pack(ctx, kpkg)
+			idx, err := p.Pack(ctx, kpkg)
 			b.Then("success", bdd.NoError(err))
 
-			m := bdd.Must(i.Value(ctx))
+			m := bdd.DoValue(b, func() (ocispecv1.Index, error) {
+				return idx.Value(ctx)
+			})
 
 			b.Then("contains 3 manifests ", bdd.Equal(3, len(m.Manifests)))
 			b.Then("contains 2 platformed", bdd.Equal(2,
@@ -108,7 +148,9 @@ func TestPacker(t *testing.T) {
 			))
 
 			b.When("resolve index", func(b bdd.T) {
-				k := bdd.Must(KubePkg(ctx, i))
+				k := bdd.DoValue(b, func() (*kubepkgv1alpha1.KubePkg, error) {
+					return KubePkg(ctx, idx)
+				})
 
 				b.Then("container image should be resolved",
 					bdd.Equal("docker.io/x/nginx", k.Spec.Containers["web"].Image.Name),
@@ -117,7 +159,7 @@ func TestPacker(t *testing.T) {
 		})
 
 		b.When("pack for oci index", func(b bdd.T) {
-			kpkg := bdd.MustDo(func() (*kubepkgv1alpha1.KubePkg, error) {
+			kpkg := bdd.DoValue(b, func() (*kubepkgv1alpha1.KubePkg, error) {
 				kpkg := &kubepkgv1alpha1.KubePkg{}
 				if err := json.Unmarshal(kubepkgExample, kpkg); err != nil {
 					return nil, err
@@ -133,14 +175,55 @@ func TestPacker(t *testing.T) {
 			idx, err := p.PackAsIndex(ctx, kpkg)
 			b.Then("success", bdd.NoError(err))
 
+			filename := "testdata/.tmp/example.kubepkg.tar"
+
 			b.Then("oci tar written",
-				bdd.NoError(ocitar.WriteFile("testdata/.tmp/example.kubepkg.tar", idx)),
+				bdd.NoError(ocitar.WriteFile(filename, idx)),
 			)
 
 			b.When("push", func(b bdd.T) {
 				err := remote.PushIndex(ctx, idx, ns)
 
 				b.Then("success", bdd.NoError(err))
+
+				b.When("read the tar", func(b bdd.T) {
+					idx := bdd.DoValue(b, func() (oci.Index, error) {
+						return ocitar.Index(func() (io.ReadCloser, error) {
+							return os.OpenFile(filename, os.O_RDONLY, os.ModePerm)
+						})
+					})
+
+					i := bdd.DoValue(b, func() (ocispecv1.Index, error) {
+						return idx.Value(ctx)
+					})
+
+					b.Then("got 3 images",
+						bdd.Equal(3, len(i.Manifests)),
+					)
+
+					for m := range idx.Manifests(ctx) {
+						switch x := m.(type) {
+						case oci.Index:
+							d := bdd.DoValue(b, func() (ocispecv1.Descriptor, error) {
+								return x.Descriptor(ctx)
+							})
+
+							if d.ArtifactType == "" {
+								b.Then("each image should contains 2 platforms",
+									bdd.EqualDoValue(2, func() (int, error) {
+										m, err := x.Value(ctx)
+										if err != nil {
+											return 0, err
+										}
+										return xiter.Count(xiter.Filter(xiter.Of(m.Manifests...), func(e ocispecv1.Descriptor) bool {
+											return e.Platform != nil
+										})), nil
+									}),
+								)
+							}
+						}
+					}
+				})
 			})
 		})
 	})

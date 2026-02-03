@@ -37,9 +37,12 @@ func (i *Image) Value(ctx context.Context) (ocispecv1.Manifest, error) {
 	return *i.img, nil
 }
 
-func (i *Image) InitFromRaw(raw []byte, descs ...ocispecv1.Descriptor) error {
+func (i *Image) InitFromReader(r io.Reader, descs ...ocispecv1.Descriptor) error {
+	digester := digest.SHA256.Digester()
+	buf := bytes.NewBuffer(nil)
+
 	img := &ocispecv1.Manifest{}
-	if err := json.Unmarshal(raw, img); err != nil {
+	if err := json.UnmarshalRead(io.TeeReader(r, io.MultiWriter(buf, digester.Hash())), img); err != nil {
 		return err
 	}
 
@@ -52,9 +55,22 @@ func (i *Image) InitFromRaw(raw []byte, descs ...ocispecv1.Descriptor) error {
 		}
 	}
 
-	if i.desc.Digest == "" {
-		i.desc.Digest = digest.FromBytes(raw)
-		i.desc.Size = int64(len(raw))
+	if dgst := digester.Digest(); dgst != i.desc.Digest {
+		i.desc.Digest = dgst
+	}
+
+	i.desc.Size = int64(buf.Len())
+
+	if i.desc.ArtifactType == "" {
+		i.desc.ArtifactType = img.ArtifactType
+	}
+
+	if i.desc.MediaType == "" {
+		i.desc.MediaType = img.MediaType
+	}
+
+	if i.desc.Platform == nil {
+		i.desc.Platform = img.Config.Platform
 	}
 
 	if len(img.Annotations) > 0 {
@@ -65,7 +81,7 @@ func (i *Image) InitFromRaw(raw []byte, descs ...ocispecv1.Descriptor) error {
 	}
 
 	i.img = img
-	i.raw = raw
+	i.raw = buf.Bytes()
 
 	return nil
 }
@@ -89,7 +105,7 @@ func (i *Image) Build(mutates ...func(m *ocispecv1.Manifest) error) error {
 	if err := json.MarshalWrite(
 		io.MultiWriter(buf, digester.Hash()),
 		img,
-		json.Deterministic(true), // map ordered alpha beta
+		json.Deterministic(true),
 	); err != nil {
 		return err
 	}

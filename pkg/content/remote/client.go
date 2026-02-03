@@ -129,6 +129,8 @@ func (rt *logRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) 
 
 	if err != nil {
 		l.Warn(fmt.Errorf("http request failed: %w", err))
+	} else {
+		l.Debug("request")
 	}
 
 	return resp, err

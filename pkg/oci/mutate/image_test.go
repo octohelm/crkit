@@ -5,11 +5,12 @@ import (
 	"testing"
 
 	"github.com/go-json-experiment/json/jsontext"
-	"github.com/octohelm/crkit/pkg/oci"
-	"github.com/octohelm/x/testing/bdd"
-	"github.com/octohelm/x/testing/snapshot"
 	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 
+	"github.com/octohelm/x/testing/bdd"
+	"github.com/octohelm/x/testing/snapshot"
+
+	"github.com/octohelm/crkit/pkg/oci"
 	"github.com/octohelm/crkit/pkg/oci/empty"
 	"github.com/octohelm/crkit/pkg/oci/mutate"
 	"github.com/octohelm/crkit/pkg/oci/partial"
