@@ -11,6 +11,7 @@ import (
 
 	"github.com/containerd/platforms"
 	"github.com/distribution/reference"
+	"github.com/octohelm/x/logr"
 	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 
 	kubepkgv1alpha1 "github.com/octohelm/kubepkgspec/pkg/apis/kubepkg/v1alpha1"
@@ -188,7 +189,10 @@ func (p *Packer) PackAsIndex(ctx context.Context, kpkg *kubepkgv1alpha1.KubePkg)
 	return finalIndex, nil
 }
 
-func (p *Packer) Pack(ctx context.Context, kpkg *kubepkgv1alpha1.KubePkg) (oci.Index, error) {
+func (p *Packer) Pack(pctx context.Context, kpkg *kubepkgv1alpha1.KubePkg) (oci.Index, error) {
+	ctx, l := logr.FromContext(pctx).Start(pctx, "PackKubePkg")
+	defer l.End()
+
 	annotations, err := p.includedAnnotations(kpkg.Annotations)
 	if err != nil {
 		return nil, err
