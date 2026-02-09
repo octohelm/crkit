@@ -8,7 +8,7 @@ import (
 
 	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 
-	"github.com/octohelm/x/testing/bdd"
+	. "github.com/octohelm/x/testing/v2"
 
 	"github.com/octohelm/crkit/pkg/oci"
 	"github.com/octohelm/crkit/pkg/oci/empty"
@@ -48,25 +48,36 @@ func FuzzMutator(f *testing.F) {
 	m := &ImageMutator{}
 	m.Build(options...)
 
-	baseImg := bdd.Must(m.Apply(f.Context(), empty.Image))
-	baseRaw := string(bdd.Must(baseImg.Raw(f.Context())))
+	baseImg := MustValue(f, func() (oci.Image, error) {
+		return m.Apply(f.Context(), empty.Image)
+	})
+
+	baseRaw := MustValue(f, func() (string, error) {
+		raw, err := baseImg.Raw(f.Context())
+		return string(raw), err
+	})
 
 	for range 10 {
 		f.Add(1)
 	}
 
 	f.Fuzz(func(t *testing.T, i int) {
-		b := bdd.FromT(t)
-		b.When("shuffle options", func(b bdd.T) {
+		t.Run("shuffle options", func(t *testing.T) {
 			m := &ImageMutator{}
 			m.Build(ShuffledSlice(options)...)
 
-			img := bdd.Must(m.Apply(t.Context(), empty.Image))
-			imgRaw := string(bdd.Must(img.Raw(t.Context())))
+			img := MustValue(t, func() (oci.Image, error) {
+				return m.Apply(t.Context(), empty.Image)
+			})
 
-			b.Then("should got result", bdd.Equal(
-				baseRaw, imgRaw,
-			))
+			imgRaw := MustValue(t, func() (string, error) {
+				raw, err := img.Raw(t.Context())
+				return string(raw), err
+			})
+
+			Then(t, "should produce same result regardless of option order",
+				Expect(imgRaw, Equal(baseRaw)),
+			)
 		})
 	})
 }

@@ -7,8 +7,7 @@ import (
 	"github.com/go-json-experiment/json/jsontext"
 	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 
-	"github.com/octohelm/x/testing/bdd"
-	"github.com/octohelm/x/testing/snapshot"
+	. "github.com/octohelm/x/testing/v2"
 
 	"github.com/octohelm/crkit/pkg/oci"
 	"github.com/octohelm/crkit/pkg/oci/empty"
@@ -17,38 +16,34 @@ import (
 )
 
 func TestMutate(t *testing.T) {
-	b := bdd.FromT(t)
-
-	b.Given("empty image", func(b bdd.T) {
+	t.Run("empty image", func(t *testing.T) {
 		img := empty.Image
 
-		b.Then("could be manifest",
-			bdd.EqualDoValue(
-				bdd.Snapshot("image-empty"),
-				func() (*snapshot.Snapshot, error) {
-					raw, err := formated(b.Context(), img)
-					if err != nil {
-					}
+		Then(t, "could be manifest",
+			ExpectMustValue(
+				func() (Snapshot, error) {
+					raw := MustValue(t, func() ([]byte, error) {
+						return formated(t.Context(), img)
+					})
 
-					return snapshot.Files(
-						snapshot.FileFromRaw("manifest.json", raw),
+					return SnapshotOf(
+						SnapshotFileFromRaw("manifest.json", raw),
 					), nil
 				},
+				MatchSnapshot("image-empty"),
 			),
 		)
 	})
 
-	b.Given("normal image", func(b bdd.T) {
-		img := bdd.DoValue(b, func() (oci.Image, error) {
+	t.Run("normal image", func(t *testing.T) {
+		img := MustValue(t, func() (oci.Image, error) {
 			return mutate.With(
 				empty.Image,
 				func(base oci.Image) (oci.Image, error) {
 					return mutate.WithImageConfig(
 						base,
 						&ocispecv1.ImageConfig{
-							Env: []string{
-								"X=1",
-							},
+							Env: []string{"X=1"},
 						},
 					)
 				},
@@ -61,24 +56,24 @@ func TestMutate(t *testing.T) {
 			)
 		})
 
-		b.Then("could be manifest",
-			bdd.EqualDoValue(
-				bdd.Snapshot("image-normal"),
-				func() (*snapshot.Snapshot, error) {
-					raw, err := formated(b.Context(), img)
-					if err != nil {
-					}
+		Then(t, "could be manifest",
+			ExpectMustValue(
+				func() (Snapshot, error) {
+					raw := MustValue(t, func() ([]byte, error) {
+						return formated(t.Context(), img)
+					})
 
-					return snapshot.Files(
-						snapshot.FileFromRaw("manifest.json", raw),
+					return SnapshotOf(
+						SnapshotFileFromRaw("manifest.json", raw),
 					), nil
 				},
+				MatchSnapshot("image-normal"),
 			),
 		)
 	})
 
-	b.Given("artifact", func(b bdd.T) {
-		img := bdd.DoValue(b, func() (oci.Image, error) {
+	t.Run("artifact", func(t *testing.T) {
+		img := MustValue(t, func() (oci.Image, error) {
 			return mutate.With(
 				empty.Image,
 				func(base oci.Image) (oci.Image, error) {
@@ -93,56 +88,56 @@ func TestMutate(t *testing.T) {
 			)
 		})
 
-		b.Then("could be manifest",
-			bdd.EqualDoValue(
-				bdd.Snapshot("artifact"),
-				func() (*snapshot.Snapshot, error) {
-					raw, err := formated(b.Context(), img)
+		Then(t, "could be manifest",
+			ExpectMustValue(
+				func() (Snapshot, error) {
+					raw, err := formated(t.Context(), img)
 					if err != nil {
+						return nil, err
 					}
 
-					return snapshot.Files(
-						snapshot.FileFromRaw("manifest.json", raw),
+					return SnapshotOf(
+						SnapshotFileFromRaw("manifest.json", raw),
 					), nil
 				},
-			))
+				MatchSnapshot("artifact"),
+			),
+		)
 	})
 
-	b.Given("empty index", func(b bdd.T) {
+	t.Run("empty index", func(t *testing.T) {
 		idx := empty.Index
 
-		b.Then("could be manifest",
-			bdd.EqualDoValue(
-				bdd.Snapshot("index-empty"),
-				func() (*snapshot.Snapshot, error) {
-					raw, err := formated(b.Context(), idx)
+		Then(t, "could be manifest",
+			ExpectMustValue(
+				func() (Snapshot, error) {
+					raw, err := formated(t.Context(), idx)
 					if err != nil {
+						return nil, err
 					}
 
-					return snapshot.Files(
-						snapshot.FileFromRaw("manifest.json", raw),
+					return SnapshotOf(
+						SnapshotFileFromRaw("manifest.json", raw),
 					), nil
 				},
-			))
+				MatchSnapshot("index-empty"),
+			),
+		)
 	})
 
-	b.Given("artifact index", func(b bdd.T) {
-		idx := bdd.DoValue(b, func() (oci.Index, error) {
+	t.Run("artifact index", func(t *testing.T) {
+		idx := MustValue(t, func() (oci.Index, error) {
 			return mutate.With(
 				empty.Index,
 				func(idx oci.Index) (oci.Index, error) {
 					return mutate.WithArtifactType(idx, "application/vnd.content+index")
 				},
 				func(idx oci.Index) (oci.Index, error) {
-					img, err := mutate.WithPlatform(empty.Image, "linux/amd64")
-					if err != nil {
-						return nil, err
-					}
+					img := MustValue(t, func() (oci.Image, error) {
+						return mutate.WithPlatform(empty.Image, "linux/amd64")
+					})
 
-					return mutate.AppendManifests(
-						idx,
-						img,
-					)
+					return mutate.AppendManifests(idx, img)
 				},
 				func(idx oci.Index) (oci.Index, error) {
 					return mutate.WithAnnotations(idx, map[string]string{
@@ -153,18 +148,19 @@ func TestMutate(t *testing.T) {
 			)
 		})
 
-		b.Then("could be manifest",
-			bdd.EqualDoValue(
-				bdd.Snapshot("index-artifact"),
-				func() (*snapshot.Snapshot, error) {
-					raw, err := formated(b.Context(), idx)
+		Then(t, "could be manifest",
+			ExpectMustValue(
+				func() (Snapshot, error) {
+					raw, err := formated(t.Context(), idx)
 					if err != nil {
+						return nil, err
 					}
 
-					return snapshot.Files(
-						snapshot.FileFromRaw("manifest.json", raw),
+					return SnapshotOf(
+						SnapshotFileFromRaw("manifest.json", raw),
 					), nil
 				},
+				MatchSnapshot("index-artifact"),
 			),
 		)
 	})

@@ -16,7 +16,7 @@ import (
 	"github.com/innoai-tech/infra/pkg/otel"
 	"github.com/octohelm/courier/pkg/courierhttp/handler/httprouter"
 	"github.com/octohelm/unifs/pkg/units"
-	"github.com/octohelm/x/testing/bdd"
+	. "github.com/octohelm/x/testing/v2"
 
 	"github.com/octohelm/crkit/pkg/content"
 	contentapi "github.com/octohelm/crkit/pkg/content/api"
@@ -34,17 +34,16 @@ func FuzzNamespace(f *testing.F) {
 	}
 
 	f.Fuzz(func(t *testing.T, i int) {
-		b := bdd.FromT(t)
-
-		b.Given("local fs namespace", func(b bdd.T) {
-			manifestN, image := bdd.DoValues(b, func() (int, oci.Manifest, error) {
+		t.Run("随机生成 OCI 镜像或索引", func(t *testing.T) {
+			manifestN, image := MustValues(t, func() (int, oci.Manifest, error) {
 				switch i {
 				case 1:
 					img, err := random.Image(int64(units.BinarySize(int64(randv2.IntN(50)))*units.MiB), 5)
 					return 1, img, err
+				default:
+					idx, err := random.Index(int64(units.BinarySize(int64(randv2.IntN(50)))*units.MiB), 5, 2)
+					return 3, idx, err
 				}
-				idx, err := random.Index(int64(units.BinarySize(int64(randv2.IntN(50)))*units.MiB), 5, 2)
-				return 3, idx, err
 			})
 
 			ctx, _ := testingutil.BuildContext(t, func(d *struct {
@@ -52,7 +51,7 @@ func FuzzNamespace(f *testing.F) {
 				contentapi.NamespaceProvider
 			},
 			) {
-				tmp := b.TempDir()
+				tmp := t.TempDir()
 				t.Cleanup(func() {
 					_ = os.RemoveAll(tmp)
 				})
@@ -61,7 +60,7 @@ func FuzzNamespace(f *testing.F) {
 				d.Content.Backend.Path = tmp
 			})
 
-			s := bdd.DoValue(t, func() (*httptest.Server, error) {
+			s := MustValue(t, func() (*httptest.Server, error) {
 				injector := configuration.ContextInjectorFromContext(ctx)
 
 				h, err := httprouter.New(apis.R, "registry")
@@ -69,7 +68,7 @@ func FuzzNamespace(f *testing.F) {
 					return nil, err
 				}
 
-				return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+				s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 					if strings.HasSuffix(req.URL.Path, "/") {
 						req.URL.Path = req.URL.Path[0 : len(req.URL.Path)-1]
 					}
@@ -77,15 +76,19 @@ func FuzzNamespace(f *testing.F) {
 					fmt.Println(req.Method, req.URL.String())
 
 					h.ServeHTTP(w, req.WithContext(injector.InjectContext(req.Context())))
-				})), nil
+				}))
+
+				return s, nil
 			})
 			t.Cleanup(s.Close)
 
-			reg := bdd.Must(contentremote.New(ctx, contentremote.Registry{
-				Endpoint: s.URL,
-			}))
+			reg := MustValue(t, func() (content.Namespace, error) {
+				return contentremote.New(ctx, contentremote.Registry{
+					Endpoint: s.URL,
+				})
+			})
 
-			remoteRepo := bdd.DoValue(t, func() (content.Repository, error) {
+			remoteRepo := MustValue(t, func() (content.Repository, error) {
 				named, err := reference.WithName("test/manifest")
 				if err != nil {
 					return nil, err
@@ -93,87 +96,90 @@ func FuzzNamespace(f *testing.F) {
 				return reg.Repository(ctx, named)
 			})
 
-			b.Given("an artifact", func(b bdd.T) {
+			t.Run("OCI artifact 操作流程", func(t *testing.T) {
 				ns, _ := content.NamespaceFromContext(ctx)
 
-				b.When("push this image to container registry", func(b bdd.T) {
-					b.Then("success pushed",
-						bdd.NoError(
-							remote.Push(ctx, image, remoteRepo, "latest"),
-						),
-					)
+				Then(t, "推送镜像到容器注册表",
+					ExpectDo(
+						func() error {
+							return remote.Push(ctx, image, remoteRepo, "latest")
+						},
+					),
+				)
 
-					b.Then("got catalogs",
-						bdd.EqualDoValue(
-							[]string{remoteRepo.Named().Name()},
-							func() ([]string, error) {
-								return collect.Catalogs(ctx, ns)
-							}),
-					)
+				Then(t, "获取目录列表",
+					ExpectMustValue(
+						func() ([]string, error) {
+							return collect.Catalogs(ctx, ns)
+						},
+						Equal([]string{remoteRepo.Named().Name()}),
+					),
+				)
 
-					b.Then("got digests same as pushed",
-						bdd.EqualDoValue(manifestN, func() (int, error) {
+				Then(t, "验证推送的manifest数量",
+					ExpectMustValue(
+						func() (int, error) {
 							repo, err := ns.Repository(ctx, remoteRepo.Named())
 							if err != nil {
-								return -1, err
+								return 0, err
 							}
 
 							manifests, err := repo.Manifests(ctx)
 							if err != nil {
-								return -1, err
+								return 0, err
 							}
 
 							revisions, err := collect.Manifests(ctx, manifests)
-							if err != nil {
-								return -1, err
-							}
-							return len(revisions), nil
-						}),
+							return len(revisions), err
+						},
+						Equal(manifestN),
+					),
+				)
+
+				t.Run("WHEN 拉取并重新推送为v1标签", func(t *testing.T) {
+					imagePushed := MustValue(t, func() (oci.Manifest, error) {
+						return remote.Manifest(ctx, remoteRepo, "latest")
+					})
+
+					Then(t, "成功推送 v1 标签",
+						ExpectDo(
+							func() error {
+								return remote.Push(ctx, imagePushed, remoteRepo, "v1")
+							},
+							ErrorNotIs(os.ErrNotExist),
+						),
 					)
 
-					b.When("pull and push as v1", func(b bdd.T) {
-						imagePushed := bdd.DoValue(b, func() (oci.Manifest, error) {
-							return remote.Manifest(ctx, remoteRepo, "latest")
-						})
+					tags := MustValue(t, func() (content.TagService, error) {
+						return remoteRepo.Tags(ctx)
+					})
 
-						b.Then("success",
-							bdd.NoError(
-								remote.Push(ctx, imagePushed, remoteRepo, "v1"),
+					Then(t, "验证存在两个标签",
+						ExpectMustValue(
+							func() ([]string, error) {
+								return tags.All(ctx)
+							},
+							Equal([]string{"latest", "v1"}),
+						),
+					)
+
+					t.Run("WHEN 删除 latest 标签", func(t *testing.T) {
+						Then(t, "成功删除标签",
+							ExpectDo(
+								func() error {
+									return tags.Untag(ctx, "latest")
+								},
 							),
 						)
 
-						tags := bdd.DoValue(b, func() (content.TagService, error) {
-							return remoteRepo.Tags(ctx)
-						})
-
-						b.Then("could got two tags",
-							bdd.EqualDoValue(
-								[]string{
-									"latest",
-									"v1",
-								},
+						Then(t, "只剩 v1 标签",
+							ExpectMustValue(
 								func() ([]string, error) {
 									return tags.All(ctx)
 								},
+								Equal([]string{"v1"}),
 							),
 						)
-
-						b.When("remove tag", func(b bdd.T) {
-							b.Then("success",
-								bdd.NoError(
-									tags.Untag(ctx, "latest"),
-								),
-							)
-
-							b.Then("could got two tags",
-								bdd.EqualDoValue(
-									[]string{"v1"},
-									func() ([]string, error) {
-										return tags.All(ctx)
-									},
-								),
-							)
-						})
 					})
 				})
 			})

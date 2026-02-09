@@ -7,9 +7,10 @@ import (
 	"iter"
 	"sync"
 
-	syncx "github.com/octohelm/x/sync"
 	"github.com/opencontainers/go-digest"
 	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
+
+	syncx "github.com/octohelm/x/sync"
 
 	"github.com/octohelm/crkit/pkg/content"
 	"github.com/octohelm/crkit/pkg/oci"

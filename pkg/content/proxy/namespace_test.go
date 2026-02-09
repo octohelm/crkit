@@ -16,7 +16,7 @@ import (
 	"github.com/octohelm/courier/pkg/courierhttp/handler/httprouter"
 	"github.com/octohelm/unifs/pkg/strfmt"
 	"github.com/octohelm/unifs/pkg/units"
-	"github.com/octohelm/x/testing/bdd"
+	. "github.com/octohelm/x/testing/v2"
 
 	"github.com/octohelm/crkit/pkg/content"
 	contentapi "github.com/octohelm/crkit/pkg/content/api"
@@ -30,8 +30,12 @@ import (
 
 func FuzzProxyNamespace(f *testing.F) {
 	manifests := []oci.Manifest{
-		bdd.Must(random.Image(int64(units.BinarySize(int64(randv2.IntN(10)))*units.MiB), 5)),
-		bdd.Must(random.Index(int64(units.BinarySize(int64(randv2.IntN(10)))*units.MiB), 5, 2)),
+		MustValue(f, func() (oci.Manifest, error) {
+			return random.Image(int64(units.BinarySize(int64(randv2.IntN(10)))*units.MiB), 5)
+		}),
+		MustValue(f, func() (oci.Manifest, error) {
+			return random.Index(int64(units.BinarySize(int64(randv2.IntN(10)))*units.MiB), 5, 2)
+		}),
 	}
 
 	for i := range manifests {
@@ -46,7 +50,6 @@ func FuzzProxyNamespace(f *testing.F) {
 
 		ctx, _ := testingutil.BuildContext(t, func(d *struct {
 			otel.Otel
-
 			contentapi.NamespaceProvider
 		},
 		) {
@@ -57,60 +60,112 @@ func FuzzProxyNamespace(f *testing.F) {
 
 			d.Remote.Endpoint = remoteRegistry.URL
 
-			d.Content.Backend = *bdd.Must(strfmt.ParseEndpoint("file://" + tmp))
+			d.Content.Backend = *MustValue(t, func() (*strfmt.Endpoint, error) {
+				return strfmt.ParseEndpoint("file://" + tmp)
+			})
 		})
 
 		injector := configuration.ContextInjectorFromContext(ctx)
 
-		registryServer := bdd.MustDo(func() (*httptest.Server, error) {
+		registryServer := MustValue(t, func() (*httptest.Server, error) {
 			h, err := httprouter.New(apis.R, "registry")
 			if err != nil {
 				return nil, err
 			}
 
-			return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+			s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 				if strings.HasSuffix(req.URL.Path, "/") {
 					req.URL.Path = req.URL.Path[0 : len(req.URL.Path)-1]
 				}
 				h.ServeHTTP(w, req.WithContext(injector.InjectContext(ctx)))
-			})), nil
+			}))
+
+			return s, nil
 		})
 		t.Cleanup(registryServer.Close)
 
-		remoteReg := bdd.Must(contentremote.New(ctx, contentremote.Registry{
-			Endpoint: remoteRegistry.URL,
-		}))
+		remoteReg := MustValue(t, func() (content.Namespace, error) {
+			return contentremote.New(ctx, contentremote.Registry{
+				Endpoint: remoteRegistry.URL,
+			})
+		})
 
-		proxyReg := bdd.Must(contentremote.New(ctx, contentremote.Registry{
-			Endpoint: registryServer.URL,
-		}))
+		proxyReg := MustValue(t, func() (content.Namespace, error) {
+			return contentremote.New(ctx, contentremote.Registry{
+				Endpoint: registryServer.URL,
+			})
+		})
 
-		t.Run("GIVEN an artifact", bdd.GivenT(func(b bdd.T) {
-			remoteRepo := bdd.Must(remoteReg.Repository(ctx, bdd.Must(reference.WithName("test/manifest"))))
+		t.Run("代理注册表功能测试", func(t *testing.T) {
+			remoteNamed := MustValue(t, func() (reference.Named, error) {
+				return reference.WithName("test/manifest")
+			})
 
-			b.When("push this image to remote registry", func(b bdd.T) {
-				b.Then("success pushed",
-					bdd.NoError(remote.Push(ctx, manifest, remoteRepo, "latest")),
+			remoteRepo := MustValue(t, func() (content.Repository, error) {
+				return remoteReg.Repository(ctx, remoteNamed)
+			})
+
+			Then(t, "推送镜像到远程注册表",
+				ExpectDo(
+					func() error {
+						return remote.Push(ctx, manifest, remoteRepo, "latest")
+					},
+				),
+			)
+
+			t.Run("从代理注册表拉取并推送为 v1", func(t *testing.T) {
+				proxyNamed := MustValue(t, func() (reference.Named, error) {
+					return reference.WithName("test/manifest")
+				})
+
+				proxyRepo := MustValue(t, func() (content.Repository, error) {
+					return proxyReg.Repository(ctx, proxyNamed)
+				})
+
+				imagePushed := MustValue(t, func() (oci.Manifest, error) {
+					return remote.Manifest(ctx, proxyRepo, "latest")
+				})
+
+				Then(t, "成功推送 v1 标签到代理注册表",
+					ExpectDo(
+						func() error {
+							return remote.Push(ctx, imagePushed, proxyRepo, "v1")
+						},
+					),
 				)
 
-				b.When("pull from proxy registry and push as v1", func(b bdd.T) {
-					proxyRepo := bdd.Must(proxyReg.Repository(ctx, bdd.Must(reference.WithName("test/manifest"))))
-					imagePushed := bdd.Must(remote.Manifest(ctx, proxyRepo, "latest"))
+				ns, _ := content.NamespaceFromContext(ctx)
 
-					b.Then("success",
-						bdd.NoError(remote.Push(ctx, imagePushed, proxyRepo, "v1")),
-					)
-
-					{
-						ns, _ := content.NamespaceFromContext(ctx)
-						repo := bdd.Must(ns.Repository(ctx, bdd.Must(reference.WithName("test/manifest"))))
-						tagService := bdd.Must(repo.Tags(ctx))
-
-						_ = bdd.Must(tagService.Get(ctx, "latest"))
-						_ = bdd.Must(tagService.Get(ctx, "v1"))
-					}
+				localNamed := MustValue(t, func() (reference.Named, error) {
+					return reference.WithName("test/manifest")
 				})
+
+				localRepo := MustValue(t, func() (content.Repository, error) {
+					return ns.Repository(ctx, localNamed)
+				})
+
+				tagService := MustValue(t, func() (content.TagService, error) {
+					return localRepo.Tags(ctx)
+				})
+
+				Then(t, "验证 latest 标签存在",
+					ExpectDo(
+						func() error {
+							_, err := tagService.Get(ctx, "latest")
+							return err
+						},
+					),
+				)
+
+				Then(t, "验证 v1 标签存在",
+					ExpectDo(
+						func() error {
+							_, err := tagService.Get(ctx, "v1")
+							return err
+						},
+					),
+				)
 			})
-		}))
+		})
 	})
 }

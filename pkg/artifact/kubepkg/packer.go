@@ -11,12 +11,12 @@ import (
 
 	"github.com/containerd/platforms"
 	"github.com/distribution/reference"
-	"github.com/octohelm/x/logr"
 	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 
 	kubepkgv1alpha1 "github.com/octohelm/kubepkgspec/pkg/apis/kubepkg/v1alpha1"
 	"github.com/octohelm/kubepkgspec/pkg/object"
 	"github.com/octohelm/kubepkgspec/pkg/workload"
+	"github.com/octohelm/x/logr"
 	syncx "github.com/octohelm/x/sync"
 
 	"github.com/octohelm/crkit/pkg/artifact/kubepkg/renamer"

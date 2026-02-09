@@ -6,8 +6,11 @@ import (
 	"path"
 	"testing"
 
-	"github.com/octohelm/x/testing/bdd"
+	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 
+	. "github.com/octohelm/x/testing/v2"
+
+	"github.com/octohelm/crkit/pkg/oci"
 	"github.com/octohelm/crkit/pkg/oci/partial"
 	"github.com/octohelm/crkit/pkg/oci/random"
 )
@@ -18,48 +21,71 @@ func TestOciTar(t *testing.T) {
 		_ = os.RemoveAll(d)
 	})
 
-	b := bdd.FromT(t)
-
-	b.Given("index", func(b bdd.T) {
+	t.Run("处理镜像索引", func(t *testing.T) {
 		imageCount := 2
 		layerCountPerImage := 5
 
-		imageIndex := bdd.Must(random.Index(10, layerCountPerImage, imageCount))
+		imageIndex := MustValue(t, func() (oci.Index, error) {
+			return random.Index(10, layerCountPerImage, imageCount)
+		})
 
-		b.When("write as tar", func(b bdd.T) {
+		t.Run("写入tar文件", func(t *testing.T) {
 			filename := path.Join(d, "x.tar")
 
-			f := bdd.Must(os.OpenFile(filename, os.O_TRUNC|os.O_WRONLY|os.O_CREATE, 0o600))
+			f := MustValue(t, func() (*os.File, error) {
+				return os.OpenFile(filename, os.O_TRUNC|os.O_WRONLY|os.O_CREATE, 0o600)
+			})
 
-			b.Then("success written",
-				bdd.NoError(Write(f, imageIndex)),
+			Then(t, "成功写入索引到 tar",
+				ExpectMust(func() error {
+					return Write(f, imageIndex)
+				}),
 			)
 
-			_ = f.Close()
+			Must(t, func() error {
+				return f.Close()
+			})
 
-			b.When("read the tar", func(b bdd.T) {
-				idx := bdd.Must(Index(func() (io.ReadCloser, error) {
-					return os.OpenFile(filename, os.O_RDONLY, os.ModePerm)
-				}))
+			t.Run("读取tar文件", func(t *testing.T) {
+				idx := MustValue(t, func() (oci.Index, error) {
+					return Index(func() (io.ReadCloser, error) {
+						return os.OpenFile(filename, os.O_RDONLY, os.ModePerm)
+					})
+				})
 
-				images := bdd.Must(partial.CollectImages(t.Context(), idx))
-				descriptors := bdd.Must(partial.CollectChildDescriptors(t.Context(), idx))
+				images := MustValue(t, func() ([]oci.Image, error) {
+					return partial.CollectImages(t.Context(), idx)
+				})
 
-				b.Then("images should got same",
-					bdd.Equal(imageCount, len(images)),
-					bdd.Equal((layerCountPerImage /* layers */ +1 /* config */)*imageCount+imageCount, len(descriptors)),
+				descriptors := MustValue(t, func() ([]ocispecv1.Descriptor, error) {
+					return partial.CollectChildDescriptors(t.Context(), idx)
+				})
+
+				Then(t, "镜像数量正确",
+					Expect(len(images), Equal(imageCount)),
 				)
 
-				b.When("write as diffed tar", func(b bdd.T) {
+				expectedDescriptors := (layerCountPerImage+1)*imageCount + imageCount
+				Then(t, "描述符数量正确",
+					Expect(len(descriptors), Equal(expectedDescriptors)),
+				)
+
+				t.Run("写入差异tar", func(t *testing.T) {
 					filenameDiff := path.Join(d, "x.diff.tar")
 
-					f := bdd.Must(os.OpenFile(filenameDiff, os.O_TRUNC|os.O_WRONLY|os.O_CREATE, 0o600))
+					f := MustValue(t, func() (*os.File, error) {
+						return os.OpenFile(filenameDiff, os.O_TRUNC|os.O_WRONLY|os.O_CREATE, 0o600)
+					})
 
-					b.Then("success", bdd.NoError(
-						Write(f, imageIndex, ExcludeImageIndex(t.Context(), idx)),
-					))
+					Then(t, "成功写入差异 tar",
+						ExpectMust(func() error {
+							return Write(f, imageIndex, ExcludeImageIndex(t.Context(), idx))
+						}),
+					)
 
-					_ = f.Close()
+					Must(t, func() error {
+						return f.Close()
+					})
 				})
 			})
 		})

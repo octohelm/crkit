@@ -3,29 +3,36 @@ package renamer
 import (
 	"testing"
 
-	"github.com/octohelm/x/testing/bdd"
+	. "github.com/octohelm/x/testing/v2"
 )
 
 func TestRename(t *testing.T) {
-	b := bdd.FromT(t)
-	b.Given("template renamer", func(b bdd.T) {
-		re := bdd.Must(NewTemplate(`
+	t.Run("template renamer", func(t *testing.T) {
+		re := MustValue(t, func() (Renamer, error) {
+			return NewTemplate(`
 docker.io/x/
 {{ if ( hasPrefix .name "artifact-") }}
 	{{ .name }}
 {{ else }}
 	prefix-{{ .name }}
 {{ end }}
-`))
-
-		b.When("rename std", func(b bdd.T) {
-			renamed := re.Rename("docker.io/y/x")
-			b.Then("success as expect", bdd.Equal("docker.io/x/prefix-x", renamed))
+`)
 		})
 
-		b.When("rename prefix", func(b bdd.T) {
+		t.Run("rename std", func(t *testing.T) {
+			renamed := re.Rename("docker.io/y/x")
+
+			Then(t, "should rename standard image correctly",
+				Expect(renamed, Equal("docker.io/x/prefix-x")),
+			)
+		})
+
+		t.Run("rename prefix", func(t *testing.T) {
 			renamed := re.Rename("docker.io/y/artifact-x")
-			b.Then("success as expect", bdd.Equal("docker.io/x/artifact-x", renamed))
+
+			Then(t, "should rename artifact prefixed image correctly",
+				Expect(renamed, Equal("docker.io/x/artifact-x")),
+			)
 		})
 	})
 }

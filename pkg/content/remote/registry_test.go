@@ -5,46 +5,62 @@ import (
 
 	"github.com/distribution/reference"
 
-	"github.com/octohelm/x/testing/bdd"
+	. "github.com/octohelm/x/testing/v2"
 )
 
 func TestRegistry(t *testing.T) {
-	b := bdd.FromT(t)
-
-	b.Given("registry hosts", func(b bdd.T) {
+	t.Run("registry hosts 配置测试", func(t *testing.T) {
 		p := RegistryHosts{
 			"gcr.io": {
 				Server: "https://gcr.io",
 			},
 		}
 
-		b.When("resolve non-domain name", func(b bdd.T) {
-			n, rh, err := p.Resolve(b.Context(), bdd.Must(reference.WithName("nginx")))
+		t.Run("解析非域名名称", func(t *testing.T) {
+			n, rh := MustValues(t, func() (reference.Named, *RegistryHost, error) {
+				named, err := reference.WithName("nginx")
+				if err != nil {
+					return nil, nil, err
+				}
+				n, rh, err := p.Resolve(t.Context(), named)
+				return n, rh, err
+			})
 
-			b.Then("found",
-				bdd.NoError(err),
-				bdd.Equal("https://registry-1.docker.io", rh.Server),
-				bdd.Equal("library/nginx", n.Name()),
+			Then(t, "找到默认 registry",
+				Expect(rh.Server, Equal("https://registry-1.docker.io")),
+				Expect(n.Name(), Equal("library/nginx")),
 			)
 		})
 
-		b.When("resolve docker name", func(b bdd.T) {
-			n, rh, err := p.Resolve(b.Context(), bdd.Must(reference.WithName("docker.io/x/nginx")))
+		t.Run("解析 docker 名称", func(t *testing.T) {
+			n, rh := MustValues(t, func() (reference.Named, *RegistryHost, error) {
+				named, err := reference.WithName("docker.io/x/nginx")
+				if err != nil {
+					return nil, nil, err
+				}
+				n, rh, err := p.Resolve(t.Context(), named)
+				return n, rh, err
+			})
 
-			b.Then("found",
-				bdd.NoError(err),
-				bdd.Equal("https://registry-1.docker.io", rh.Server),
-				bdd.Equal("x/nginx", n.Name()),
+			Then(t, "找到 docker registry",
+				Expect(rh.Server, Equal("https://registry-1.docker.io")),
+				Expect(n.Name(), Equal("x/nginx")),
 			)
 		})
 
-		b.When("resolve gcr name", func(b bdd.T) {
-			n, rh, err := p.Resolve(b.Context(), bdd.Must(reference.WithName("gcr.io/x/nginx")))
+		t.Run("解析 gcr 名称", func(t *testing.T) {
+			n, rh := MustValues(t, func() (reference.Named, *RegistryHost, error) {
+				named, err := reference.WithName("gcr.io/x/nginx")
+				if err != nil {
+					return nil, nil, err
+				}
+				n, rh, err := p.Resolve(t.Context(), named)
+				return n, rh, err
+			})
 
-			b.Then("found",
-				bdd.NoError(err),
-				bdd.Equal("https://gcr.io", rh.Server),
-				bdd.Equal("x/nginx", n.Name()),
+			Then(t, "找到 gcr registry",
+				Expect(rh.Server, Equal("https://gcr.io")),
+				Expect(n.Name(), Equal("x/nginx")),
 			)
 		})
 	})

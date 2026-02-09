@@ -12,9 +12,10 @@ import (
 	"github.com/opencontainers/go-digest"
 
 	"github.com/octohelm/unifs/pkg/filesystem/local"
-	"github.com/octohelm/x/testing/bdd"
+	. "github.com/octohelm/x/testing/v2"
 
 	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
+	"github.com/octohelm/crkit/pkg/content"
 	"github.com/octohelm/crkit/pkg/content/fs/layout"
 )
 
@@ -26,60 +27,74 @@ func TestBlobStore(t *testing.T) {
 
 	fs := local.NewFS(tmp)
 
-	t.Run("GIVEN a blob store", bdd.GivenT(func(b bdd.T) {
+	t.Run("GIVEN a blob store", func(t *testing.T) {
 		blobs := &blobStore{
 			workspace: newWorkspace(fs, layout.Default),
 		}
 
-		b.When("do write some text", func(b bdd.T) {
-			w := bdd.Must(blobs.Writer(b.Context()))
+		t.Run("do write some text", func(t *testing.T) {
+			w := MustValue(t, func() (content.BlobWriter, error) {
+				return blobs.Writer(t.Context())
+			})
 
 			text := []byte("hello world")
 
-			_, err := w.Write(text)
-			b.Then("success write",
-				bdd.NoError(err),
+			Then(t, "success write",
+				ExpectMust(func() error {
+					_, err := w.Write(text)
+					return err
+				}),
 			)
 
-			d, err := w.Commit(b.Context(), manifestv1.Descriptor{})
-			b.Then("success commit",
-				bdd.NoError(err),
-				bdd.Equal(len(text), int(d.Size)),
-				bdd.Equal(digest.FromBytes(text), d.Digest),
+			d := MustValue(t, func() (*manifestv1.Descriptor, error) {
+				return w.Commit(t.Context(), manifestv1.Descriptor{})
+			})
+
+			Then(t, "success commit",
+				Expect(d.Size, Equal(int64(len(text)))),
+				Expect(d.Digest, Equal(digest.FromBytes(text))),
 			)
 
-			b.When("query info", func(b bdd.T) {
-				info, err := blobs.Info(b.Context(), d.Digest)
+			t.Run("query info", func(t *testing.T) {
+				info := MustValue(t, func() (*manifestv1.Descriptor, error) {
+					return blobs.Info(t.Context(), d.Digest)
+				})
 
-				b.Then("success",
-					bdd.NoError(err),
-					bdd.Equal(d.Size, info.Size),
-					bdd.Equal(d.Digest, info.Digest),
+				Then(t, "success",
+					Expect(info.Size, Equal(d.Size)),
+					Expect(info.Digest, Equal(d.Digest)),
 				)
 			})
 
-			b.When("get content", func(b bdd.T) {
-				f, err := blobs.Open(b.Context(), d.Digest)
-				b.Then("success",
-					bdd.NoError(err),
-				)
+			t.Run("get content", func(t *testing.T) {
+				f := MustValue(t, func() (io.ReadCloser, error) {
+					return blobs.Open(t.Context(), d.Digest)
+				})
 				defer f.Close()
 
-				data := bdd.Must(io.ReadAll(f))
-				b.Then("read content as same as written",
-					bdd.Equal(string(text), string(data)),
+				Then(t, "read content as same as written",
+					ExpectMustValue(func() (string, error) {
+						data, err := io.ReadAll(f)
+						if err != nil {
+							return "", err
+						}
+						return string(data), nil
+					}, Equal(string(text))),
 				)
 			})
 		})
-	}))
+	})
 
-	t.Run("GIVEN a blob store for resumable writing", bdd.GivenT(func(b bdd.T) {
+	t.Run("GIVEN a blob store for resumable writing", func(t *testing.T) {
 		blobs := &blobStore{
 			workspace: newWorkspace(fs, layout.Default),
 		}
 
-		b.When("do write", func(b bdd.T) {
-			writerForCreate := bdd.Must(blobs.Writer(b.Context()))
+		t.Run("do write", func(t *testing.T) {
+			writerForCreate := MustValue(t, func() (content.BlobWriter, error) {
+				return blobs.Writer(t.Context())
+			})
+
 			id := writerForCreate.ID()
 			_ = writerForCreate.Close()
 
@@ -93,44 +108,52 @@ func TestBlobStore(t *testing.T) {
 				}
 				defer w.Close()
 
-				if _, err := w.Write(bytes.Repeat([]byte("1"), chunkSize)); err != nil {
-					return err
-				}
-				return nil
+				_, err = w.Write(bytes.Repeat([]byte("1"), chunkSize))
+				return err
 			}
 
 			for i := range 5 {
-				b.When(fmt.Sprintf("append %d", i), func(b bdd.T) {
-					err := appendChunk(b.Context(), id)
-					b.Then("success",
-						bdd.NoError(err),
+				t.Run(fmt.Sprintf("append %d", i), func(t *testing.T) {
+					Then(t, "success",
+						ExpectMust(func() error { return appendChunk(context.Background(), id) }),
 					)
 				})
 			}
 
-			b.When("commit", func(b bdd.T) {
-				writerForCommit := bdd.Must(blobs.Resume(b.Context(), id))
+			t.Run("commit", func(t *testing.T) {
+				writerForCommit := MustValue(t, func() (content.BlobWriter, error) {
+					return blobs.Resume(context.Background(), id)
+				})
 				defer writerForCommit.Close()
 
-				d := bdd.Must(writerForCommit.Commit(b.Context(), manifestv1.Descriptor{}))
+				d := MustValue(t, func() (*manifestv1.Descriptor, error) {
+					return writerForCommit.Commit(context.Background(), manifestv1.Descriptor{})
+				})
 
-				b.Then("success",
-					bdd.Equal(chunkSize*chunkN, int(d.Size)),
+				Then(t, "success",
+					Expect(d.Size, Equal(int64(chunkSize*chunkN))),
 				)
 
-				b.When("get content", func(b bdd.T) {
-					f, err := blobs.Open(b.Context(), d.Digest)
-					b.Then("success",
-						bdd.NoError(err),
-					)
+				t.Run("get content", func(t *testing.T) {
+					f := MustValue(t, func() (io.ReadCloser, error) {
+						return blobs.Open(context.Background(), d.Digest)
+					})
 					defer f.Close()
 
-					data := bdd.Must(io.ReadAll(f))
-					b.Then("read content as same as written",
-						bdd.Equal(strings.Repeat("1", chunkSize*chunkN), string(data)),
+					Then(t, "read content as same as written",
+						ExpectMustValue(
+							func() (string, error) {
+								data, err := io.ReadAll(f)
+								if err != nil {
+									return "", err
+								}
+								return string(data), nil
+							},
+							Equal(strings.Repeat("1", chunkSize*chunkN)),
+						),
 					)
 				})
 			})
 		})
-	}))
+	})
 }

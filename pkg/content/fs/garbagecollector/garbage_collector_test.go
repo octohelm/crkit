@@ -10,12 +10,13 @@ import (
 	"github.com/innoai-tech/infra/pkg/configuration/testingutil"
 	"github.com/innoai-tech/infra/pkg/otel"
 	"github.com/octohelm/unifs/pkg/units"
-	"github.com/octohelm/x/testing/bdd"
+	. "github.com/octohelm/x/testing/v2"
 
 	"github.com/octohelm/crkit/pkg/content"
 	contentapi "github.com/octohelm/crkit/pkg/content/api"
 	"github.com/octohelm/crkit/pkg/content/collect"
 	"github.com/octohelm/crkit/pkg/content/fs/garbagecollector"
+	"github.com/octohelm/crkit/pkg/oci"
 	"github.com/octohelm/crkit/pkg/oci/random"
 	"github.com/octohelm/crkit/pkg/oci/remote"
 )
@@ -26,9 +27,7 @@ func TestGarbageCollector(t *testing.T) {
 
 	ctx, d := testingutil.BuildContext(t, func(d *struct {
 		otel.Otel
-
 		contentapi.NamespaceProvider
-
 		garbagecollector.GarbageCollector
 	},
 	) {
@@ -42,70 +41,217 @@ func TestGarbageCollector(t *testing.T) {
 
 	ns, _ := content.NamespaceFromContext(ctx)
 
-	repository := bdd.Must(ns.Repository(ctx, bdd.Must(reference.WithName("test/manifest"))))
+	named := MustValue(t, func() (reference.Named, error) {
+		return reference.WithName("test/manifest")
+	})
 
-	tagService := bdd.Must(repository.Tags(ctx))
-	manifestService := bdd.Must(repository.Manifests(ctx))
-	blobsStore := bdd.Must(repository.Blobs(ctx))
+	repository := MustValue(t, func() (content.Repository, error) {
+		return ns.Repository(ctx, named)
+	})
 
-	b := bdd.FromT(t)
+	tagService := MustValue(t, func() (content.TagService, error) {
+		return repository.Tags(ctx)
+	})
 
-	b.Given("an index artifact", func(b bdd.T) {
-		idx := bdd.Must(random.Index(int64(1*units.MiB), 5, 2))
-		manifestsN := 2 /* manifests */ + 1 /* index */
-		layersN := (5 /* layers */ + 1 /* config */) * 2
-		blobsN := manifestsN + layersN
+	manifestService := MustValue(t, func() (content.ManifestService, error) {
+		return repository.Manifests(ctx)
+	})
 
-		b.When("push with tag latest", func(b bdd.T) {
-			b.Then("success pushed",
-				bdd.NoError(remote.Push(ctx, idx, repository, "latest")),
+	blobsStore := MustValue(t, func() (content.BlobStore, error) {
+		return repository.Blobs(ctx)
+	})
+
+	t.Run("测试垃圾回收器", func(t *testing.T) {
+		idx := MustValue(t, func() (oci.Manifest, error) {
+			return random.Index(int64(1*units.MiB), 5, 2)
+		})
+
+		const manifestsN = 3 // 2 manifests + 1 index
+		const layersN = 12   // (5 layers + 1 config) * 2
+		const blobsN = 15    // manifestsN + layersN
+
+		t.Run("推送latest标签", func(t *testing.T) {
+			Then(t, "成功推送",
+				ExpectDo(
+					func() error {
+						return remote.Push(ctx, idx, repository, "latest")
+					},
+				),
 			)
 
-			b.Then("tag revisions and manifests/layers and blobs got single size",
-				bdd.Equal(1, len(bdd.Must(collect.TagRevisions(ctx, tagService, "latest")))),
-				bdd.Equal(manifestsN, len(bdd.Must(collect.Manifests(ctx, manifestService)))),
-				bdd.Equal(layersN, len(bdd.Must(collect.Layers(ctx, blobsStore)))),
-				bdd.Equal(blobsN, len(bdd.Must(collect.Blobs(ctx, ns)))),
+			Then(t, "标签修订版本数量为1",
+				ExpectMustValue(
+					func() (int, error) {
+						revisions, err := collect.TagRevisions(ctx, tagService, "latest")
+						return len(revisions), err
+					},
+					Equal(1),
+				),
 			)
 
-			b.Given("another index artifact", func(b bdd.T) {
-				idx2 := bdd.Must(random.Index(int64(1*units.MiB), 5, 2))
+			Then(t, "manifest数量正确",
+				ExpectMustValue(
+					func() (int, error) {
+						manifests, err := collect.Manifests(ctx, manifestService)
+						return len(manifests), err
+					},
+					Equal(manifestsN),
+				),
+			)
 
-				b.When("push another image to container registry", func(b bdd.T) {
-					b.Then("success pushed",
-						bdd.NoError(remote.Push(ctx, idx2, repository, "latest")),
+			Then(t, "layer数量正确",
+				ExpectMustValue(
+					func() (int, error) {
+						layers, err := collect.Layers(ctx, blobsStore)
+						return len(layers), err
+					},
+					Equal(layersN),
+				),
+			)
+
+			Then(t, "blob总数正确",
+				ExpectMustValue(
+					func() (int, error) {
+						blobs, err := collect.Blobs(ctx, ns)
+						return len(blobs), err
+					},
+					Equal(blobsN),
+				),
+			)
+
+			t.Run("推送另一个镜像", func(t *testing.T) {
+				idx2 := MustValue(t, func() (oci.Manifest, error) {
+					return random.Index(int64(1*units.MiB), 5, 2)
+				})
+
+				t.Run("推送第二个镜像", func(t *testing.T) {
+					Then(t, "成功推送第二个镜像",
+						ExpectDo(
+							func() error {
+								return remote.Push(ctx, idx2, repository, "latest")
+							},
+						),
 					)
 
-					b.Then("tag revisions and manifests/layers and blobs got double size",
-						bdd.Equal(2, len(bdd.Must(collect.TagRevisions(ctx, tagService, "latest")))),
-						bdd.Equal(manifestsN*2, len(bdd.Must(collect.Manifests(ctx, manifestService)))),
-						bdd.Equal(layersN*2, len(bdd.Must(collect.Layers(ctx, blobsStore)))),
-						bdd.Equal(blobsN*2, len(bdd.Must(collect.Blobs(ctx, ns)))),
+					Then(t, "标签修订版本数量翻倍",
+						ExpectMustValue(
+							func() (int, error) {
+								revisions, err := collect.TagRevisions(ctx, tagService, "latest")
+								return len(revisions), err
+							},
+							Equal(2),
+						),
 					)
 
-					b.When("do mark and sweep exclude modified in 1 hour", func(b bdd.T) {
-						b.Then("success",
-							bdd.NoError(d.GarbageCollector.MarkAndSweepExcludeModifiedIn(ctx, time.Hour)),
+					Then(t, "manifest数量翻倍",
+						ExpectMustValue(
+							func() (int, error) {
+								manifests, err := collect.Manifests(ctx, manifestService)
+								return len(manifests), err
+							},
+							Equal(manifestsN*2),
+						),
+					)
+
+					Then(t, "layer数量翻倍",
+						ExpectMustValue(
+							func() (int, error) {
+								layers, err := collect.Layers(ctx, blobsStore)
+								return len(layers), err
+							},
+							Equal(layersN*2),
+						),
+					)
+
+					Then(t, "blob总数翻倍",
+						ExpectMustValue(
+							func() (int, error) {
+								blobs, err := collect.Blobs(ctx, ns)
+								return len(blobs), err
+							},
+							Equal(blobsN*2),
+						),
+					)
+
+					t.Run("排除1小时内修改的垃圾回收", func(t *testing.T) {
+						Then(t, "成功执行垃圾回收",
+							ExpectDo(
+								func() error {
+									return d.GarbageCollector.MarkAndSweepExcludeModifiedIn(ctx, time.Hour)
+								},
+							),
 						)
 
-						b.Then("tag revisions and manifests/layers and blobs still got double size",
-							bdd.Equal(2, len(bdd.Must(collect.TagRevisions(ctx, tagService, "latest")))),
-							bdd.Equal(manifestsN*2, len(bdd.Must(collect.Manifests(ctx, manifestService)))),
-							bdd.Equal(layersN*2, len(bdd.Must(collect.Layers(ctx, blobsStore)))),
-							bdd.Equal(blobsN*2, len(bdd.Must(collect.Blobs(ctx, ns)))),
+						Then(t, "保留所有资源（1小时内修改）",
+							ExpectMustValue(
+								func() (int, error) {
+									revisions, err := collect.TagRevisions(ctx, tagService, "latest")
+									return len(revisions), err
+								},
+								Equal(2),
+							),
+							ExpectMustValue(
+								func() (int, error) {
+									manifests, err := collect.Manifests(ctx, manifestService)
+									return len(manifests), err
+								},
+								Equal(manifestsN*2),
+							),
+							ExpectMustValue(
+								func() (int, error) {
+									layers, err := collect.Layers(ctx, blobsStore)
+									return len(layers), err
+								},
+								Equal(layersN*2),
+							),
+							ExpectMustValue(
+								func() (int, error) {
+									blobs, err := collect.Blobs(ctx, ns)
+									return len(blobs), err
+								},
+								Equal(blobsN*2),
+							),
 						)
 					})
 
-					b.When("do mark and sweep all", func(b bdd.T) {
-						b.Then("success",
-							bdd.NoError(d.GarbageCollector.MarkAndSweepExcludeModifiedIn(ctx, 0)),
+					t.Run("清除所有垃圾回收", func(t *testing.T) {
+						Then(t, "成功执行全面垃圾回收",
+							ExpectDo(
+								func() error {
+									return d.GarbageCollector.MarkAndSweepExcludeModifiedIn(ctx, 0)
+								},
+							),
 						)
 
-						b.Then("tag revisions and manifests/layers and blobs got single size",
-							bdd.Equal(1, len(bdd.Must(collect.TagRevisions(ctx, tagService, "latest")))),
-							bdd.Equal(manifestsN, len(bdd.Must(collect.Manifests(ctx, manifestService)))),
-							bdd.Equal(layersN, len(bdd.Must(collect.Layers(ctx, blobsStore)))),
-							bdd.Equal(blobsN, len(bdd.Must(collect.Blobs(ctx, ns)))),
+						Then(t, "只保留最新资源",
+							ExpectMustValue(
+								func() (int, error) {
+									revisions, err := collect.TagRevisions(ctx, tagService, "latest")
+									return len(revisions), err
+								},
+								Equal(1),
+							),
+							ExpectMustValue(
+								func() (int, error) {
+									manifests, err := collect.Manifests(ctx, manifestService)
+									return len(manifests), err
+								},
+								Equal(manifestsN),
+							),
+							ExpectMustValue(
+								func() (int, error) {
+									layers, err := collect.Layers(ctx, blobsStore)
+									return len(layers), err
+								},
+								Equal(layersN),
+							),
+							ExpectMustValue(
+								func() (int, error) {
+									blobs, err := collect.Blobs(ctx, ns)
+									return len(blobs), err
+								},
+								Equal(blobsN),
+							),
 						)
 					})
 				})

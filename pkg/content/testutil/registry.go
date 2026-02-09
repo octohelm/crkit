@@ -8,14 +8,14 @@ import (
 
 	"github.com/octohelm/courier/pkg/courierhttp/handler/httprouter"
 	"github.com/octohelm/unifs/pkg/filesystem/local"
-	"github.com/octohelm/x/testing/bdd"
+	testingv2 "github.com/octohelm/x/testing/v2"
 
 	"github.com/octohelm/crkit/pkg/content"
 	contentfs "github.com/octohelm/crkit/pkg/content/fs"
 	"github.com/octohelm/crkit/pkg/registryhttp/apis"
 )
 
-func NewRegistry(t bdd.TB) http.Handler {
+func NewRegistry(t testingv2.TB) http.Handler {
 	tmp := t.TempDir()
 	t.Cleanup(func() {
 		_ = os.Remove(tmp)
