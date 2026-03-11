@@ -24,7 +24,7 @@ type Registry struct {
 }
 
 func (r Registry) Resolve(ctx context.Context, named reference.Named) (reference.Named, *RegistryHost, error) {
-	_, nsNamed, err := splitDomain(named)
+	domain, nsNamed, err := splitDomain(named)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -40,7 +40,11 @@ func (r Registry) Resolve(ctx context.Context, named reference.Named) (reference
 		}
 	}
 
-	return nsNamed, rh, nil
+	if strings.Contains(r.Endpoint, "//"+domain) {
+		return nsNamed, rh, nil
+	}
+
+	return named, rh, nil
 }
 
 func splitDomain(named reference.Named) (string, reference.Named, error) {
