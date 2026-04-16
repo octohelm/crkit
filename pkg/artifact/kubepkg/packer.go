@@ -11,6 +11,7 @@ import (
 
 	"github.com/containerd/platforms"
 	"github.com/distribution/reference"
+	"github.com/go-json-experiment/json"
 	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 
 	kubepkgv1alpha1 "github.com/octohelm/kubepkgspec/pkg/apis/kubepkg/v1alpha1"
@@ -31,6 +32,8 @@ const (
 	AnnotationImageName           = "kubepkg.image.name"
 	AnnotationImageRef            = "kubepkg.image.ref"
 	AnnotationSourceBaseImageName = "kubepkg.source.image.base.name"
+
+	dockerImageConfigMediaType = "application/vnd.docker.container.image.v1+json"
 )
 
 type Packer struct {
@@ -322,6 +325,13 @@ func (p *Packer) resolveMatchedImage(ctx context.Context, m oci.Manifest, named 
 
 	switch x := m.(type) {
 	case oci.Image:
+		if d.Platform == nil {
+			d.Platform, err = resolvePlatformFromConfig(ctx, x)
+			if err != nil {
+				return nil, false, err
+			}
+		}
+
 		if d.Platform != nil {
 			if matcher.Match(*d.Platform) {
 				i, err := mutate.WithPlatform(x, platforms.Format(platform))
@@ -351,7 +361,42 @@ func (p *Packer) resolveMatchedImage(ctx context.Context, m oci.Manifest, named 
 		}
 	}
 
-	return nil, false, fmt.Errorf("%w: %s of %s", ErrPlatformNotMatched, platform, named)
+	return nil, false, fmt.Errorf("%w: %s of %s", ErrPlatformNotMatched, platforms.Format(platform), named)
+}
+
+func resolvePlatformFromConfig(ctx context.Context, img oci.Image) (*ocispecv1.Platform, error) {
+	config, err := img.Config(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("read image config failed: %w", err)
+	}
+
+	configDesc, err := config.Descriptor(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("read image config descriptor failed: %w", err)
+	}
+
+	switch configDesc.MediaType {
+	case ocispecv1.MediaTypeImageConfig, dockerImageConfigMediaType:
+	default:
+		return nil, nil
+	}
+
+	r, err := config.Open(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("open image config failed: %w", err)
+	}
+	defer r.Close()
+
+	var platform ocispecv1.Platform
+	if err := json.UnmarshalRead(r, &platform); err != nil {
+		return nil, fmt.Errorf("decode image config failed: %w", err)
+	}
+
+	if platform.OS == "" || platform.Architecture == "" {
+		return nil, nil
+	}
+
+	return &platform, nil
 }
 
 var ErrPlatformNotMatched = errors.New("platform no matched")

@@ -24,6 +24,7 @@ import (
 	"github.com/octohelm/crkit/pkg/oci"
 	"github.com/octohelm/crkit/pkg/oci/empty"
 	"github.com/octohelm/crkit/pkg/oci/mutate"
+	"github.com/octohelm/crkit/pkg/oci/partial"
 	"github.com/octohelm/crkit/pkg/oci/random"
 	"github.com/octohelm/crkit/pkg/oci/remote"
 	ocitar "github.com/octohelm/crkit/pkg/oci/tar"
@@ -248,4 +249,69 @@ func TestPacker(t *testing.T) {
 			})
 		})
 	})
+}
+
+func TestPackerResolveMatchedImageReadsPlatformFromConfig(t *testing.T) {
+	ctx := t.Context()
+
+	named := MustValue(t, func() (reference.Named, error) {
+		return reference.ParseNormalizedNamed("docker.io/library/nginx")
+	})
+
+	for _, c := range []struct {
+		name      string
+		mediaType string
+	}{
+		{name: "OCI config", mediaType: ocispecv1.MediaTypeImageConfig},
+		{name: "Docker config", mediaType: dockerImageConfigMediaType},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			configRaw := MustValue(t, func() ([]byte, error) {
+				return json.Marshal(map[string]any{
+					"os":           "linux",
+					"architecture": "amd64",
+				})
+			})
+
+			img := MustValue(t, func() (oci.Image, error) {
+				return mutate.WithConfig(empty.Image, partial.BlobFromBytes(configRaw, ocispecv1.Descriptor{
+					MediaType: c.mediaType,
+				}))
+			})
+
+			desc := MustValue(t, func() (ocispecv1.Descriptor, error) {
+				return img.Descriptor(ctx)
+			})
+
+			if desc.Platform != nil {
+				t.Fatalf("expected descriptor platform to be nil, got %#v", desc.Platform)
+			}
+
+			matched, ok, err := (&Packer{}).resolveMatchedImage(ctx, img, named, ocispecv1.Platform{
+				OS:           "linux",
+				Architecture: "amd64",
+			})
+			if err != nil {
+				t.Fatalf("resolve matched image failed: %v", err)
+			}
+			if !ok {
+				t.Fatal("expected image to match platform from config")
+			}
+
+			matchedDesc := MustValue(t, func() (ocispecv1.Descriptor, error) {
+				return matched.Descriptor(ctx)
+			})
+
+			if matchedDesc.Platform == nil {
+				t.Fatal("expected matched image descriptor to contain platform")
+			}
+
+			Then(t, "返回镜像应包含请求平台",
+				Expect(*matchedDesc.Platform, Equal(ocispecv1.Platform{
+					OS:           "linux",
+					Architecture: "amd64",
+				})),
+			)
+		})
+	}
 }
