@@ -20,7 +20,7 @@ jobs:
         with:
           fetch-depth: 0
       - uses: extractions/setup-just@v3
-      - uses: docker/setup-qemu-action@v2
+      - uses: docker/setup-qemu-action@v4
       - run: curl -sSLf https://raw.githubusercontent.com/octohelm/piper/main/install.sh | sudo sh
 
       - run: just ship
