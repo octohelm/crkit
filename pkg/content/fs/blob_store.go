@@ -2,6 +2,7 @@ package fs
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"io/fs"
@@ -72,11 +73,14 @@ func (bs *blobStore) Remove(ctx context.Context, dgst digest.Digest) error {
 func (bs *blobStore) Info(ctx context.Context, dgst digest.Digest) (*manifestv1.Descriptor, error) {
 	s, err := bs.workspace.Stat(ctx, bs.workspace.layout.BlobDataPath(dgst))
 	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, &content.ErrBlobUnknown{
-				Digest: dgst,
+		if perr, ok := errors.AsType[*os.PathError](err); ok {
+			if os.IsNotExist(perr) {
+				return nil, &content.ErrBlobUnknown{
+					Digest: dgst,
+				}
 			}
 		}
+
 		return nil, err
 	}
 	return &manifestv1.Descriptor{
@@ -88,9 +92,11 @@ func (bs *blobStore) Info(ctx context.Context, dgst digest.Digest) (*manifestv1.
 func (bs *blobStore) Open(ctx context.Context, dgst digest.Digest) (io.ReadCloser, error) {
 	file, err := bs.workspace.Reader(ctx, bs.workspace.layout.BlobDataPath(dgst))
 	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, &content.ErrBlobUnknown{
-				Digest: dgst,
+		if perr, ok := errors.AsType[*os.PathError](err); ok {
+			if os.IsNotExist(perr) {
+				return nil, &content.ErrBlobUnknown{
+					Digest: dgst,
+				}
 			}
 		}
 		return nil, err
@@ -129,8 +135,10 @@ func (bs *blobStore) Writer(ctx context.Context) (content.BlobWriter, error) {
 func (bs *blobStore) Resume(ctx context.Context, id string) (content.BlobWriter, error) {
 	startedAtBytes, err := bs.workspace.GetContent(ctx, bs.workspace.layout.UploadStartedAtPath(id))
 	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, &content.ErrBlobUploadUnknown{}
+		if perr, ok := errors.AsType[*os.PathError](err); ok {
+			if os.IsNotExist(perr) {
+				return nil, &content.ErrBlobUploadUnknown{}
+			}
 		}
 		return nil, err
 	}
@@ -144,8 +152,10 @@ func (bs *blobStore) Resume(ctx context.Context, id string) (content.BlobWriter,
 
 	fileWriter, err := bs.workspace.Writer(ctx, uploadDataPath, true)
 	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, &content.ErrBlobUploadUnknown{}
+		if perr, ok := errors.AsType[*os.PathError](err); ok {
+			if os.IsNotExist(perr) {
+				return nil, &content.ErrBlobUploadUnknown{}
+			}
 		}
 		return nil, err
 	}

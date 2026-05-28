@@ -15,8 +15,8 @@ import (
 	"github.com/octohelm/exp/xiter"
 	"github.com/octohelm/x/logr"
 
-	"github.com/octohelm/crkit/pkg/content/fs/driver"
 	"github.com/octohelm/crkit/pkg/content/fs/layout"
+	"github.com/octohelm/crkit/pkg/driver"
 )
 
 // +gengo:injectable

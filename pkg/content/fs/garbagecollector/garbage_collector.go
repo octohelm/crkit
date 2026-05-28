@@ -12,7 +12,7 @@ import (
 	"github.com/octohelm/x/sync/singleflight"
 
 	"github.com/octohelm/crkit/pkg/content"
-	"github.com/octohelm/crkit/pkg/content/fs/driver"
+	"github.com/octohelm/crkit/pkg/driver"
 )
 
 // +gengo:injectable

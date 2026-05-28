@@ -1,15 +1,13 @@
 package fs
 
 import (
-	"github.com/octohelm/unifs/pkg/filesystem"
-
-	"github.com/octohelm/crkit/pkg/content/fs/driver"
 	"github.com/octohelm/crkit/pkg/content/fs/layout"
+	"github.com/octohelm/crkit/pkg/driver"
 )
 
-func newWorkspace(fs filesystem.FileSystem, layout layout.Layout) *workspace {
+func newWorkspace(d driver.Driver, layout layout.Layout) *workspace {
 	return &workspace{
-		Driver: driver.FromFileSystem(fs),
+		Driver: d,
 		layout: layout,
 	}
 }

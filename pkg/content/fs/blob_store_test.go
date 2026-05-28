@@ -17,6 +17,7 @@ import (
 	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
 	"github.com/octohelm/crkit/pkg/content"
 	"github.com/octohelm/crkit/pkg/content/fs/layout"
+	driverfs "github.com/octohelm/crkit/pkg/driver/fs"
 )
 
 func TestBlobStore(t *testing.T) {
@@ -25,7 +26,7 @@ func TestBlobStore(t *testing.T) {
 		_ = os.RemoveAll(tmp)
 	})
 
-	fs := local.NewFS(tmp)
+	fs := driverfs.FromFileSystem(local.NewFS(tmp))
 
 	t.Run("GIVEN a blob store", func(t *testing.T) {
 		blobs := &blobStore{

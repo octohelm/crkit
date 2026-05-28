@@ -7,7 +7,7 @@ package uploadpurger
 import (
 	context "context"
 
-	fsdriver "github.com/octohelm/crkit/pkg/content/fs/driver"
+	fsdriver "github.com/octohelm/crkit/pkg/driver"
 )
 
 func (v *UploadPurger) Init(ctx context.Context) error {

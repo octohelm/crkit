@@ -11,14 +11,13 @@ import (
 	"github.com/distribution/reference"
 	"github.com/opencontainers/go-digest"
 
-	"github.com/octohelm/unifs/pkg/filesystem"
-
 	"github.com/octohelm/crkit/pkg/content"
 	"github.com/octohelm/crkit/pkg/content/fs/layout"
+	"github.com/octohelm/crkit/pkg/driver"
 )
 
-func NewNamespace(fs filesystem.FileSystem) content.Namespace {
-	return &namespace{workspace: newWorkspace(fs, layout.Default)}
+func NewNamespace(d driver.Driver) content.Namespace {
+	return &namespace{workspace: newWorkspace(d, layout.Default)}
 }
 
 type namespace struct {

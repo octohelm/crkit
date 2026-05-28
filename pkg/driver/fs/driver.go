@@ -1,4 +1,4 @@
-package driver
+package fs
 
 import (
 	"bufio"
@@ -7,45 +7,47 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/fs"
+	iofs "io/fs"
 	"os"
 	"path"
 
 	"github.com/octohelm/unifs/pkg/filesystem"
+
+	"github.com/octohelm/crkit/pkg/driver"
 )
 
-func FromFileSystem(fs filesystem.FileSystem) Driver {
-	return &driver{fs: fs}
+func FromFileSystem(fs filesystem.FileSystem) driver.Driver {
+	return &fsDriver{fs: fs}
 }
 
-type driver struct {
+type fsDriver struct {
 	fs filesystem.FileSystem
 }
 
-func (d *driver) Stat(ctx context.Context, path string) (filesystem.FileInfo, error) {
+func (d *fsDriver) Stat(ctx context.Context, path string) (filesystem.FileInfo, error) {
 	return d.fs.Stat(ctx, path)
 }
 
-func (d *driver) Delete(ctx context.Context, path string) error {
+func (d *fsDriver) Delete(ctx context.Context, path string) error {
 	return d.fs.RemoveAll(ctx, path)
 }
 
-func (d *driver) Reader(ctx context.Context, path string) (io.ReadCloser, error) {
+func (d *fsDriver) Reader(ctx context.Context, path string) (io.ReadCloser, error) {
 	return filesystem.Open(ctx, d.fs, path)
 }
 
-func (d *driver) WalkDir(ctx context.Context, path string, fn fs.WalkDirFunc) error {
+func (d *fsDriver) WalkDir(ctx context.Context, path string, fn iofs.WalkDirFunc) error {
 	return filesystem.WalkDir(ctx, filesystem.Sub(d.fs, path), ".", fn)
 }
 
-func (w *driver) Move(ctx context.Context, oldPath string, newPath string) error {
+func (w *fsDriver) Move(ctx context.Context, oldPath string, newPath string) error {
 	if err := filesystem.MkdirAll(ctx, w.fs, path.Dir(newPath)); err != nil {
 		return err
 	}
 	return w.fs.Rename(ctx, oldPath, newPath)
 }
 
-func (d *driver) GetContent(ctx context.Context, path string) ([]byte, error) {
+func (d *fsDriver) GetContent(ctx context.Context, path string) ([]byte, error) {
 	f, err := d.Reader(ctx, path)
 	if err != nil {
 		return nil, err
@@ -56,7 +58,7 @@ func (d *driver) GetContent(ctx context.Context, path string) ([]byte, error) {
 	return io.ReadAll(f)
 }
 
-func (d *driver) PutContent(ctx context.Context, path string, contents []byte) error {
+func (d *fsDriver) PutContent(ctx context.Context, path string, contents []byte) error {
 	writer, err := d.Writer(ctx, path, false)
 	if err != nil {
 		return err
@@ -72,7 +74,7 @@ func (d *driver) PutContent(ctx context.Context, path string, contents []byte) e
 	return writer.Commit(ctx)
 }
 
-func (d *driver) Writer(ctx context.Context, pathname string, append bool) (FileWriter, error) {
+func (d *fsDriver) Writer(ctx context.Context, pathname string, append bool) (driver.FileWriter, error) {
 	dir := path.Dir(pathname)
 	if dir != "" {
 		if err := filesystem.MkdirAll(ctx, d.fs, dir); err != nil {
@@ -108,7 +110,7 @@ func (d *driver) Writer(ctx context.Context, pathname string, append bool) (File
 }
 
 type fileWriter struct {
-	driver  *driver
+	driver  *fsDriver
 	path    string
 	written int64
 

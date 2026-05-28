@@ -18,7 +18,7 @@ type HeadManifest struct {
 	Reference content.Reference `name:"reference" in:"path"`
 }
 
-func (req *HeadManifest) Output(ctx context.Context) (any, error) {
+func (req *HeadManifest) Output(ctx context.Context) (x any, e error) {
 	repo, err := req.Repository(ctx)
 	if err != nil {
 		return nil, err

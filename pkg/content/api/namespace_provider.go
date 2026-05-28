@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"path"
 
@@ -12,9 +13,11 @@ import (
 
 	"github.com/octohelm/crkit/pkg/content"
 	contentfs "github.com/octohelm/crkit/pkg/content/fs"
-	"github.com/octohelm/crkit/pkg/content/fs/driver"
 	contentproxy "github.com/octohelm/crkit/pkg/content/proxy"
 	contentremote "github.com/octohelm/crkit/pkg/content/remote"
+	"github.com/octohelm/crkit/pkg/driver"
+	driverfs "github.com/octohelm/crkit/pkg/driver/fs"
+	drivers3 "github.com/octohelm/crkit/pkg/driver/s3"
 )
 
 // +gengo:injectable:provider
@@ -43,15 +46,19 @@ func (s *NamespaceProvider) beforeInit(ctx context.Context) error {
 func (s *NamespaceProvider) afterInit(ctx context.Context) error {
 	if !s.NoCache {
 		if err := filesystem.MkdirAll(ctx, s.Content.FileSystem(), "."); err != nil {
-			return err
+			return fmt.Errorf("mkdir failed %w", err)
 		}
 	}
 
-	local := contentfs.NewNamespace(s.Content.FileSystem())
-
 	if !s.NoCache {
-		s.driver = driver.FromFileSystem(s.Content.FileSystem())
+		if s.Content.Backend.Scheme == "s3" {
+			s.driver = drivers3.FromS3Endpoint(s.Content.Backend)
+		} else {
+			s.driver = driverfs.FromFileSystem(s.Content.FileSystem())
+		}
 	}
+
+	local := contentfs.NewNamespace(s.driver)
 
 	if s.Remote.Endpoint != "" {
 		if s.NoCache {

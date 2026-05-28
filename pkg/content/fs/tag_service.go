@@ -2,6 +2,7 @@ package fs
 
 import (
 	"context"
+	"errors"
 	"io/fs"
 	"iter"
 	"os"
@@ -24,9 +25,11 @@ type tagService struct {
 func (t *tagService) Get(ctx context.Context, tag string) (*manifestv1.Descriptor, error) {
 	data, err := t.workspace.GetContent(ctx, t.workspace.layout.RepositoryManifestTagCurrentLinkPath(t.named, tag))
 	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, &content.ErrTagUnknown{
-				Tag: tag,
+		if perr, ok := errors.AsType[*os.PathError](err); ok {
+			if os.IsNotExist(perr) {
+				return nil, &content.ErrTagUnknown{
+					Tag: tag,
+				}
 			}
 		}
 		return nil, err

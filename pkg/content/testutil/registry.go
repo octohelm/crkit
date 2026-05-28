@@ -12,6 +12,7 @@ import (
 
 	"github.com/octohelm/crkit/pkg/content"
 	contentfs "github.com/octohelm/crkit/pkg/content/fs"
+	fsdriver "github.com/octohelm/crkit/pkg/driver/fs"
 	"github.com/octohelm/crkit/pkg/registryhttp/apis"
 )
 
@@ -21,7 +22,7 @@ func NewRegistry(t testingv2.TB) http.Handler {
 		_ = os.Remove(tmp)
 	})
 	return &registry{
-		namespace: contentfs.NewNamespace(local.NewFS(tmp)),
+		namespace: contentfs.NewNamespace(fsdriver.FromFileSystem(local.NewFS(tmp))),
 	}
 }
 

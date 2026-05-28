@@ -8,7 +8,7 @@ import (
 	context "context"
 
 	content "github.com/octohelm/crkit/pkg/content"
-	fsdriver "github.com/octohelm/crkit/pkg/content/fs/driver"
+	fsdriver "github.com/octohelm/crkit/pkg/driver"
 )
 
 func (p *NamespaceProvider) InjectContext(ctx context.Context) context.Context {

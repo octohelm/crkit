@@ -2,6 +2,7 @@ package garbagecollector
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -12,8 +13,8 @@ import (
 
 	"github.com/octohelm/x/logr"
 
-	"github.com/octohelm/crkit/pkg/content/fs/driver"
 	"github.com/octohelm/crkit/pkg/content/fs/layout"
+	"github.com/octohelm/crkit/pkg/driver"
 )
 
 type Vacuum interface {
@@ -122,8 +123,10 @@ func (v *vacuum) RemoveManifest(ctx context.Context, named reference.Named, dgst
 		tagIndexEntryPath := v.layout.RepositoryManifestTagIndexEntryPath(named, tag, dgst)
 
 		if _, err := v.driver.Stat(ctx, tagIndexEntryPath); err != nil {
-			if os.IsNotExist(err) {
-				continue
+			if perr, ok := errors.AsType[*os.PathError](err); ok {
+				if os.IsNotExist(perr) {
+					continue
+				}
 			}
 
 			return err

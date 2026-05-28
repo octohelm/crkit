@@ -2,6 +2,7 @@ package fs
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"io/fs"
@@ -130,8 +131,10 @@ func (lbs *linkedBlobStore) LinkedDigests(ctx context.Context) iter.Seq2[content
 			return nil
 		}); err != nil {
 			// skip base dir not exists
-			if os.IsNotExist(err) {
-				return
+			if perr, ok := errors.AsType[*os.PathError](err); ok {
+				if os.IsNotExist(perr) {
+					return
+				}
 			}
 
 			if !yield(content.LinkedDigest{}, err) {
@@ -150,8 +153,10 @@ func (lbs *linkedBlobStore) Info(ctx context.Context, dgst digest.Digest) (*mani
 
 	_, err := lbs.workspace.Stat(ctx, link)
 	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, lbs.errUnknownFunc(dgst)
+		if perr, ok := errors.AsType[*os.PathError](err); ok {
+			if os.IsNotExist(perr) {
+				return nil, lbs.errUnknownFunc(dgst)
+			}
 		}
 		return nil, err
 	}
@@ -164,8 +169,10 @@ func (lbs *linkedBlobStore) Open(ctx context.Context, dgst digest.Digest) (io.Re
 
 	_, err := lbs.workspace.Stat(ctx, link)
 	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, lbs.errUnknownFunc(dgst)
+		if perr, ok := errors.AsType[*os.PathError](err); ok {
+			if os.IsNotExist(perr) {
+				return nil, lbs.errUnknownFunc(dgst)
+			}
 		}
 		return nil, err
 	}

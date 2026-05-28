@@ -11,11 +11,10 @@ import (
 	"github.com/opencontainers/go-digest"
 
 	"github.com/octohelm/x/logr"
-	"github.com/octohelm/x/ptr"
 
 	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
 	"github.com/octohelm/crkit/pkg/content"
-	"github.com/octohelm/crkit/pkg/content/fs/driver"
+	"github.com/octohelm/crkit/pkg/driver"
 )
 
 func MarkAndSweepExcludeModifiedIn(
@@ -246,7 +245,7 @@ func (c *collector) markManifest(ctx context.Context, named reference.Named, man
 		for d := range m.References() {
 			if err := c.markManifest(ctx, named, manifestService, d.Digest); err != nil {
 				// skip for partial cached
-				if errors.As(err, ptr.Ptr(&content.ErrManifestUnknownRevision{})) {
+				if _, ok := errors.AsType[*content.ErrManifestUnknownRevision](err); ok {
 					continue
 				}
 				return err
