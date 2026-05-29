@@ -101,15 +101,8 @@ func (d *s3Driver) Delete(ctx context.Context, name string) error {
 	}
 
 	if !isRoot(name) {
-		keys, err := d.listKeys(ctx, d.dirPrefixKey(name))
-		if err != nil {
-			return fmt.Errorf("list s3 dir %q for remove: %w", name, err)
-		}
-
-		for _, key := range keys {
-			if err := d.deleteKey(ctx, key); err != nil {
-				return fmt.Errorf("remove child s3 object %q: %w", key, err)
-			}
+		if err := d.deletePrefix(ctx, d.dirPrefixKey(name)); err != nil {
+			return fmt.Errorf("remove s3 dir %q: %w", name, err)
 		}
 	}
 
@@ -184,18 +177,21 @@ func (d *s3Driver) Move(ctx context.Context, oldName string, newName string) err
 	if info.IsDir() {
 		oldPrefix := d.dirPrefixKey(oldName)
 		newPrefix := d.dirPrefixKey(newName)
-		keys, err := d.listKeys(ctx, oldPrefix)
-		if err != nil {
-			return fmt.Errorf("list rename source %q: %w", oldName, err)
-		}
-		for _, key := range keys {
-			rel := strings.TrimPrefix(key, oldPrefix)
+		if err := d.forEachObject(ctx, simples3.ListInput{
+			Bucket: d.bucket,
+			Prefix: oldPrefix,
+		}, func(obj simples3.Object) error {
+			rel := strings.TrimPrefix(obj.Key, oldPrefix)
 			if rel == "" {
-				continue
+				return nil
 			}
-			if err := d.copyKey(ctx, key, path.Join(newPrefix, rel)); err != nil {
-				return fmt.Errorf("copy s3 object %q to %q: %w", key, path.Join(newPrefix, rel), err)
+			destKey := path.Join(newPrefix, rel)
+			if err := d.copyKey(ctx, obj.Key, destKey); err != nil {
+				return fmt.Errorf("copy s3 object %q to %q: %w", obj.Key, destKey, err)
 			}
+			return nil
+		}); err != nil {
+			return fmt.Errorf("list rename source %q: %w", oldName, err)
 		}
 		if err := d.Delete(ctx, oldName); err != nil {
 			return fmt.Errorf("remove renamed source dir %q: %w", oldName, err)
@@ -359,46 +355,97 @@ func (d *s3Driver) statDirectory(ctx context.Context, name string) (filesystem.F
 	return nil, pathError("stat", name, os.ErrNotExist)
 }
 
-func (d *s3Driver) listKeys(ctx context.Context, prefix string) ([]string, error) {
-	objects, _, err := d.listObjects(ctx, simples3.ListInput{
-		Bucket: d.bucket,
-		Prefix: prefix,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	keys := make([]string, 0, len(objects))
-	for _, obj := range objects {
-		keys = append(keys, obj.Key)
-	}
-	return keys, nil
-}
-
 func (d *s3Driver) listObjects(ctx context.Context, input simples3.ListInput) ([]simples3.Object, []string, error) {
 	var objects []simples3.Object
 	var prefixes []string
 
+	err := d.forEachListPage(ctx, input, func(resp simples3.ListResponse) error {
+		objects = append(objects, resp.Objects...)
+		prefixes = append(prefixes, resp.CommonPrefixes...)
+		return nil
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+	return objects, prefixes, nil
+}
+
+func (d *s3Driver) forEachObject(ctx context.Context, input simples3.ListInput, fn func(simples3.Object) error) error {
+	return d.forEachListPage(ctx, input, func(resp simples3.ListResponse) error {
+		for _, obj := range resp.Objects {
+			if err := fn(obj); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
+func (d *s3Driver) forEachListPage(ctx context.Context, input simples3.ListInput, fn func(simples3.ListResponse) error) error {
+	total := int64(0)
+
 	for {
 		if err := ctx.Err(); err != nil {
-			return nil, nil, err
+			return err
 		}
 
 		resp, err := d.client.List(input)
 		if err != nil {
-			return nil, nil, err
+			return err
 		}
 
-		objects = append(objects, resp.Objects...)
-		prefixes = append(prefixes, resp.CommonPrefixes...)
+		if err := fn(resp); err != nil {
+			return err
+		}
 
-		if input.MaxKeys > 0 && int64(len(objects)+len(prefixes)) >= input.MaxKeys {
-			return objects, prefixes, nil
+		total += int64(len(resp.Objects) + len(resp.CommonPrefixes))
+		if input.MaxKeys > 0 && total >= input.MaxKeys {
+			return nil
 		}
 		if !resp.IsTruncated || resp.NextContinuationToken == "" {
-			return objects, prefixes, nil
+			return nil
 		}
 
+		input.ContinuationToken = resp.NextContinuationToken
+	}
+}
+
+func (d *s3Driver) deletePrefix(ctx context.Context, prefix string) error {
+	input := simples3.ListInput{
+		Bucket: d.bucket,
+		Prefix: prefix,
+	}
+
+	for {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+
+		resp, err := d.client.List(input)
+		if err != nil {
+			return err
+		}
+
+		lastKey := ""
+		for _, obj := range resp.Objects {
+			lastKey = obj.Key
+			if err := d.deleteKey(ctx, obj.Key); err != nil {
+				return fmt.Errorf("remove child s3 object %q: %w", obj.Key, err)
+			}
+		}
+
+		if !resp.IsTruncated {
+			return nil
+		}
+
+		if lastKey != "" {
+			input.StartAfter = lastKey
+			input.ContinuationToken = ""
+			continue
+		}
+		if resp.NextContinuationToken == "" {
+			return nil
+		}
 		input.ContinuationToken = resp.NextContinuationToken
 	}
 }
@@ -623,7 +670,7 @@ func (fw *s3FileWriter) Close() error {
 	}
 
 	if !fw.committed && !fw.cancelled && !fw.commitAttempted {
-		if err := fw.flushBySimplePut(); err != nil {
+		if err := fw.upload(context.WithoutCancel(fw.ctx)); err != nil {
 			return err
 		}
 	}
@@ -658,23 +705,8 @@ func (fw *s3FileWriter) Commit(ctx context.Context) error {
 
 	fw.commitAttempted = true
 
-	if _, err := fw.file.Seek(0, io.SeekStart); err != nil {
-		return fmt.Errorf("seek s3 write temp file %q: %w", fw.path, err)
-	}
-
-	info, err := fw.file.Stat()
-	if err != nil {
-		return fmt.Errorf("stat s3 write temp file %q: %w", fw.path, err)
-	}
-
-	if info.Size() == 0 {
-		if err := fw.driver.putObject(ctx, fw.path, fw.file); err != nil {
-			return fmt.Errorf("put s3 object %q: %w", fw.path, err)
-		}
-	} else {
-		if err := fw.driver.putObjectMultipart(ctx, fw.path, fw.file, info.Size()); err != nil {
-			return fmt.Errorf("put s3 multipart object %q: %w", fw.path, err)
-		}
+	if err := fw.upload(ctx); err != nil {
+		return err
 	}
 
 	fw.committed = true
@@ -701,12 +733,25 @@ func (fw *s3FileWriter) copyCurrent(ctx context.Context) error {
 	return nil
 }
 
-func (fw *s3FileWriter) flushBySimplePut() error {
+func (fw *s3FileWriter) upload(ctx context.Context) error {
 	if _, err := fw.file.Seek(0, io.SeekStart); err != nil {
 		return fmt.Errorf("seek s3 write temp file %q: %w", fw.path, err)
 	}
-	if err := fw.driver.putObject(context.WithoutCancel(fw.ctx), fw.path, fw.file); err != nil {
-		return fmt.Errorf("put s3 object %q: %w", fw.path, err)
+
+	info, err := fw.file.Stat()
+	if err != nil {
+		return fmt.Errorf("stat s3 write temp file %q: %w", fw.path, err)
+	}
+
+	if info.Size() == 0 {
+		if err := fw.driver.putObject(ctx, fw.path, fw.file); err != nil {
+			return fmt.Errorf("put s3 object %q: %w", fw.path, err)
+		}
+		return nil
+	}
+
+	if err := fw.driver.putObjectMultipart(ctx, fw.path, fw.file, info.Size()); err != nil {
+		return fmt.Errorf("put s3 multipart object %q: %w", fw.path, err)
 	}
 	return nil
 }

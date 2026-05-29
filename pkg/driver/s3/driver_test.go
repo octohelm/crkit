@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"io/fs"
 	"net/http"
 	"net/http/httptest"
@@ -140,8 +141,8 @@ func TestS3WriterCloseAndCommitSemantics(t *testing.T) {
 	if err := writer.Commit(ctx); err == nil || err.Error() != "already closed" {
 		t.Fatalf("commit after close error = %v, want already closed", err)
 	}
-	if recorder.completeMultipartCount() != 0 {
-		t.Fatalf("complete multipart count after close = %d, want 0", recorder.completeMultipartCount())
+	if recorder.completeMultipartCount() != 1 {
+		t.Fatalf("complete multipart count after close = %d, want 1", recorder.completeMultipartCount())
 	}
 
 	data, err := driver.GetContent(ctx, "resume.txt")
@@ -185,8 +186,8 @@ func TestS3WriterCloseAndCommitSemantics(t *testing.T) {
 	if string(data) != "hello world" {
 		t.Fatalf("committed content = %q, want %q", data, "hello world")
 	}
-	if recorder.completeMultipartCount() != 1 {
-		t.Fatalf("complete multipart count after commit = %d, want 1", recorder.completeMultipartCount())
+	if recorder.completeMultipartCount() != 2 {
+		t.Fatalf("complete multipart count after commit = %d, want 2", recorder.completeMultipartCount())
 	}
 }
 
@@ -220,6 +221,43 @@ func TestS3WriterCommitMultipartPreservesContent(t *testing.T) {
 	}
 	if recorder.completeMultipartCount() != 1 {
 		t.Fatalf("complete multipart count = %d, want 1", recorder.completeMultipartCount())
+	}
+}
+
+func TestS3DriverMoveAndDeletePagedDirectory(t *testing.T) {
+	server, _, backend := newFakeS3Server(t)
+	driver := FromS3Endpoint(endpointForServer(t, server, "/"+testBucket+"/paged"))
+	ctx := context.Background()
+
+	const objectCount = 1005
+	for i := range objectCount {
+		key := fmt.Sprintf("paged/source/file-%04d.txt", i)
+		if _, err := backend.PutObject(testBucket, key, nil, bytes.NewReader([]byte("x")), 1, nil); err != nil {
+			t.Fatalf("seed object %q: %v", key, err)
+		}
+	}
+
+	if err := driver.Move(ctx, "source", "dest"); err != nil {
+		t.Fatalf("move paged dir: %v", err)
+	}
+
+	if _, err := driver.Stat(ctx, "source/file-1004.txt"); !os.IsNotExist(err) {
+		t.Fatalf("stat old paged path error = %v, want not exist", err)
+	}
+
+	moved, err := driver.GetContent(ctx, "dest/file-1004.txt")
+	if err != nil {
+		t.Fatalf("get moved paged object: %v", err)
+	}
+	if string(moved) != "x" {
+		t.Fatalf("moved paged content = %q, want %q", moved, "x")
+	}
+
+	if err := driver.Delete(ctx, "dest"); err != nil {
+		t.Fatalf("delete paged dir: %v", err)
+	}
+	if _, err := driver.Stat(ctx, "dest/file-1004.txt"); !os.IsNotExist(err) {
+		t.Fatalf("stat deleted paged path error = %v, want not exist", err)
 	}
 }
 
