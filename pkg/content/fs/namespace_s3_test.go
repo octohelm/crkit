@@ -21,6 +21,7 @@ import (
 	"github.com/innoai-tech/infra/pkg/otel"
 	"github.com/octohelm/courier/pkg/courierhttp/handler/httprouter"
 	"github.com/octohelm/unifs/pkg/strfmt"
+	"github.com/octohelm/unifs/pkg/units"
 	. "github.com/octohelm/x/testing/v2"
 
 	"github.com/octohelm/crkit/pkg/content"
@@ -28,19 +29,40 @@ import (
 	"github.com/octohelm/crkit/pkg/content/collect"
 	contentremote "github.com/octohelm/crkit/pkg/content/remote"
 	"github.com/octohelm/crkit/pkg/oci"
-	"github.com/octohelm/crkit/pkg/oci/random"
+	"github.com/octohelm/crkit/pkg/oci/empty"
+	"github.com/octohelm/crkit/pkg/oci/mutate"
+	"github.com/octohelm/crkit/pkg/oci/partial"
 	"github.com/octohelm/crkit/pkg/oci/remote"
 	"github.com/octohelm/crkit/pkg/registryhttp/apis"
 )
 
 const namespaceS3Bucket = "namespace-test"
 
-func TestNamespaceS3(t *testing.T) {
-	s3Server := newNamespaceFakeS3Server(t)
+const (
+	namespaceS3MaxImageSize = int64(1 * units.GiB)
+	namespaceS3MaxLayers    = 4
+)
 
-	image := MustValue(t, func() (oci.Image, error) {
-		return random.Image(6*1024*1024, 1)
+func FuzzNamespaceS3(f *testing.F) {
+	f.Add(namespaceS3SeedSize(1), 1, uint64(1))
+	f.Add(namespaceS3SeedSize(int64(5*units.MiB)-1), 1, uint64(2))
+	f.Add(namespaceS3SeedSize(int64(5*units.MiB)), 1, uint64(3))
+	f.Add(namespaceS3SeedSize(int64(5*units.MiB)+1), 1, uint64(4))
+	f.Add(namespaceS3SeedSize(int64(16*units.MiB)+123), 2, uint64(5))
+	f.Add(namespaceS3SeedSize(int64(64*units.MiB)), 4, uint64(6))
+
+	f.Fuzz(func(t *testing.T, rawImageSize uint64, rawLayerCount int, seed uint64) {
+		layerSize, layerCount := namespaceS3ImageShape(rawImageSize, rawLayerCount)
+		image := MustValue(t, func() (oci.Image, error) {
+			return namespaceS3Image(layerSize, layerCount, seed)
+		})
+
+		testNamespaceS3(t, image)
 	})
+}
+
+func testNamespaceS3(t *testing.T, image oci.Image) {
+	s3Server := newNamespaceFakeS3Server(t)
 
 	ctx, _ := testingutil.BuildContext(t, func(d *struct {
 		otel.Otel
@@ -182,6 +204,67 @@ func TestNamespaceS3(t *testing.T) {
 			Equal([]string{"latest", "v1"}),
 		),
 	)
+}
+
+func namespaceS3SeedSize(size int64) uint64 {
+	if size <= 1 {
+		return 0
+	}
+	return uint64(size - 1)
+}
+
+func namespaceS3ImageShape(rawImageSize uint64, rawLayerCount int) (int64, int) {
+	totalSize := int64(rawImageSize%uint64(namespaceS3MaxImageSize)) + 1
+	layerCount := rawLayerCount
+	if layerCount < 1 {
+		layerCount = 1
+	}
+	layerCount = (layerCount-1)%namespaceS3MaxLayers + 1
+	if int64(layerCount) > totalSize {
+		layerCount = int(totalSize)
+	}
+	return totalSize / int64(layerCount), layerCount
+}
+
+func namespaceS3Image(layerSize int64, layerCount int, seed uint64) (oci.Image, error) {
+	img := empty.Image
+
+	for i := range layerCount {
+		var err error
+		img, err = mutate.AppendLayers(
+			img,
+			partial.BlobFromBytes(
+				namespaceS3LayerBytes(layerSize, seed+uint64(i)),
+				ocispecv1.Descriptor{MediaType: ocispecv1.MediaTypeImageLayer},
+			),
+		)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return mutate.WithImageConfig(img, &ocispecv1.ImageConfig{
+		Env: []string{
+			fmt.Sprintf("SEED=%016x", seed),
+			fmt.Sprintf("LAYER_SIZE=%d", layerSize),
+			fmt.Sprintf("LAYER_COUNT=%d", layerCount),
+		},
+	})
+}
+
+func namespaceS3LayerBytes(size int64, seed uint64) []byte {
+	data := make([]byte, int(size))
+	x := seed
+	if x == 0 {
+		x = 0x9e3779b97f4a7c15
+	}
+	for i := range data {
+		x ^= x << 13
+		x ^= x >> 7
+		x ^= x << 17
+		data[i] = byte(x)
+	}
+	return data
 }
 
 func newNamespaceFakeS3Server(t *testing.T) *httptest.Server {

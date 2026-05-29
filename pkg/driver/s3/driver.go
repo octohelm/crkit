@@ -243,23 +243,22 @@ func (d *s3Driver) Writer(ctx context.Context, name string, append bool) (FileWr
 		return nil, err
 	}
 
-	file, err := os.CreateTemp("", "crkit-s3-*")
-	if err != nil {
-		return nil, fmt.Errorf("create s3 write temp file %q: %w", name, err)
-	}
-
 	writer := &s3FileWriter{
-		driver: d,
-		ctx:    ctx,
-		path:   name,
-		file:   file,
+		driver:     d,
+		ctx:        ctx,
+		path:       name,
+		append:     append,
+		partNumber: 1,
 	}
 
 	if append {
-		if err := writer.copyCurrent(ctx); err != nil {
-			_ = writer.closeTemp()
+		size, exists, err := d.objectSize(ctx, name)
+		if err != nil {
 			return nil, err
 		}
+		writer.existingExists = exists
+		writer.existingSize = size
+		writer.written = size
 	}
 
 	return writer, nil
@@ -496,98 +495,27 @@ func (d *s3Driver) putObject(ctx context.Context, name string, body io.ReadSeeke
 	return err
 }
 
-func (d *s3Driver) putObjectMultipart(ctx context.Context, name string, body io.Reader, size int64) error {
-	if err := d.ensureBucket(ctx); err != nil {
-		return err
-	}
+func (d *s3Driver) objectSize(ctx context.Context, name string) (int64, bool, error) {
 	if err := ctx.Err(); err != nil {
-		return err
+		return 0, false, err
 	}
 
-	key := d.key(name)
-	initOutput, err := d.client.InitiateMultipartUpload(simples3.InitiateMultipartUploadInput{
-		Bucket:      d.bucket,
-		ObjectKey:   key,
-		ContentType: contentType(ctx),
-	})
-	if err != nil {
-		return err
-	}
-
-	abort := func(uploadErr error) error {
-		abortErr := d.client.AbortMultipartUpload(simples3.AbortMultipartUploadInput{
-			Bucket:    d.bucket,
-			ObjectKey: key,
-			UploadID:  initOutput.UploadID,
-		})
-		if abortErr != nil {
-			return errors.Join(uploadErr, abortErr)
-		}
-		return uploadErr
-	}
-
-	partSize := int64(simples3.DefaultPartSize)
-	if size > partSize*int64(simples3.MaxParts) {
-		return abort(fmt.Errorf("file too large: requires more than %d parts", simples3.MaxParts))
-	}
-
-	partNumber := 1
-	buf := make([]byte, partSize)
-	parts := make([]simples3.CompletedPart, 0, (size+partSize-1)/partSize)
-
-	for {
-		if err := ctx.Err(); err != nil {
-			return abort(err)
-		}
-
-		n, readErr := io.ReadFull(body, buf)
-		if readErr == io.EOF {
-			break
-		}
-		if readErr != nil && readErr != io.ErrUnexpectedEOF {
-			return abort(readErr)
-		}
-		if n == 0 {
-			break
-		}
-
-		if partNumber > simples3.MaxParts {
-			return abort(fmt.Errorf("file too large: requires more than %d parts", simples3.MaxParts))
-		}
-
-		output, err := d.client.UploadPart(simples3.UploadPartInput{
-			Bucket:     d.bucket,
-			ObjectKey:  key,
-			UploadID:   initOutput.UploadID,
-			PartNumber: partNumber,
-			Body:       bytes.NewReader(buf[:n]),
-			Size:       int64(n),
-		})
-		if err != nil {
-			return abort(err)
-		}
-
-		parts = append(parts, simples3.CompletedPart{
-			PartNumber: output.PartNumber,
-			ETag:       output.ETag,
-		})
-		partNumber++
-
-		if readErr == io.ErrUnexpectedEOF {
-			break
-		}
-	}
-
-	_, err = d.client.CompleteMultipartUpload(simples3.CompleteMultipartUploadInput{
+	info, err := d.client.FileDetails(simples3.DetailsInput{
 		Bucket:    d.bucket,
-		ObjectKey: key,
-		UploadID:  initOutput.UploadID,
-		Parts:     parts,
+		ObjectKey: d.key(name),
 	})
 	if err != nil {
-		return abort(err)
+		if isS3NotFound(err) {
+			return 0, false, nil
+		}
+		return 0, false, fmt.Errorf("stat s3 object %q for append: %w", name, err)
 	}
-	return nil
+
+	size, err := strconv.ParseInt(info.ContentLength, 10, 64)
+	if err != nil {
+		return 0, false, fmt.Errorf("parse s3 object size %q: %w", info.ContentLength, err)
+	}
+	return size, true, nil
 }
 
 func (d *s3Driver) copyKey(ctx context.Context, sourceKey string, destKey string) error {
@@ -637,8 +565,21 @@ type s3FileWriter struct {
 	ctx    context.Context
 	path   string
 
+	append         bool
+	existingExists bool
+	existingSize   int64
+	existingCopied bool
+
 	written int64
-	file    *os.File
+	dirty   bool
+
+	key        string
+	uploadID   string
+	partNumber int
+	parts      []simples3.CompletedPart
+	buf        []byte
+	bufLen     int
+	uploadErr  error
 
 	closed          bool
 	committed       bool
@@ -653,10 +594,27 @@ func (fw *s3FileWriter) Write(p []byte) (int, error) {
 		return 0, fmt.Errorf("already committed")
 	} else if fw.cancelled {
 		return 0, fmt.Errorf("already cancelled")
+	} else if fw.uploadErr != nil {
+		return 0, fw.uploadErr
 	}
 
-	n, err := fw.file.Write(p)
+	if len(p) == 0 {
+		return 0, nil
+	}
+
+	if err := fw.copyExistingIfNeed(fw.ctx); err != nil {
+		fw.uploadErr = err
+		return 0, err
+	}
+
+	n, err := fw.writeToMultipart(fw.ctx, p)
 	fw.written += int64(n)
+	if n > 0 {
+		fw.dirty = true
+	}
+	if err != nil {
+		fw.uploadErr = err
+	}
 	return n, err
 }
 
@@ -670,15 +628,16 @@ func (fw *s3FileWriter) Close() error {
 	}
 
 	if !fw.committed && !fw.cancelled && !fw.commitAttempted {
-		if err := fw.upload(context.WithoutCancel(fw.ctx)); err != nil {
+		if err := fw.finish(context.WithoutCancel(fw.ctx)); err != nil {
 			return err
 		}
 	}
 
-	if err := fw.closeTemp(); err != nil {
-		return err
+	if fw.commitAttempted && !fw.committed {
+		_ = fw.abortMultipart()
 	}
 
+	fw.releaseBuffer()
 	fw.closed = true
 	return nil
 }
@@ -689,7 +648,7 @@ func (fw *s3FileWriter) Cancel(ctx context.Context) error {
 	}
 
 	fw.cancelled = true
-	_ = fw.closeTemp()
+	_ = fw.abortMultipart()
 
 	return fw.driver.Delete(ctx, fw.path)
 }
@@ -705,7 +664,7 @@ func (fw *s3FileWriter) Commit(ctx context.Context) error {
 
 	fw.commitAttempted = true
 
-	if err := fw.upload(ctx); err != nil {
+	if err := fw.finish(ctx); err != nil {
 		return err
 	}
 
@@ -713,7 +672,16 @@ func (fw *s3FileWriter) Commit(ctx context.Context) error {
 	return nil
 }
 
-func (fw *s3FileWriter) copyCurrent(ctx context.Context) error {
+func (fw *s3FileWriter) copyExistingIfNeed(ctx context.Context) error {
+	if !fw.append || fw.existingCopied {
+		return nil
+	}
+	fw.existingCopied = true
+
+	if !fw.existingExists || fw.existingSize == 0 {
+		return nil
+	}
+
 	r, err := fw.driver.Reader(ctx, fw.path)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -725,47 +693,180 @@ func (fw *s3FileWriter) copyCurrent(ctx context.Context) error {
 		_ = r.Close()
 	}()
 
-	n, err := io.Copy(fw.file, r)
-	if err != nil {
+	if _, err := io.Copy(&s3MultipartWriteAdapter{ctx: ctx, writer: fw}, r); err != nil {
+		_ = fw.abortMultipart()
 		return fmt.Errorf("copy current s3 object %q for append: %w", fw.path, err)
 	}
-	fw.written = n
 	return nil
 }
 
-func (fw *s3FileWriter) upload(ctx context.Context) error {
-	if _, err := fw.file.Seek(0, io.SeekStart); err != nil {
-		return fmt.Errorf("seek s3 write temp file %q: %w", fw.path, err)
+type s3MultipartWriteAdapter struct {
+	ctx    context.Context
+	writer *s3FileWriter
+}
+
+func (a *s3MultipartWriteAdapter) Write(p []byte) (int, error) {
+	return a.writer.writeToMultipart(a.ctx, p)
+}
+
+func (fw *s3FileWriter) writeToMultipart(ctx context.Context, p []byte) (int, error) {
+	if len(p) == 0 {
+		return 0, nil
 	}
 
-	info, err := fw.file.Stat()
+	if err := fw.ensureMultipart(ctx); err != nil {
+		return 0, err
+	}
+
+	written := 0
+	for len(p) > 0 {
+		if err := ctx.Err(); err != nil {
+			_ = fw.abortMultipart()
+			return written, err
+		}
+
+		n := copy(fw.buf[fw.bufLen:], p)
+		fw.bufLen += n
+		written += n
+		p = p[n:]
+
+		if fw.bufLen == len(fw.buf) {
+			if err := fw.uploadBufferedPart(ctx); err != nil {
+				_ = fw.abortMultipart()
+				return written, err
+			}
+		}
+	}
+
+	return written, nil
+}
+
+func (fw *s3FileWriter) ensureMultipart(ctx context.Context) error {
+	if fw.uploadID != "" {
+		return nil
+	}
+
+	if err := fw.driver.ensureBucket(ctx); err != nil {
+		return err
+	}
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+
+	key := fw.driver.key(fw.path)
+	initOutput, err := fw.driver.client.InitiateMultipartUpload(simples3.InitiateMultipartUploadInput{
+		Bucket:      fw.driver.bucket,
+		ObjectKey:   key,
+		ContentType: contentType(ctx),
+	})
 	if err != nil {
-		return fmt.Errorf("stat s3 write temp file %q: %w", fw.path, err)
+		return err
 	}
 
-	if info.Size() == 0 {
-		if err := fw.driver.putObject(ctx, fw.path, fw.file); err != nil {
+	fw.key = key
+	fw.uploadID = initOutput.UploadID
+	fw.buf = make([]byte, simples3.DefaultPartSize)
+	return nil
+}
+
+func (fw *s3FileWriter) uploadBufferedPart(ctx context.Context) error {
+	if fw.bufLen == 0 {
+		return nil
+	}
+
+	if fw.partNumber > simples3.MaxParts {
+		return fmt.Errorf("file too large: requires more than %d parts", simples3.MaxParts)
+	}
+
+	output, err := fw.driver.client.UploadPart(simples3.UploadPartInput{
+		Bucket:     fw.driver.bucket,
+		ObjectKey:  fw.key,
+		UploadID:   fw.uploadID,
+		PartNumber: fw.partNumber,
+		Body:       bytes.NewReader(fw.buf[:fw.bufLen]),
+		Size:       int64(fw.bufLen),
+	})
+	if err != nil {
+		return err
+	}
+
+	fw.parts = append(fw.parts, simples3.CompletedPart{
+		PartNumber: output.PartNumber,
+		ETag:       output.ETag,
+	})
+	fw.partNumber++
+	fw.bufLen = 0
+	return nil
+}
+
+func (fw *s3FileWriter) finish(ctx context.Context) error {
+	if fw.uploadErr != nil {
+		_ = fw.abortMultipart()
+		return fw.uploadErr
+	}
+
+	if fw.append && fw.existingExists && !fw.dirty {
+		return nil
+	}
+
+	if err := fw.copyExistingIfNeed(ctx); err != nil {
+		fw.uploadErr = err
+		return err
+	}
+
+	if fw.uploadID == "" {
+		if err := fw.driver.putObject(ctx, fw.path, bytes.NewReader(nil)); err != nil {
 			return fmt.Errorf("put s3 object %q: %w", fw.path, err)
 		}
 		return nil
 	}
 
-	if err := fw.driver.putObjectMultipart(ctx, fw.path, fw.file, info.Size()); err != nil {
+	if err := fw.uploadBufferedPart(ctx); err != nil {
+		abortErr := fw.abortMultipart()
+		if abortErr != nil {
+			return errors.Join(fmt.Errorf("put s3 multipart object %q: %w", fw.path, err), abortErr)
+		}
 		return fmt.Errorf("put s3 multipart object %q: %w", fw.path, err)
 	}
+
+	_, err := fw.driver.client.CompleteMultipartUpload(simples3.CompleteMultipartUploadInput{
+		Bucket:    fw.driver.bucket,
+		ObjectKey: fw.key,
+		UploadID:  fw.uploadID,
+		Parts:     fw.parts,
+	})
+	if err != nil {
+		abortErr := fw.abortMultipart()
+		if abortErr != nil {
+			return errors.Join(fmt.Errorf("put s3 multipart object %q: %w", fw.path, err), abortErr)
+		}
+		return fmt.Errorf("put s3 multipart object %q: %w", fw.path, err)
+	}
+	fw.uploadID = ""
+	fw.parts = nil
+	fw.releaseBuffer()
 	return nil
 }
 
-func (fw *s3FileWriter) closeTemp() error {
-	if fw.file == nil {
+func (fw *s3FileWriter) abortMultipart() error {
+	if fw.uploadID == "" {
 		return nil
 	}
 
-	name := fw.file.Name()
-	err := fw.file.Close()
-	_ = os.Remove(name)
-	fw.file = nil
+	err := fw.driver.client.AbortMultipartUpload(simples3.AbortMultipartUploadInput{
+		Bucket:    fw.driver.bucket,
+		ObjectKey: fw.key,
+		UploadID:  fw.uploadID,
+	})
+	fw.uploadID = ""
+	fw.parts = nil
+	fw.releaseBuffer()
 	return err
+}
+
+func (fw *s3FileWriter) releaseBuffer() {
+	fw.buf = nil
+	fw.bufLen = 0
 }
 
 func endpointPrefix(endpoint strfmt.Endpoint) string {
