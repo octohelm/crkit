@@ -16,7 +16,7 @@ import (
 
 	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
 	"github.com/octohelm/crkit/pkg/content"
-	"github.com/octohelm/crkit/pkg/registryhttp/apis/registry"
+	endpointsv2 "github.com/octohelm/crkit/pkg/endpoints/registry/v2"
 )
 
 type tagService struct {
@@ -27,7 +27,7 @@ type tagService struct {
 var _ content.TagService = &tagService{}
 
 func (ts *tagService) Get(ctx context.Context, tag string) (*manifestv1.Descriptor, error) {
-	req := &registry.HeadManifest{}
+	req := &endpointsv2.HeadManifest{}
 	req.Accept = strings.Join(slices.Collect(maps.Keys((&manifestv1.Payload{}).Mapping())), ",")
 	req.Name = content.Name(ts.named.Name())
 	req.Reference = content.Reference(tag)
@@ -56,7 +56,7 @@ func (ts *tagService) Get(ctx context.Context, tag string) (*manifestv1.Descript
 }
 
 func (ts *tagService) Tag(ctx context.Context, tag string, desc manifestv1.Descriptor) error {
-	resolve := &registry.GetManifest{}
+	resolve := &endpointsv2.GetManifest{}
 	resolve.Name = content.Name(ts.named.Name())
 	resolve.Reference = content.Reference(desc.Digest.String())
 
@@ -65,7 +65,7 @@ func (ts *tagService) Tag(ctx context.Context, tag string, desc manifestv1.Descr
 		return err
 	}
 
-	put := &registry.PutManifest{}
+	put := &endpointsv2.PutManifest{}
 	put.Name = content.Name(ts.named.Name())
 	put.Reference = content.Reference(tag)
 	put.Manifest = *m
@@ -77,7 +77,7 @@ func (ts *tagService) Tag(ctx context.Context, tag string, desc manifestv1.Descr
 }
 
 func (ts *tagService) Untag(ctx context.Context, tag string) error {
-	req := &registry.DeleteManifest{}
+	req := &endpointsv2.DeleteManifest{}
 	req.Name = content.Name(ts.named.Name())
 	req.Reference = content.Reference(tag)
 
@@ -86,7 +86,7 @@ func (ts *tagService) Untag(ctx context.Context, tag string) error {
 }
 
 func (ts *tagService) All(ctx context.Context) ([]string, error) {
-	resolve := &registry.ListTag{}
+	resolve := &endpointsv2.ListTag{}
 	resolve.Name = content.Name(ts.named.Name())
 
 	list, _, err := Do(ctx, ts.client, resolve)

@@ -19,4 +19,7 @@ type TagRevisionIterable interface {
 	TagRevisions(ctx context.Context, tag string) iter.Seq2[LinkedDigest, error]
 }
 
+// Deprecated: use apiregistryv2.TagList instead.
+//
+//go:fix inline
 type TagList = registryv2.TagList

@@ -17,7 +17,7 @@ import (
 
 	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
 	"github.com/octohelm/crkit/pkg/content"
-	"github.com/octohelm/crkit/pkg/registryhttp/apis/registry"
+	endpointsv2 "github.com/octohelm/crkit/pkg/endpoints/registry/v2"
 )
 
 type manifestService struct {
@@ -28,7 +28,7 @@ type manifestService struct {
 var _ content.ManifestService = &manifestService{}
 
 func (ms *manifestService) Delete(ctx context.Context, dgst digest.Digest) error {
-	req := &registry.DeleteManifest{}
+	req := &endpointsv2.DeleteManifest{}
 	req.Name = content.Name(ms.named.Name())
 	req.Reference = content.Reference(dgst.String())
 
@@ -37,7 +37,7 @@ func (ms *manifestService) Delete(ctx context.Context, dgst digest.Digest) error
 }
 
 func (ms *manifestService) Put(ctx context.Context, m manifestv1.Manifest) (digest.Digest, error) {
-	req := &registry.PutManifest{}
+	req := &endpointsv2.PutManifest{}
 	req.Name = content.Name(ms.named.Name())
 	p, err := manifestv1.From(m)
 	if err != nil {
@@ -65,7 +65,7 @@ func (ms *manifestService) Put(ctx context.Context, m manifestv1.Manifest) (dige
 }
 
 func (ms *manifestService) Info(ctx context.Context, dgst digest.Digest) (*manifestv1.Descriptor, error) {
-	req := &registry.HeadManifest{}
+	req := &endpointsv2.HeadManifest{}
 	req.Name = content.Name(ms.named.Name())
 	req.Accept = strings.Join(slices.Collect(maps.Keys((&manifestv1.Payload{}).Mapping())), ",")
 	req.Reference = content.Reference(dgst.String())
@@ -94,7 +94,7 @@ func (ms *manifestService) Info(ctx context.Context, dgst digest.Digest) (*manif
 }
 
 func (ms *manifestService) Get(ctx context.Context, dgst digest.Digest) (manifestv1.Manifest, error) {
-	req := &registry.GetManifest{}
+	req := &endpointsv2.GetManifest{}
 	req.Accept = strings.Join(slices.Collect(maps.Keys((&manifestv1.Payload{}).Mapping())), ",")
 	req.Name = content.Name(ms.named.Name())
 	req.Reference = content.Reference(dgst.String())

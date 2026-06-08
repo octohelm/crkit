@@ -23,7 +23,7 @@ import (
 	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
 	"github.com/octohelm/crkit/pkg/content"
 	contentutil "github.com/octohelm/crkit/pkg/content/util"
-	"github.com/octohelm/crkit/pkg/registryhttp/apis/registry"
+	endpointsv2 "github.com/octohelm/crkit/pkg/endpoints/registry/v2"
 )
 
 type blobStore struct {
@@ -34,7 +34,7 @@ type blobStore struct {
 var _ content.Provider = &blobStore{}
 
 func (bs *blobStore) Info(ctx context.Context, dgst digest.Digest) (*manifestv1.Descriptor, error) {
-	req := &registry.HeadBlob{}
+	req := &endpointsv2.HeadBlob{}
 	req.Name = content.Name(bs.named.Name())
 	req.Digest = content.Digest(dgst)
 
@@ -65,7 +65,7 @@ func (bs *blobStore) Info(ctx context.Context, dgst digest.Digest) (*manifestv1.
 }
 
 func (bs *blobStore) Open(ctx context.Context, dgst digest.Digest) (r io.ReadCloser, err error) {
-	req := &registry.GetBlob{}
+	req := &endpointsv2.GetBlob{}
 	req.Name = content.Name(bs.named.Name())
 	req.Digest = content.Digest(dgst)
 
@@ -77,7 +77,7 @@ func (bs *blobStore) Open(ctx context.Context, dgst digest.Digest) (r io.ReadClo
 }
 
 type blobReader struct {
-	*registry.GetBlob
+	*endpointsv2.GetBlob
 	ctx    context.Context
 	client courier.Client
 
@@ -117,7 +117,7 @@ func (b *blobReader) Close() error {
 var _ content.Remover = &blobStore{}
 
 func (bs *blobStore) Remove(ctx context.Context, dgst digest.Digest) error {
-	req := &registry.DeleteBlob{}
+	req := &endpointsv2.DeleteBlob{}
 	req.Name = content.Name(bs.named.Name())
 	req.Digest = content.Digest(dgst)
 
@@ -137,7 +137,7 @@ func (bs *blobStore) Resume(ctx context.Context, id string) (content.BlobWriter,
 }
 
 func (bs *blobStore) Writer(ctx context.Context) (content.BlobWriter, error) {
-	req := &registry.CreateBlobUpload{}
+	req := &endpointsv2.CreateBlobUpload{}
 	req.Name = content.Name(bs.named.Name())
 
 	_, meta, err := Do(ctx, bs.client, req)

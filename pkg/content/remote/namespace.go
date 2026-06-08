@@ -17,7 +17,7 @@ import (
 	syncx "github.com/octohelm/x/sync"
 
 	"github.com/octohelm/crkit/pkg/content"
-	"github.com/octohelm/crkit/pkg/registryhttp/apis/registry"
+	endpointsv2 "github.com/octohelm/crkit/pkg/endpoints/registry/v2"
 )
 
 type Option func(n *namespace)
@@ -172,7 +172,7 @@ var _ content.RepositoryNameIterable = &namespace{}
 
 func (n *namespace) RepositoryNames(ctx context.Context) iter.Seq2[reference.Named, error] {
 	return func(yield func(reference.Named, error) bool) {
-		req := &registry.Catalog{}
+		req := &endpointsv2.Catalog{}
 
 		// FIXME to merge all registries
 		named, err := reference.ParseNormalizedNamed("x")
