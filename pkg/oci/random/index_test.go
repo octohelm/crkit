@@ -46,19 +46,23 @@ func FuzzIndex(f *testing.F) {
 					}
 				}
 
-				Then(t, "got expect layers",
+				Then(
+					t, "got expect layers",
 					Expect(len(layers), Equal(int(layersN)*count)),
 				)
 
-				Then(t, "got expect configs",
+				Then(
+					t, "got expect configs",
 					Expect(len(configs), Equal(count)),
 				)
 
-				Then(t, "got expect images",
+				Then(
+					t, "got expect images",
 					Expect(len(images), Equal(count)),
 				)
 
-				Then(t, "got expect indexes",
+				Then(
+					t, "got expect indexes",
 					Expect(len(indexes), Equal(0)),
 				)
 			})

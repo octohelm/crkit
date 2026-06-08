@@ -5,21 +5,20 @@ import (
 
 	"github.com/opencontainers/go-digest"
 
-	"github.com/octohelm/courier/pkg/courierhttp"
-
+	apiregistryv2 "github.com/octohelm/crkit/pkg/apis/registry/v2"
 	"github.com/octohelm/crkit/pkg/content"
+	endpointregistryv2 "github.com/octohelm/crkit/pkg/endpoints/registry/v2"
 )
 
+// +gengo:injectable
 type DeleteBlob struct {
-	courierhttp.MethodDelete `path:"/{name...}/blobs/{digest}"`
+	endpointregistryv2.DeleteBlob
 
-	NameScoped
-
-	Digest content.Digest `name:"digest" in:"path"`
+	namespace content.Namespace `inject:""`
 }
 
 func (req *DeleteBlob) Output(ctx context.Context) (any, error) {
-	repo, err := req.Repository(ctx)
+	repo, err := repository(ctx, req.namespace, apiregistryv2.Name(req.Name))
 	if err != nil {
 		return nil, err
 	}

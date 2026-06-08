@@ -17,7 +17,8 @@ func TestParseWwwAuthenticate(t *testing.T) {
 			},
 		}
 
-		Then(t, "序列化结果应该正确",
+		Then(
+			t, "序列化结果应该正确",
 			Expect(a.String(), Equal(`Bearer realm="http://localhost/token", service="test"`)),
 		)
 	})
@@ -35,7 +36,8 @@ func TestParseWwwAuthenticate(t *testing.T) {
 			return ParseWwwAuthenticate(`Bearer realm="http://localhost/token" service=test`)
 		})
 
-		Then(t, "解析结果应该匹配",
+		Then(
+			t, "解析结果应该匹配",
 			Expect(parsed, Equal(expected)),
 		)
 	})
@@ -49,7 +51,8 @@ func TestParseWwwAuthenticate(t *testing.T) {
 			},
 		}
 
-		Then(t, "应该成功解析",
+		Then(
+			t, "应该成功解析",
 			ExpectMustValue(func() (*WwwAuthenticate, error) {
 				return ParseWwwAuthenticate(input)
 			}, Equal(expected)),
@@ -68,7 +71,8 @@ func TestParseWwwAuthenticate(t *testing.T) {
 			},
 		}
 
-		Then(t, "应该正确解析复杂参数",
+		Then(
+			t, "应该正确解析复杂参数",
 			ExpectMustValue(func() (*WwwAuthenticate, error) {
 				return ParseWwwAuthenticate(input)
 			}, Equal(expected)),
@@ -77,7 +81,8 @@ func TestParseWwwAuthenticate(t *testing.T) {
 
 	t.Run("错误处理", func(t *testing.T) {
 		t.Run("无效格式应该返回错误", func(t *testing.T) {
-			Then(t, "空字符串应该返回错误",
+			Then(
+				t, "空字符串应该返回错误",
 				ExpectDo(
 					func() error {
 						_, err := ParseWwwAuthenticate("")
@@ -87,7 +92,8 @@ func TestParseWwwAuthenticate(t *testing.T) {
 				),
 			)
 
-			Then(t, "缺少 AuthType 应该返回错误",
+			Then(
+				t, "缺少 AuthType 应该返回错误",
 				ExpectDo(
 					func() error {
 						_, err := ParseWwwAuthenticate(`realm="test"`)

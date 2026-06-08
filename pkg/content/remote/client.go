@@ -3,6 +3,7 @@ package remote
 import (
 	"context"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"net/url"
@@ -71,14 +72,23 @@ func (c *Client) Do(ctx context.Context, req any, metas ...courier.Metadata) cou
 	return c.c.Do(ctx, req, metas...)
 }
 
-func Do[Data any, Op interface{ ResponseData() *Data }](ctx context.Context, c courier.Client, req Op, metas ...courier.Metadata) (*Data, courier.Metadata, error) {
-	resp := new(Data)
-
-	if _, ok := any(resp).(*courier.NoContent); ok {
+func Do[Data any, Op interface{ ResponseData() Data }](ctx context.Context, c courier.Client, req Op, metas ...courier.Metadata) (Data, courier.Metadata, error) {
+	switch any(req).(type) {
+	case interface{ ResponseData() *courier.NoContent }:
+		resp := req.ResponseData()
 		meta, err := c.Do(ctx, req, metas...).Into(nil)
 		return resp, meta, err
+	case interface{ ResponseData() io.ReadCloser }:
+		var body io.ReadCloser
+		meta, err := c.Do(ctx, req, metas...).Into(&body)
+		if err != nil {
+			var zero Data
+			return zero, meta, err
+		}
+		return any(body).(Data), meta, nil
 	}
 
+	resp := req.ResponseData()
 	meta, err := c.Do(ctx, req, metas...).Into(resp)
 	return resp, meta, err
 }

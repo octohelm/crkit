@@ -287,7 +287,8 @@ func (w *tarWriter) writeManifest(ctx context.Context, m oci.Manifest, scope *oc
 		return fmt.Errorf("read digest failed: %w", err)
 	}
 
-	return w.writeToTar(ctx,
+	return w.writeToTar(
+		ctx,
 		tar.Header{
 			Name: path.Join("blobs", string(desc.Digest.Algorithm()), desc.Digest.Hex()),
 			Size: desc.Size,

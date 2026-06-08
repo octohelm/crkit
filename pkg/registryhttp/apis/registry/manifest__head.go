@@ -6,20 +6,20 @@ import (
 
 	"github.com/octohelm/courier/pkg/courierhttp"
 
+	apiregistryv2 "github.com/octohelm/crkit/pkg/apis/registry/v2"
 	"github.com/octohelm/crkit/pkg/content"
+	endpointregistryv2 "github.com/octohelm/crkit/pkg/endpoints/registry/v2"
 )
 
+// +gengo:injectable
 type HeadManifest struct {
-	courierhttp.MethodHead `path:"/{name...}/manifests/{reference}"`
+	endpointregistryv2.HeadManifest
 
-	NameScoped
-
-	Accept    string            `name:"Accept,omitzero" in:"header"`
-	Reference content.Reference `name:"reference" in:"path"`
+	namespace content.Namespace `inject:""`
 }
 
 func (req *HeadManifest) Output(ctx context.Context) (x any, e error) {
-	repo, err := req.Repository(ctx)
+	repo, err := repository(ctx, req.namespace, apiregistryv2.Name(req.Name))
 	if err != nil {
 		return nil, err
 	}
@@ -54,7 +54,8 @@ func (req *HeadManifest) Output(ctx context.Context) (x any, e error) {
 	}
 
 	// https://github.com/opencontainers/distribution-spec/blob/main/spec.md#checking-if-content-exists-in-the-registry
-	return courierhttp.Wrap[any](nil,
+	return courierhttp.Wrap[any](
+		nil,
 		courierhttp.WithStatusCode(200),
 		courierhttp.WithMetadata("Docker-Content-Digest", desc.Digest.String()),
 		courierhttp.WithMetadata("Content-Length", fmt.Sprintf("%d", desc.Size)),

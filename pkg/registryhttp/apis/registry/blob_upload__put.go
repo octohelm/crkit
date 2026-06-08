@@ -11,29 +11,22 @@ import (
 	"github.com/octohelm/courier/pkg/courierhttp"
 
 	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
+	apiregistryv2 "github.com/octohelm/crkit/pkg/apis/registry/v2"
 	"github.com/octohelm/crkit/pkg/content"
-	contentutil "github.com/octohelm/crkit/pkg/content/util"
+	endpointregistryv2 "github.com/octohelm/crkit/pkg/endpoints/registry/v2"
 )
 
 // +gengo:injectable
 type PutBlobUpload struct {
-	courierhttp.MethodPut `path:"/{name...}/blobs/uploads/{id}"`
+	endpointregistryv2.PutBlobUpload
 
-	NameScoped
-
-	ID string `name:"id" in:"path"`
-
-	ContentRange  contentutil.Range `name:"Content-Range,omitzero" in:"header"`
-	ContentLength int64             `name:"Content-Length,omitzero" in:"header"`
-
-	Digest content.Digest `name:"digest" in:"query"`
-	Chunk  io.ReadCloser  `in:"body"`
+	namespace content.Namespace `inject:""`
 }
 
 func (req *PutBlobUpload) Output(ctx context.Context) (any, error) {
 	defer req.Chunk.Close()
 
-	repo, err := req.Repository(ctx)
+	repo, err := repository(ctx, req.namespace, apiregistryv2.Name(req.Name))
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +55,8 @@ func (req *PutBlobUpload) Output(ctx context.Context) (any, error) {
 		return nil, err
 	}
 
-	return courierhttp.Wrap[any](nil,
+	return courierhttp.Wrap[any](
+		nil,
 		courierhttp.WithStatusCode(http.StatusCreated),
 		courierhttp.WithMetadata("Docker-Content-Digest", d.Digest.String()),
 		courierhttp.WithMetadata("Location", fmt.Sprintf("/v2/%s/blobs/%s", repo.Named().Name(), d.Digest.String())),

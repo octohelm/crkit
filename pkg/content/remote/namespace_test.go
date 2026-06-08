@@ -134,7 +134,8 @@ func FuzzRemoteNamespace(f *testing.F) {
 				return reg.Repository(ctx, named)
 			})
 
-			Then(t, "推送镜像到容器注册表",
+			Then(
+				t, "推送镜像到容器注册表",
 				ExpectDo(
 					func() error {
 						return remote.Push(ctx, src, repo, "latest")
@@ -147,7 +148,8 @@ func FuzzRemoteNamespace(f *testing.F) {
 					return remote.Manifest(ctx, repo, "latest")
 				})
 
-				Then(t, "成功推送 v1 标签",
+				Then(
+					t, "成功推送 v1 标签",
 					ExpectDo(
 						func() error {
 							return remote.Push(ctx, imagePushed, repo, "v1")
@@ -163,7 +165,8 @@ func FuzzRemoteNamespace(f *testing.F) {
 					return repository.Tags(ctx)
 				})
 
-				Then(t, "验证存在两个标签",
+				Then(
+					t, "验证存在两个标签",
 					ExpectMustValue(
 						func() ([]string, error) {
 							return tags.All(ctx)
@@ -173,7 +176,8 @@ func FuzzRemoteNamespace(f *testing.F) {
 				)
 
 				t.Run("删除 latest 标签", func(t *testing.T) {
-					Then(t, "成功删除标签",
+					Then(
+						t, "成功删除标签",
 						ExpectDo(
 							func() error {
 								return tags.Untag(ctx, "latest")
@@ -181,7 +185,8 @@ func FuzzRemoteNamespace(f *testing.F) {
 						),
 					)
 
-					Then(t, "只剩 v1 标签",
+					Then(
+						t, "只剩 v1 标签",
 						ExpectMustValue(
 							func() ([]string, error) {
 								return tags.All(ctx)

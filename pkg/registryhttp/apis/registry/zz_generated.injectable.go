@@ -9,8 +9,10 @@ import (
 )
 
 func (v *CancelBlobUpload) Init(ctx context.Context) error {
-	if err := v.NameScoped.Init(ctx); err != nil {
-		return err
+	if value, ok := content.NamespaceFromContext(ctx); ok {
+		v.namespace = value
+	} else {
+		return fmt.Errorf("missing provider %T.namespace", v)
 	}
 
 	return nil
@@ -27,22 +29,86 @@ func (v *Catalog) Init(ctx context.Context) error {
 }
 
 func (v *CreateBlobUpload) Init(ctx context.Context) error {
-	if err := v.NameScoped.Init(ctx); err != nil {
-		return err
+	if value, ok := content.NamespaceFromContext(ctx); ok {
+		v.namespace = value
+	} else {
+		return fmt.Errorf("missing provider %T.namespace", v)
+	}
+
+	return nil
+}
+
+func (v *DeleteBlob) Init(ctx context.Context) error {
+	if value, ok := content.NamespaceFromContext(ctx); ok {
+		v.namespace = value
+	} else {
+		return fmt.Errorf("missing provider %T.namespace", v)
+	}
+
+	return nil
+}
+
+func (v *DeleteManifest) Init(ctx context.Context) error {
+	if value, ok := content.NamespaceFromContext(ctx); ok {
+		v.namespace = value
+	} else {
+		return fmt.Errorf("missing provider %T.namespace", v)
+	}
+
+	return nil
+}
+
+func (v *GetBlob) Init(ctx context.Context) error {
+	if value, ok := content.NamespaceFromContext(ctx); ok {
+		v.namespace = value
+	} else {
+		return fmt.Errorf("missing provider %T.namespace", v)
 	}
 
 	return nil
 }
 
 func (v *GetBlobUpload) Init(ctx context.Context) error {
-	if err := v.NameScoped.Init(ctx); err != nil {
-		return err
+	if value, ok := content.NamespaceFromContext(ctx); ok {
+		v.namespace = value
+	} else {
+		return fmt.Errorf("missing provider %T.namespace", v)
 	}
 
 	return nil
 }
 
-func (v *NameScoped) Init(ctx context.Context) error {
+func (v *GetManifest) Init(ctx context.Context) error {
+	if value, ok := content.NamespaceFromContext(ctx); ok {
+		v.namespace = value
+	} else {
+		return fmt.Errorf("missing provider %T.namespace", v)
+	}
+
+	return nil
+}
+
+func (v *HeadBlob) Init(ctx context.Context) error {
+	if value, ok := content.NamespaceFromContext(ctx); ok {
+		v.namespace = value
+	} else {
+		return fmt.Errorf("missing provider %T.namespace", v)
+	}
+
+	return nil
+}
+
+func (v *HeadManifest) Init(ctx context.Context) error {
+	if value, ok := content.NamespaceFromContext(ctx); ok {
+		v.namespace = value
+	} else {
+		return fmt.Errorf("missing provider %T.namespace", v)
+	}
+
+	return nil
+}
+
+func (v *ListTag) Init(ctx context.Context) error {
 	if value, ok := content.NamespaceFromContext(ctx); ok {
 		v.namespace = value
 	} else {
@@ -53,16 +119,30 @@ func (v *NameScoped) Init(ctx context.Context) error {
 }
 
 func (v *PatchBlobUpload) Init(ctx context.Context) error {
-	if err := v.NameScoped.Init(ctx); err != nil {
-		return err
+	if value, ok := content.NamespaceFromContext(ctx); ok {
+		v.namespace = value
+	} else {
+		return fmt.Errorf("missing provider %T.namespace", v)
 	}
 
 	return nil
 }
 
 func (v *PutBlobUpload) Init(ctx context.Context) error {
-	if err := v.NameScoped.Init(ctx); err != nil {
-		return err
+	if value, ok := content.NamespaceFromContext(ctx); ok {
+		v.namespace = value
+	} else {
+		return fmt.Errorf("missing provider %T.namespace", v)
+	}
+
+	return nil
+}
+
+func (v *PutManifest) Init(ctx context.Context) error {
+	if value, ok := content.NamespaceFromContext(ctx); ok {
+		v.namespace = value
+	} else {
+		return fmt.Errorf("missing provider %T.namespace", v)
 	}
 
 	return nil

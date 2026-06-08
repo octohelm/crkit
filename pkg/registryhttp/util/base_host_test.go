@@ -17,8 +17,10 @@ func TestBaseHost(t *testing.T) {
 
 			trimmed := BaseHost("x.io").TrimNamed(n)
 
-			Then(t, "修剪后的命名应该移除基础主机前缀",
-				Expect(trimmed.String(),
+			Then(
+				t, "修剪后的命名应该移除基础主机前缀",
+				Expect(
+					trimmed.String(),
 					Equal("docker.io/library/nginx:latest"),
 				),
 			)
@@ -31,8 +33,10 @@ func TestBaseHost(t *testing.T) {
 
 			trimmed := BaseHost("x.io").TrimNamed(n)
 
-			Then(t, "当主机名不包含基础主机时应保持不变",
-				Expect(trimmed.String(),
+			Then(
+				t, "当主机名不包含基础主机时应保持不变",
+				Expect(
+					trimmed.String(),
 					Equal("x.io/library/nginx:latest"),
 				),
 			)
@@ -47,8 +51,10 @@ func TestBaseHost(t *testing.T) {
 
 			completed := BaseHost("x.io").CompletedNamed(n)
 
-			Then(t, "应为外部注册表添加基础主机前缀",
-				Expect(completed.String(),
+			Then(
+				t, "应为外部注册表添加基础主机前缀",
+				Expect(
+					completed.String(),
 					Equal("x.io/docker.io/library/nginx:latest"),
 				),
 			)
@@ -65,8 +71,10 @@ func TestBaseHost(t *testing.T) {
 
 			completed := BaseHost("x.io").CompletedNamed(n)
 
-			Then(t, "应为短名称添加基础主机前缀",
-				Expect(completed.String(),
+			Then(
+				t, "应为短名称添加基础主机前缀",
+				Expect(
+					completed.String(),
 					Equal("x.io/library/nginx:latest"),
 				),
 			)

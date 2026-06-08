@@ -22,7 +22,8 @@ docker.io/x/
 		t.Run("rename std", func(t *testing.T) {
 			renamed := re.Rename("docker.io/y/x")
 
-			Then(t, "should rename standard image correctly",
+			Then(
+				t, "should rename standard image correctly",
 				Expect(renamed, Equal("docker.io/x/prefix-x")),
 			)
 		})
@@ -30,7 +31,8 @@ docker.io/x/
 		t.Run("rename prefix", func(t *testing.T) {
 			renamed := re.Rename("docker.io/y/artifact-x")
 
-			Then(t, "should rename artifact prefixed image correctly",
+			Then(
+				t, "should rename artifact prefixed image correctly",
 				Expect(renamed, Equal("docker.io/x/artifact-x")),
 			)
 		})

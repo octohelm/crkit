@@ -3,19 +3,20 @@ package registry
 import (
 	"context"
 
-	"github.com/octohelm/courier/pkg/courierhttp"
-
+	apiregistryv2 "github.com/octohelm/crkit/pkg/apis/registry/v2"
 	"github.com/octohelm/crkit/pkg/content"
+	endpointregistryv2 "github.com/octohelm/crkit/pkg/endpoints/registry/v2"
 )
 
+// +gengo:injectable
 type ListTag struct {
-	courierhttp.MethodGet `path:"/{name...}/tags/list"`
+	endpointregistryv2.ListTag
 
-	NameScoped
+	namespace content.Namespace `inject:""`
 }
 
 func (req *ListTag) Output(ctx context.Context) (any, error) {
-	repo, err := req.Repository(ctx)
+	repo, err := repository(ctx, req.namespace, apiregistryv2.Name(req.Name))
 	if err != nil {
 		return nil, err
 	}
@@ -30,7 +31,7 @@ func (req *ListTag) Output(ctx context.Context) (any, error) {
 		return nil, err
 	}
 
-	return &content.TagList{
+	return &apiregistryv2.TagList{
 		Name: req.Name.Name(),
 		Tags: tagList,
 	}, nil

@@ -1,0 +1,40 @@
+# 整理依赖
+[group('env')]
+[no-cd]
+dep:
+    go mod tidy
+
+# 更新依赖
+[group('env')]
+[no-cd]
+update:
+    go get -u ./...
+
+# 运行测试
+[group('test')]
+[no-cd]
+test path='./...' *args:
+    go test -count=1 -failfast {{ args }} {{ path }}
+
+# 格式化
+[group('fmt')]
+[no-cd]
+fmt path='./...':
+    go tool fmt {{ path }}
+
+# 代码生成
+[group('build')]
+[no-cd]
+gen path='./...':
+    go generate {{ path }}
+
+# 安装 agent skills
+[group('env')]
+[no-cd]
+skills-install:
+    go tool skills-install
+
+# 列出所有可用命令
+[group('meta')]
+default:
+    @just --list

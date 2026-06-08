@@ -40,7 +40,8 @@ func TestBlobStore(t *testing.T) {
 
 			text := []byte("hello world")
 
-			Then(t, "success write",
+			Then(
+				t, "success write",
 				ExpectMust(func() error {
 					_, err := w.Write(text)
 					return err
@@ -51,7 +52,8 @@ func TestBlobStore(t *testing.T) {
 				return w.Commit(t.Context(), manifestv1.Descriptor{})
 			})
 
-			Then(t, "success commit",
+			Then(
+				t, "success commit",
 				Expect(d.Size, Equal(int64(len(text)))),
 				Expect(d.Digest, Equal(digest.FromBytes(text))),
 			)
@@ -61,7 +63,8 @@ func TestBlobStore(t *testing.T) {
 					return blobs.Info(t.Context(), d.Digest)
 				})
 
-				Then(t, "success",
+				Then(
+					t, "success",
 					Expect(info.Size, Equal(d.Size)),
 					Expect(info.Digest, Equal(d.Digest)),
 				)
@@ -73,7 +76,8 @@ func TestBlobStore(t *testing.T) {
 				})
 				defer f.Close()
 
-				Then(t, "read content as same as written",
+				Then(
+					t, "read content as same as written",
 					ExpectMustValue(func() (string, error) {
 						data, err := io.ReadAll(f)
 						if err != nil {
@@ -115,7 +119,8 @@ func TestBlobStore(t *testing.T) {
 
 			for i := range 5 {
 				t.Run(fmt.Sprintf("append %d", i), func(t *testing.T) {
-					Then(t, "success",
+					Then(
+						t, "success",
 						ExpectMust(func() error { return appendChunk(context.Background(), id) }),
 					)
 				})
@@ -131,7 +136,8 @@ func TestBlobStore(t *testing.T) {
 					return writerForCommit.Commit(context.Background(), manifestv1.Descriptor{})
 				})
 
-				Then(t, "success",
+				Then(
+					t, "success",
 					Expect(d.Size, Equal(int64(chunkSize*chunkN))),
 				)
 
@@ -141,7 +147,8 @@ func TestBlobStore(t *testing.T) {
 					})
 					defer f.Close()
 
-					Then(t, "read content as same as written",
+					Then(
+						t, "read content as same as written",
 						ExpectMustValue(
 							func() (string, error) {
 								data, err := io.ReadAll(f)

@@ -5,11 +5,11 @@ import (
 	context "context"
 
 	content "github.com/octohelm/crkit/pkg/content"
-	fsdriver "github.com/octohelm/crkit/pkg/driver"
+	pkgdriver "github.com/octohelm/crkit/pkg/driver"
 )
 
 func (v *Executor) Init(ctx context.Context) error {
-	if value, ok := fsdriver.DriverFromContext(ctx); ok {
+	if value, ok := pkgdriver.DriverFromContext(ctx); ok {
 		v.driver = value
 	}
 	if value, ok := content.NamespaceFromContext(ctx); ok {
@@ -20,7 +20,7 @@ func (v *Executor) Init(ctx context.Context) error {
 }
 
 func (v *GarbageCollector) Init(ctx context.Context) error {
-	if value, ok := fsdriver.DriverFromContext(ctx); ok {
+	if value, ok := pkgdriver.DriverFromContext(ctx); ok {
 		v.driver = value
 	}
 	if value, ok := content.NamespaceFromContext(ctx); ok {

@@ -1,13 +1,22 @@
 crkit := "go tool crkit"
 
+# 启动本地 registry 服务
+[group('dev')]
+[no-cd]
 serve:
     {{ crkit }} serve registry -c \
     	--log-format=text \
     	--addr=:5070
 
+# 垃圾回收（干运行）
+[group('dev')]
+[no-cd]
 gc:
     {{ crkit }} gc -c --log-level=debug --dry-run
 
+# 代理模式启动
+[group('dev')]
+[no-cd]
 serve-proxy:
     {{ crkit }} serve registry -c \
     	--log-format=text \
@@ -16,5 +25,19 @@ serve-proxy:
     	--remote-password=${CONTAINER_REGISTRY_PASSWORD} \
     	--addr=:5070
 
+# 导出 K8s 配置
+[group('build')]
+[no-cd]
 dump-k8s:
     {{ crkit }} serve registry --dump-k8s
+
+# 构建 & 发布镜像
+[group('build')]
+[no-cd]
+ship:
+    TTY=0 piper -p piper.cue do ship
+
+# 列出所有可用命令
+[group('meta')]
+default:
+    @just --list

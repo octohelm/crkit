@@ -298,7 +298,8 @@ func (p *Packer) Pack(pctx context.Context, kpkg *kubepkgv1alpha1.KubePkg) (oci.
 }
 
 func (p *Packer) kubepkgArtifact(ctx context.Context, kpkg *kubepkgv1alpha1.KubePkg, annotations map[string]string) (oci.Image, error) {
-	kubepkgArtifact, err := mutate.With(empty.Image,
+	kubepkgArtifact, err := mutate.With(
+		empty.Image,
 		func(base oci.Image) (oci.Image, error) {
 			return WithConfig(base, kpkg)
 		},

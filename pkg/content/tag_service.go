@@ -5,6 +5,7 @@ import (
 	"iter"
 
 	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
+	registryv2 "github.com/octohelm/crkit/pkg/apis/registry/v2"
 )
 
 type TagService interface {
@@ -18,11 +19,4 @@ type TagRevisionIterable interface {
 	TagRevisions(ctx context.Context, tag string) iter.Seq2[LinkedDigest, error]
 }
 
-type TagList struct {
-	Name string   `json:"name"`
-	Tags []string `json:"tags"`
-}
-
-func (TagList) ContentType() string {
-	return "application/json"
-}
+type TagList = registryv2.TagList

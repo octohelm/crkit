@@ -26,7 +26,8 @@ func TestRegistry(t *testing.T) {
 				return n, rh, err
 			})
 
-			Then(t, "找到默认 registry",
+			Then(
+				t, "找到默认 registry",
 				Expect(rh.Server, Equal("https://registry-1.docker.io")),
 				Expect(n.Name(), Equal("library/nginx")),
 			)
@@ -42,7 +43,8 @@ func TestRegistry(t *testing.T) {
 				return n, rh, err
 			})
 
-			Then(t, "找到 docker registry",
+			Then(
+				t, "找到 docker registry",
 				Expect(rh.Server, Equal("https://registry-1.docker.io")),
 				Expect(n.Name(), Equal("x/nginx")),
 			)
@@ -58,7 +60,8 @@ func TestRegistry(t *testing.T) {
 				return n, rh, err
 			})
 
-			Then(t, "找到 gcr registry",
+			Then(
+				t, "找到 gcr registry",
 				Expect(rh.Server, Equal("https://gcr.io")),
 				Expect(n.Name(), Equal("x/nginx")),
 			)

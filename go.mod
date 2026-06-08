@@ -1,30 +1,37 @@
 module github.com/octohelm/crkit
 
-go 1.26.3
+go 1.26.4
 
 tool (
 	github.com/octohelm/crkit/internal/cmd/crkit
-	github.com/octohelm/crkit/internal/cmd/devtool
+	github.com/octohelm/crkit/tool/internal/cmd/fmt
+	github.com/octohelm/crkit/tool/internal/cmd/gen
+	github.com/octohelm/crkit/tool/internal/cmd/skills-install
 )
 
 // +gengo:import:group=0_controlled
 require (
-	github.com/innoai-tech/infra v0.0.0-20260429091147-8db53bc740da
+	// +skill:infra-guideline
+	github.com/innoai-tech/infra v0.0.0-20260508093839-4a99cd0e004e
 	github.com/innoai-tech/openapi-playground v0.0.0-20251225080706-b73e3d246544 // indirect
-	github.com/octohelm/courier v0.0.0-20260423104043-41a7d6803925
-	github.com/octohelm/enumeration v0.0.0-20260424074548-309e324da628
+	// +skill:courier-guideline
+	github.com/octohelm/courier v0.0.0-20260508093754-7951d2aa2fa9
+	// +skill:enumeration-guideline
+	github.com/octohelm/enumeration v0.0.0-20260508083658-4717c31ed563
 	github.com/octohelm/exp v0.0.0-20260224044958-a00886840aaf
-	github.com/octohelm/gengo v0.0.0-20260429071238-a7c74f0d08fb
+	// +skill:gengo-guideline
+	github.com/octohelm/gengo v0.0.0-20260530031402-9a2babfc1a5d
 	github.com/octohelm/kubepkgspec v0.0.0-20260228030104-9d4426bfafab
 	github.com/octohelm/unifs v0.0.0-20260528054228-fe56b9c78e82
-	github.com/octohelm/x v0.0.0-20260423102402-017813b113b1
+	// +skill:testing-guideline
+	github.com/octohelm/x v0.0.0-20260508104609-6b72a870e0d2
 )
 
 require (
 	github.com/containerd/containerd/v2 v2.2.2
 	github.com/containerd/platforms v1.0.0-rc.2
 	github.com/distribution/reference v0.6.0
-	github.com/go-json-experiment/json v0.0.0-20260214004413-d219187c3433
+	github.com/go-json-experiment/json v0.0.0-20260505212615-e40f80bf6836
 	github.com/gobwas/glob v0.2.3
 	github.com/google/uuid v1.6.0
 	github.com/johannesboyne/gofakes3 v0.0.0-20260208201424-4c385a1f6a73
@@ -134,7 +141,7 @@ require (
 	k8s.io/client-go v0.35.2 // indirect
 	k8s.io/klog/v2 v2.140.0 // indirect
 	k8s.io/utils v0.0.0-20260319190234-28399d86e0b5 // indirect
-	mvdan.cc/gofumpt v0.9.2 // indirect
+	mvdan.cc/gofumpt v0.10.0 // indirect
 	sigs.k8s.io/controller-runtime v0.23.3 // indirect
 	sigs.k8s.io/gateway-api v1.5.0 // indirect
 	sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730 // indirect

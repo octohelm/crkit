@@ -5,6 +5,9 @@ func (v *BaseURL) RuntimeDoc(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
 		}
+		if doc, ok := runtimeDoc(&v.BaseURL, "", names...); ok {
+			return doc, ok
+		}
 
 		return nil, false
 	}
@@ -14,10 +17,8 @@ func (v *BaseURL) RuntimeDoc(names ...string) ([]string, bool) {
 func (v *CancelBlobUpload) RuntimeDoc(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
-		case "ID":
-			return []string{}, true
 		}
-		if doc, ok := runtimeDoc(&v.NameScoped, "", names...); ok {
+		if doc, ok := runtimeDoc(&v.CancelBlobUpload, "", names...); ok {
 			return doc, ok
 		}
 
@@ -30,17 +31,8 @@ func (v *Catalog) RuntimeDoc(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
 		}
-
-		return nil, false
-	}
-	return []string{}, true
-}
-
-func (v *CatalogResponse) RuntimeDoc(names ...string) ([]string, bool) {
-	if len(names) > 0 {
-		switch names[0] {
-		case "Repositories":
-			return []string{}, true
+		if doc, ok := runtimeDoc(&v.Catalog, "", names...); ok {
+			return doc, ok
 		}
 
 		return nil, false
@@ -51,17 +43,8 @@ func (v *CatalogResponse) RuntimeDoc(names ...string) ([]string, bool) {
 func (v *CreateBlobUpload) RuntimeDoc(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
-		case "ContentLength":
-			return []string{}, true
-		case "ContentType":
-			return []string{}, true
-		case "Digest":
-			return []string{}, true
-		case "Blob":
-			return []string{}, true
-
 		}
-		if doc, ok := runtimeDoc(&v.NameScoped, "", names...); ok {
+		if doc, ok := runtimeDoc(&v.CreateBlobUpload, "", names...); ok {
 			return doc, ok
 		}
 
@@ -73,10 +56,8 @@ func (v *CreateBlobUpload) RuntimeDoc(names ...string) ([]string, bool) {
 func (v *DeleteBlob) RuntimeDoc(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
-		case "Digest":
-			return []string{}, true
 		}
-		if doc, ok := runtimeDoc(&v.NameScoped, "", names...); ok {
+		if doc, ok := runtimeDoc(&v.DeleteBlob, "", names...); ok {
 			return doc, ok
 		}
 
@@ -88,10 +69,8 @@ func (v *DeleteBlob) RuntimeDoc(names ...string) ([]string, bool) {
 func (v *DeleteManifest) RuntimeDoc(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
-		case "Reference":
-			return []string{}, true
 		}
-		if doc, ok := runtimeDoc(&v.NameScoped, "", names...); ok {
+		if doc, ok := runtimeDoc(&v.DeleteManifest, "", names...); ok {
 			return doc, ok
 		}
 
@@ -103,10 +82,8 @@ func (v *DeleteManifest) RuntimeDoc(names ...string) ([]string, bool) {
 func (v *GetBlob) RuntimeDoc(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
-		case "Digest":
-			return []string{}, true
 		}
-		if doc, ok := runtimeDoc(&v.NameScoped, "", names...); ok {
+		if doc, ok := runtimeDoc(&v.GetBlob, "", names...); ok {
 			return doc, ok
 		}
 
@@ -118,10 +95,8 @@ func (v *GetBlob) RuntimeDoc(names ...string) ([]string, bool) {
 func (v *GetBlobUpload) RuntimeDoc(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
-		case "ID":
-			return []string{}, true
 		}
-		if doc, ok := runtimeDoc(&v.NameScoped, "", names...); ok {
+		if doc, ok := runtimeDoc(&v.GetBlobUpload, "", names...); ok {
 			return doc, ok
 		}
 
@@ -133,13 +108,8 @@ func (v *GetBlobUpload) RuntimeDoc(names ...string) ([]string, bool) {
 func (v *GetManifest) RuntimeDoc(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
-		case "Accept":
-			return []string{}, true
-		case "Reference":
-			return []string{}, true
-
 		}
-		if doc, ok := runtimeDoc(&v.NameScoped, "", names...); ok {
+		if doc, ok := runtimeDoc(&v.GetManifest, "", names...); ok {
 			return doc, ok
 		}
 
@@ -151,10 +121,8 @@ func (v *GetManifest) RuntimeDoc(names ...string) ([]string, bool) {
 func (v *HeadBlob) RuntimeDoc(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
-		case "Digest":
-			return []string{}, true
 		}
-		if doc, ok := runtimeDoc(&v.NameScoped, "", names...); ok {
+		if doc, ok := runtimeDoc(&v.HeadBlob, "", names...); ok {
 			return doc, ok
 		}
 
@@ -166,13 +134,8 @@ func (v *HeadBlob) RuntimeDoc(names ...string) ([]string, bool) {
 func (v *HeadManifest) RuntimeDoc(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
-		case "Accept":
-			return []string{}, true
-		case "Reference":
-			return []string{}, true
-
 		}
-		if doc, ok := runtimeDoc(&v.NameScoped, "", names...); ok {
+		if doc, ok := runtimeDoc(&v.HeadManifest, "", names...); ok {
 			return doc, ok
 		}
 
@@ -185,20 +148,8 @@ func (v *ListTag) RuntimeDoc(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
 		}
-		if doc, ok := runtimeDoc(&v.NameScoped, "", names...); ok {
+		if doc, ok := runtimeDoc(&v.ListTag, "", names...); ok {
 			return doc, ok
-		}
-
-		return nil, false
-	}
-	return []string{}, true
-}
-
-func (v *NameScoped) RuntimeDoc(names ...string) ([]string, bool) {
-	if len(names) > 0 {
-		switch names[0] {
-		case "Name":
-			return []string{}, true
 		}
 
 		return nil, false
@@ -209,13 +160,8 @@ func (v *NameScoped) RuntimeDoc(names ...string) ([]string, bool) {
 func (v *PatchBlobUpload) RuntimeDoc(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
-		case "ID":
-			return []string{}, true
-		case "Chunk":
-			return []string{}, true
-
 		}
-		if doc, ok := runtimeDoc(&v.NameScoped, "", names...); ok {
+		if doc, ok := runtimeDoc(&v.PatchBlobUpload, "", names...); ok {
 			return doc, ok
 		}
 
@@ -227,19 +173,8 @@ func (v *PatchBlobUpload) RuntimeDoc(names ...string) ([]string, bool) {
 func (v *PutBlobUpload) RuntimeDoc(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
-		case "ID":
-			return []string{}, true
-		case "ContentRange":
-			return []string{}, true
-		case "ContentLength":
-			return []string{}, true
-		case "Digest":
-			return []string{}, true
-		case "Chunk":
-			return []string{}, true
-
 		}
-		if doc, ok := runtimeDoc(&v.NameScoped, "", names...); ok {
+		if doc, ok := runtimeDoc(&v.PutBlobUpload, "", names...); ok {
 			return doc, ok
 		}
 
@@ -251,13 +186,8 @@ func (v *PutBlobUpload) RuntimeDoc(names ...string) ([]string, bool) {
 func (v *PutManifest) RuntimeDoc(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
-		case "Reference":
-			return []string{}, true
-		case "Manifest":
-			return []string{}, true
-
 		}
-		if doc, ok := runtimeDoc(&v.NameScoped, "", names...); ok {
+		if doc, ok := runtimeDoc(&v.PutManifest, "", names...); ok {
 			return doc, ok
 		}
 

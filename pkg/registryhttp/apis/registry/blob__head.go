@@ -8,19 +8,20 @@ import (
 
 	"github.com/octohelm/courier/pkg/courierhttp"
 
+	apiregistryv2 "github.com/octohelm/crkit/pkg/apis/registry/v2"
 	"github.com/octohelm/crkit/pkg/content"
+	endpointregistryv2 "github.com/octohelm/crkit/pkg/endpoints/registry/v2"
 )
 
+// +gengo:injectable
 type HeadBlob struct {
-	courierhttp.MethodHead `path:"/{name...}/blobs/{digest}"`
+	endpointregistryv2.HeadBlob
 
-	NameScoped
-
-	Digest content.Digest `name:"digest" in:"path"`
+	namespace content.Namespace `inject:""`
 }
 
 func (req *HeadBlob) Output(ctx context.Context) (any, error) {
-	repo, err := req.Repository(ctx)
+	repo, err := repository(ctx, req.namespace, apiregistryv2.Name(req.Name))
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +37,8 @@ func (req *HeadBlob) Output(ctx context.Context) (any, error) {
 	}
 
 	// https://github.com/opencontainers/distribution-spec/blob/main/spec.md#checking-if-content-exists-in-the-registry
-	return courierhttp.Wrap[any](nil,
+	return courierhttp.Wrap[any](
+		nil,
 		courierhttp.WithStatusCode(200),
 		courierhttp.WithMetadata("Docker-Content-Digest", desc.Digest.String()),
 		courierhttp.WithMetadata("Content-Type", desc.MediaType),

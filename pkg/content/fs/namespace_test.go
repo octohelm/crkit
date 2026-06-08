@@ -99,7 +99,8 @@ func FuzzNamespace(f *testing.F) {
 			t.Run("OCI artifact 操作流程", func(t *testing.T) {
 				ns, _ := content.NamespaceFromContext(ctx)
 
-				Then(t, "推送镜像到容器注册表",
+				Then(
+					t, "推送镜像到容器注册表",
 					ExpectDo(
 						func() error {
 							return remote.Push(ctx, image, remoteRepo, "latest")
@@ -107,7 +108,8 @@ func FuzzNamespace(f *testing.F) {
 					),
 				)
 
-				Then(t, "获取目录列表",
+				Then(
+					t, "获取目录列表",
 					ExpectMustValue(
 						func() ([]string, error) {
 							return collect.Catalogs(ctx, ns)
@@ -116,7 +118,8 @@ func FuzzNamespace(f *testing.F) {
 					),
 				)
 
-				Then(t, "验证推送的manifest数量",
+				Then(
+					t, "验证推送的manifest数量",
 					ExpectMustValue(
 						func() (int, error) {
 							repo, err := ns.Repository(ctx, remoteRepo.Named())
@@ -141,7 +144,8 @@ func FuzzNamespace(f *testing.F) {
 						return remote.Manifest(ctx, remoteRepo, "latest")
 					})
 
-					Then(t, "成功推送 v1 标签",
+					Then(
+						t, "成功推送 v1 标签",
 						ExpectDo(
 							func() error {
 								return remote.Push(ctx, imagePushed, remoteRepo, "v1")
@@ -154,7 +158,8 @@ func FuzzNamespace(f *testing.F) {
 						return remoteRepo.Tags(ctx)
 					})
 
-					Then(t, "验证存在两个标签",
+					Then(
+						t, "验证存在两个标签",
 						ExpectMustValue(
 							func() ([]string, error) {
 								return tags.All(ctx)
@@ -164,7 +169,8 @@ func FuzzNamespace(f *testing.F) {
 					)
 
 					t.Run("WHEN 删除 latest 标签", func(t *testing.T) {
-						Then(t, "成功删除标签",
+						Then(
+							t, "成功删除标签",
 							ExpectDo(
 								func() error {
 									return tags.Untag(ctx, "latest")
@@ -172,7 +178,8 @@ func FuzzNamespace(f *testing.F) {
 							),
 						)
 
-						Then(t, "只剩 v1 标签",
+						Then(
+							t, "只剩 v1 标签",
 							ExpectMustValue(
 								func() ([]string, error) {
 									return tags.All(ctx)

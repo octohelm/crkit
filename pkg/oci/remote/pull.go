@@ -38,7 +38,8 @@ func Manifest(ctx context.Context, repo content.Repository, reference string) (o
 }
 
 func manifest(pctx context.Context, repo content.Repository, d ocispecv1.Descriptor) (finalM oci.Manifest, finalErr error) {
-	ctx, l := logr.FromContext(pctx).Start(pctx, "resolve manifest",
+	ctx, l := logr.FromContext(pctx).Start(
+		pctx, "resolve manifest",
 		slog.String("repo.name", repo.Named().Name()),
 		slog.String("manifest.digest", string(d.Digest)),
 	)

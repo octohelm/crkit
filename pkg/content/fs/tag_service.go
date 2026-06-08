@@ -52,7 +52,8 @@ func (t *tagService) Tag(ctx context.Context, tag string, desc manifestv1.Descri
 	}
 
 	// record revision
-	if err := t.workspace.PutContent(ctx,
+	if err := t.workspace.PutContent(
+		ctx,
 		t.workspace.layout.RepositoryManifestTagIndexLinkPath(t.named, tag, info.Digest),
 		[]byte(info.Digest),
 	); err != nil {

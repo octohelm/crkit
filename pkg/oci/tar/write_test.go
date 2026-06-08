@@ -36,7 +36,8 @@ func TestOciTar(t *testing.T) {
 				return os.OpenFile(filename, os.O_TRUNC|os.O_WRONLY|os.O_CREATE, 0o600)
 			})
 
-			Then(t, "成功写入索引到 tar",
+			Then(
+				t, "成功写入索引到 tar",
 				ExpectMust(func() error {
 					return Write(f, imageIndex)
 				}),
@@ -61,12 +62,14 @@ func TestOciTar(t *testing.T) {
 					return partial.CollectChildDescriptors(t.Context(), idx)
 				})
 
-				Then(t, "镜像数量正确",
+				Then(
+					t, "镜像数量正确",
 					Expect(len(images), Equal(imageCount)),
 				)
 
 				expectedDescriptors := (layerCountPerImage+1)*imageCount + imageCount
-				Then(t, "描述符数量正确",
+				Then(
+					t, "描述符数量正确",
 					Expect(len(descriptors), Equal(expectedDescriptors)),
 				)
 
@@ -77,7 +80,8 @@ func TestOciTar(t *testing.T) {
 						return os.OpenFile(filenameDiff, os.O_TRUNC|os.O_WRONLY|os.O_CREATE, 0o600)
 					})
 
-					Then(t, "成功写入差异 tar",
+					Then(
+						t, "成功写入差异 tar",
 						ExpectMust(func() error {
 							return Write(f, imageIndex, ExcludeImageIndex(t.Context(), idx))
 						}),

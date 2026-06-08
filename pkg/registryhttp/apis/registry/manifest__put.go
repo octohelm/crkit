@@ -6,20 +6,20 @@ import (
 	"github.com/octohelm/courier/pkg/courierhttp"
 
 	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
+	apiregistryv2 "github.com/octohelm/crkit/pkg/apis/registry/v2"
 	"github.com/octohelm/crkit/pkg/content"
+	endpointregistryv2 "github.com/octohelm/crkit/pkg/endpoints/registry/v2"
 )
 
+// +gengo:injectable
 type PutManifest struct {
-	courierhttp.MethodPut `path:"/{name...}/manifests/{reference}"`
+	endpointregistryv2.PutManifest
 
-	NameScoped
-
-	Reference content.Reference  `name:"reference" in:"path"`
-	Manifest  manifestv1.Payload `in:"body"`
+	namespace content.Namespace `inject:""`
 }
 
 func (req *PutManifest) Output(ctx context.Context) (any, error) {
-	repo, err := req.Repository(ctx)
+	repo, err := repository(ctx, req.namespace, apiregistryv2.Name(req.Name))
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +47,8 @@ func (req *PutManifest) Output(ctx context.Context) (any, error) {
 		}
 	}
 
-	return courierhttp.Wrap[any](nil,
+	return courierhttp.Wrap[any](
+		nil,
 		courierhttp.WithStatusCode(201),
 		courierhttp.WithMetadata("Docker-Content-Digest", d.String()),
 	), nil

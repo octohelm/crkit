@@ -1,4 +1,4 @@
-//go:generate go tool devtool gen .
+//go:generate go tool gen .
 package main
 
 import (

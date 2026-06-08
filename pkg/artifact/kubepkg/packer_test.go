@@ -133,11 +133,13 @@ func TestPacker(t *testing.T) {
 				return idx.Value(ctx)
 			})
 
-			Then(t, "包含 3 个 manifest",
+			Then(
+				t, "包含 3 个 manifest",
 				Expect(len(m.Manifests), Equal(3)),
 			)
 
-			Then(t, "包含 2 个平台化镜像",
+			Then(
+				t, "包含 2 个平台化镜像",
 				Expect(
 					xiter.Count(xiter.Filter(xiter.Of(m.Manifests...), func(e ocispecv1.Descriptor) bool {
 						return e.Platform != nil && e.Platform.Architecture == "amd64"
@@ -146,7 +148,8 @@ func TestPacker(t *testing.T) {
 				),
 			)
 
-			Then(t, "包含 1 个 kubepkg artifact",
+			Then(
+				t, "包含 1 个 kubepkg artifact",
 				Expect(
 					xiter.Count(xiter.Filter(xiter.Of(m.Manifests...), func(e ocispecv1.Descriptor) bool {
 						return e.ArtifactType == ArtifactType
@@ -160,7 +163,8 @@ func TestPacker(t *testing.T) {
 					return KubePkg(ctx, idx)
 				})
 
-				Then(t, "容器镜像应被正确解析",
+				Then(
+					t, "容器镜像应被正确解析",
 					Expect(k.Spec.Containers["web"].Image.Name, Equal("docker.io/x/nginx")),
 				)
 			})
@@ -188,7 +192,8 @@ func TestPacker(t *testing.T) {
 
 			filename := "testdata/.tmp/example.kubepkg.tar"
 
-			Then(t, "写入 OCI tar 文件",
+			Then(
+				t, "写入 OCI tar 文件",
 				ExpectDo(
 					func() error {
 						return ocitar.WriteFile(filename, idx)
@@ -197,7 +202,8 @@ func TestPacker(t *testing.T) {
 			)
 
 			t.Run("推送到注册表", func(t *testing.T) {
-				Then(t, "成功推送索引",
+				Then(
+					t, "成功推送索引",
 					ExpectDo(
 						func() error {
 							return remote.PushIndex(ctx, idx, ns)
@@ -216,7 +222,8 @@ func TestPacker(t *testing.T) {
 						return idx2.Value(ctx)
 					})
 
-					Then(t, "获取 3 个镜像",
+					Then(
+						t, "获取 3 个镜像",
 						Expect(len(i.Manifests), Equal(3)),
 					)
 
@@ -228,7 +235,8 @@ func TestPacker(t *testing.T) {
 							})
 
 							if d.ArtifactType == "" {
-								Then(t, "每个镜像应包含 2 个平台",
+								Then(
+									t, "每个镜像应包含 2 个平台",
 									ExpectMustValue(
 										func() (int, error) {
 											m, err := x.Value(ctx)
@@ -306,7 +314,8 @@ func TestPackerResolveMatchedImageReadsPlatformFromConfig(t *testing.T) {
 				t.Fatal("expected matched image descriptor to contain platform")
 			}
 
-			Then(t, "返回镜像应包含请求平台",
+			Then(
+				t, "返回镜像应包含请求平台",
 				Expect(*matchedDesc.Platform, Equal(ocispecv1.Platform{
 					OS:           "linux",
 					Architecture: "amd64",

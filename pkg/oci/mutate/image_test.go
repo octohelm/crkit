@@ -19,7 +19,8 @@ func TestMutate(t *testing.T) {
 	t.Run("empty image", func(t *testing.T) {
 		img := empty.Image
 
-		Then(t, "could be manifest",
+		Then(
+			t, "could be manifest",
 			ExpectMustValue(
 				func() (Snapshot, error) {
 					raw := MustValue(t, func() ([]byte, error) {
@@ -56,7 +57,8 @@ func TestMutate(t *testing.T) {
 			)
 		})
 
-		Then(t, "could be manifest",
+		Then(
+			t, "could be manifest",
 			ExpectMustValue(
 				func() (Snapshot, error) {
 					raw := MustValue(t, func() ([]byte, error) {
@@ -88,7 +90,8 @@ func TestMutate(t *testing.T) {
 			)
 		})
 
-		Then(t, "could be manifest",
+		Then(
+			t, "could be manifest",
 			ExpectMustValue(
 				func() (Snapshot, error) {
 					raw, err := formated(t.Context(), img)
@@ -108,7 +111,8 @@ func TestMutate(t *testing.T) {
 	t.Run("empty index", func(t *testing.T) {
 		idx := empty.Index
 
-		Then(t, "could be manifest",
+		Then(
+			t, "could be manifest",
 			ExpectMustValue(
 				func() (Snapshot, error) {
 					raw, err := formated(t.Context(), idx)
@@ -148,7 +152,8 @@ func TestMutate(t *testing.T) {
 			)
 		})
 
-		Then(t, "could be manifest",
+		Then(
+			t, "could be manifest",
 			ExpectMustValue(
 				func() (Snapshot, error) {
 					raw, err := formated(t.Context(), idx)

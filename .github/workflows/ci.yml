@@ -23,4 +23,4 @@ jobs:
       - uses: docker/setup-qemu-action@v2
       - run: curl -sSLf https://raw.githubusercontent.com/octohelm/piper/main/install.sh | sudo sh
 
-      - run: just ship
+      - run: just crkit ship

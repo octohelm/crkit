@@ -18,10 +18,12 @@ func FuzzImage(f *testing.F) {
 
 	f.Fuzz(func(t *testing.T, layersN int) {
 		t.Run("image fuzz test", func(t *testing.T) {
-			Then(t, "image should have expected layers",
-				ExpectMustValue(func() (oci.Image, error) {
-					return Image(int64(1*units.MiB), layersN)
-				},
+			Then(
+				t, "image should have expected layers",
+				ExpectMustValue(
+					func() (oci.Image, error) {
+						return Image(int64(1*units.MiB), layersN)
+					},
 					Be(func(img oci.Image) error {
 						ctx := t.Context()
 						i, err := img.Value(ctx)

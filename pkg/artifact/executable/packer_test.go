@@ -41,7 +41,8 @@ func TestPacker(t *testing.T) {
 				),
 			)
 
-			Then(t, "应该成功",
+			Then(
+				t, "应该成功",
 				Expect(err, Be(cmp.Nil[error]())),
 			)
 
@@ -49,7 +50,8 @@ func TestPacker(t *testing.T) {
 				return idx.Value(t.Context())
 			})
 
-			Then(t, "应该有2个manifest",
+			Then(
+				t, "应该有2个manifest",
 				Expect(len(i.Manifests), Equal(2)),
 			)
 		})
@@ -64,11 +66,13 @@ func TestPacker(t *testing.T) {
 				WithImageName("x/bin:latest"),
 			)
 
-			Then(t, "应该成功",
+			Then(
+				t, "应该成功",
 				Expect(err, Be(cmp.Nil[error]())),
 			)
 
-			Then(t, "写入OCI tar应该成功",
+			Then(
+				t, "写入OCI tar应该成功",
 				ExpectDo(
 					func() error {
 						return ocitar.WriteFile("./target/bin.oci.tar", idx)

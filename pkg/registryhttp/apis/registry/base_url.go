@@ -3,26 +3,19 @@ package registry
 import (
 	"context"
 
-	"github.com/octohelm/courier/pkg/courierhttp"
-
+	apiregistryv2 "github.com/octohelm/crkit/pkg/apis/registry/v2"
 	"github.com/octohelm/crkit/pkg/content"
+	endpointregistryv2 "github.com/octohelm/crkit/pkg/endpoints/registry/v2"
 )
 
 type BaseURL struct {
-	courierhttp.MethodGet
+	endpointregistryv2.BaseURL
 }
 
 func (r *BaseURL) Output(ctx context.Context) (any, error) {
 	return map[string]string{}, nil
 }
 
-// +gengo:injectable
-type NameScoped struct {
-	Name content.Name `name:"name" in:"path"`
-
-	namespace content.Namespace `inject:""`
-}
-
-func (req *NameScoped) Repository(ctx context.Context) (content.Repository, error) {
-	return req.namespace.Repository(ctx, req.Name)
+func repository(ctx context.Context, ns content.Namespace, name apiregistryv2.Name) (content.Repository, error) {
+	return ns.Repository(ctx, name)
 }

@@ -105,7 +105,8 @@ func FuzzProxyNamespace(f *testing.F) {
 				return remoteReg.Repository(ctx, remoteNamed)
 			})
 
-			Then(t, "推送镜像到远程注册表",
+			Then(
+				t, "推送镜像到远程注册表",
 				ExpectDo(
 					func() error {
 						return remote.Push(ctx, manifest, remoteRepo, "latest")
@@ -126,7 +127,8 @@ func FuzzProxyNamespace(f *testing.F) {
 					return remote.Manifest(ctx, proxyRepo, "latest")
 				})
 
-				Then(t, "成功推送 v1 标签到代理注册表",
+				Then(
+					t, "成功推送 v1 标签到代理注册表",
 					ExpectDo(
 						func() error {
 							return remote.Push(ctx, imagePushed, proxyRepo, "v1")
@@ -148,7 +150,8 @@ func FuzzProxyNamespace(f *testing.F) {
 					return localRepo.Tags(ctx)
 				})
 
-				Then(t, "验证 latest 标签存在",
+				Then(
+					t, "验证 latest 标签存在",
 					ExpectDo(
 						func() error {
 							_, err := tagService.Get(ctx, "latest")
@@ -157,7 +160,8 @@ func FuzzProxyNamespace(f *testing.F) {
 					),
 				)
 
-				Then(t, "验证 v1 标签存在",
+				Then(
+					t, "验证 v1 标签存在",
 					ExpectDo(
 						func() error {
 							_, err := tagService.Get(ctx, "v1")

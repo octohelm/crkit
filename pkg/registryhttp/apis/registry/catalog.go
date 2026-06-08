@@ -3,15 +3,15 @@ package registry
 import (
 	"context"
 
-	"github.com/octohelm/courier/pkg/courierhttp"
-
+	apiregistryv2 "github.com/octohelm/crkit/pkg/apis/registry/v2"
 	"github.com/octohelm/crkit/pkg/content"
 	"github.com/octohelm/crkit/pkg/content/collect"
+	endpointregistryv2 "github.com/octohelm/crkit/pkg/endpoints/registry/v2"
 )
 
 // +gengo:injectable
 type Catalog struct {
-	courierhttp.MethodGet `path:"/_catalog" method:"get"`
+	endpointregistryv2.Catalog
 
 	namespace content.Namespace `inject:""`
 }
@@ -21,9 +21,5 @@ func (r *Catalog) Output(ctx context.Context) (any, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &CatalogResponse{Repositories: names}, nil
-}
-
-type CatalogResponse struct {
-	Repositories []string `json:"repositories"`
+	return &apiregistryv2.CatalogResponse{Repositories: names}, nil
 }

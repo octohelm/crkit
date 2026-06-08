@@ -67,7 +67,8 @@ func testNamespaceS3(t *testing.T, image oci.Image) {
 	ctx, _ := testingutil.BuildContext(t, func(d *struct {
 		otel.Otel
 		contentapi.NamespaceProvider
-	}) {
+	},
+	) {
 		d.Content.Backend = endpointForNamespaceS3Server(t, s3Server, "/"+namespaceS3Bucket+"/content")
 	})
 
@@ -105,7 +106,8 @@ func testNamespaceS3(t *testing.T, image oci.Image) {
 
 	ns, _ := content.NamespaceFromContext(ctx)
 
-	Then(t, "推送镜像到 S3-backed 容器注册表",
+	Then(
+		t, "推送镜像到 S3-backed 容器注册表",
 		ExpectDo(
 			func() error {
 				return remote.Push(ctx, image, remoteRepo, "latest")
@@ -113,7 +115,8 @@ func testNamespaceS3(t *testing.T, image oci.Image) {
 		),
 	)
 
-	Then(t, "获取目录列表",
+	Then(
+		t, "获取目录列表",
 		ExpectMustValue(
 			func() ([]string, error) {
 				return collect.Catalogs(ctx, ns)
@@ -122,7 +125,8 @@ func testNamespaceS3(t *testing.T, image oci.Image) {
 		),
 	)
 
-	Then(t, "验证推送的 manifest 数量",
+	Then(
+		t, "验证推送的 manifest 数量",
 		ExpectMustValue(
 			func() (int, error) {
 				repo, err := ns.Repository(ctx, remoteRepo.Named())
@@ -152,7 +156,8 @@ func testNamespaceS3(t *testing.T, image oci.Image) {
 		return ocispecv1.Descriptor{}, fmt.Errorf("image has no layers")
 	})
 
-	Then(t, "验证 S3 中读取的 layer digest 与 descriptor 一致",
+	Then(
+		t, "验证 S3 中读取的 layer digest 与 descriptor 一致",
 		ExpectMustValue(
 			func() (digest.Digest, error) {
 				blobs, err := remoteRepo.Blobs(ctx)
@@ -184,7 +189,8 @@ func testNamespaceS3(t *testing.T, image oci.Image) {
 		return remote.Manifest(ctx, remoteRepo, "latest")
 	})
 
-	Then(t, "拉取后重新推送为 v1 标签",
+	Then(
+		t, "拉取后重新推送为 v1 标签",
 		ExpectDo(
 			func() error {
 				return remote.Push(ctx, imagePushed, remoteRepo, "v1")
@@ -196,7 +202,8 @@ func testNamespaceS3(t *testing.T, image oci.Image) {
 		return remoteRepo.Tags(ctx)
 	})
 
-	Then(t, "验证存在两个标签",
+	Then(
+		t, "验证存在两个标签",
 		ExpectMustValue(
 			func() ([]string, error) {
 				return tags.All(ctx)
@@ -215,10 +222,7 @@ func namespaceS3SeedSize(size int64) uint64 {
 
 func namespaceS3ImageShape(rawImageSize uint64, rawLayerCount int) (int64, int) {
 	totalSize := int64(rawImageSize%uint64(namespaceS3MaxImageSize)) + 1
-	layerCount := rawLayerCount
-	if layerCount < 1 {
-		layerCount = 1
-	}
+	layerCount := max(rawLayerCount, 1)
 	layerCount = (layerCount-1)%namespaceS3MaxLayers + 1
 	if int64(layerCount) > totalSize {
 		layerCount = int(totalSize)

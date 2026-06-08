@@ -75,7 +75,8 @@ func FuzzMutator(f *testing.F) {
 				return string(raw), err
 			})
 
-			Then(t, "should produce same result regardless of option order",
+			Then(
+				t, "should produce same result regardless of option order",
 				Expect(imgRaw, Equal(baseRaw)),
 			)
 		})
