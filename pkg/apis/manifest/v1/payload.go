@@ -10,6 +10,7 @@ import (
 	"github.com/octohelm/courier/pkg/validator/taggedunion"
 )
 
+// FromBytes 从原始字节解析清单
 func FromBytes(raw []byte) (*Payload, error) {
 	p := &Payload{}
 	if err := p.UnmarshalJSON(raw); err != nil {
@@ -18,6 +19,7 @@ func FromBytes(raw []byte) (*Payload, error) {
 	return p, nil
 }
 
+// From 将 Manifest 包装为 Payload
 func From(media Manifest) (*Payload, error) {
 	switch x := media.(type) {
 	case *Payload:
@@ -37,6 +39,7 @@ func From(media Manifest) (*Payload, error) {
 	return nil, fmt.Errorf("invalid media %s", media.Type())
 }
 
+// Payload 清单载荷，支持 OCI/Docker 四种格式的 Tagged Union
 type Payload struct {
 	Manifest `json:"-"`
 

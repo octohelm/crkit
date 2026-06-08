@@ -6,6 +6,7 @@ import (
 	"github.com/opencontainers/go-digest"
 )
 
+// Name 仓库名称
 type Name string
 
 func (n Name) String() string {
@@ -16,6 +17,7 @@ func (n Name) Name() string {
 	return string(n)
 }
 
+// Digest 内容摘要
 type Digest digest.Digest
 
 func (d *Digest) UnmarshalText(t []byte) error {
@@ -27,6 +29,7 @@ func (d *Digest) UnmarshalText(t []byte) error {
 	return nil
 }
 
+// Reference 清单引用，可以是 Tag 或 Digest
 type Reference string
 
 func (tag Reference) Digest() (digest.Digest, error) {

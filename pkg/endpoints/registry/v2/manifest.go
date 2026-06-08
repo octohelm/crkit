@@ -8,6 +8,7 @@ import (
 	registryv2 "github.com/octohelm/crkit/pkg/apis/registry/v2"
 )
 
+// GetManifest 获取清单
 type GetManifest struct {
 	courierhttp.MethodGet `path:"/{name...}/manifests/{reference}"`
 
@@ -20,6 +21,15 @@ func (GetManifest) ResponseData() *manifestv1.Payload {
 	return new(manifestv1.Payload)
 }
 
+func (GetManifest) ResponseErrors() []error {
+	return []error{
+		&registryv2.ErrManifestUnknownRevision{},
+		&registryv2.ErrRepositoryNameInvalid{},
+		&registryv2.ErrRepositoryUnknown{},
+	}
+}
+
+// HeadManifest 检查清单是否存在
 type HeadManifest struct {
 	courierhttp.MethodHead `path:"/{name...}/manifests/{reference}"`
 
@@ -32,6 +42,15 @@ func (HeadManifest) ResponseData() *courier.NoContent {
 	return nil
 }
 
+func (HeadManifest) ResponseErrors() []error {
+	return []error{
+		&registryv2.ErrManifestUnknownRevision{},
+		&registryv2.ErrRepositoryNameInvalid{},
+		&registryv2.ErrRepositoryUnknown{},
+	}
+}
+
+// PutManifest 推送清单
 type PutManifest struct {
 	courierhttp.MethodPut `path:"/{name...}/manifests/{reference}"`
 
@@ -44,6 +63,16 @@ func (PutManifest) ResponseData() *courier.NoContent {
 	return nil
 }
 
+func (PutManifest) ResponseErrors() []error {
+	return []error{
+		&registryv2.ErrManifestUnverified{},
+		&registryv2.ErrManifestBlobUnknown{},
+		&registryv2.ErrRepositoryNameInvalid{},
+		&registryv2.ErrRepositoryUnknown{},
+	}
+}
+
+// DeleteManifest 删除清单
 type DeleteManifest struct {
 	courierhttp.MethodDelete `path:"/{name...}/manifests/{reference}"`
 
@@ -53,4 +82,12 @@ type DeleteManifest struct {
 
 func (DeleteManifest) ResponseData() *courier.NoContent {
 	return nil
+}
+
+func (DeleteManifest) ResponseErrors() []error {
+	return []error{
+		&registryv2.ErrManifestUnknownRevision{},
+		&registryv2.ErrRepositoryNameInvalid{},
+		&registryv2.ErrRepositoryUnknown{},
+	}
 }

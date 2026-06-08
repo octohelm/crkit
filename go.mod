@@ -20,7 +20,7 @@ require (
 	github.com/octohelm/enumeration v0.0.0-20260508083658-4717c31ed563
 	github.com/octohelm/exp v0.0.0-20260224044958-a00886840aaf
 	// +skill:gengo-guideline
-	github.com/octohelm/gengo v0.0.0-20260530031402-9a2babfc1a5d
+	github.com/octohelm/gengo v0.0.0-20260608094149-799b7653595f
 	github.com/octohelm/kubepkgspec v0.0.0-20260228030104-9d4426bfafab
 	github.com/octohelm/unifs v0.0.0-20260528054228-fe56b9c78e82
 	// +skill:testing-guideline

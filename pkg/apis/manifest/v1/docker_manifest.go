@@ -6,8 +6,10 @@ import (
 	specv1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
+// DockerMediaTypeManifest Docker 镜像清单媒体类型
 const DockerMediaTypeManifest = "application/vnd.docker.distribution.manifest.v2+json"
 
+// DockerManifest Docker 镜像清单
 type DockerManifest specv1.Manifest
 
 var _ Manifest = DockerManifest{}

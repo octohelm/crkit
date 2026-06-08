@@ -195,8 +195,8 @@ github.com/octohelm/enumeration v0.0.0-20260508083658-4717c31ed563 h1:yhor6OqsOM
 github.com/octohelm/enumeration v0.0.0-20260508083658-4717c31ed563/go.mod h1:Oy9UoBUtI8PUjrvcb7P3MrQ9UoP0wtjrY0LDSpecmvM=
 github.com/octohelm/exp v0.0.0-20260224044958-a00886840aaf h1:SVl0zGOKkW4Kk2PqCVPzd4FUQx728X9ELUfaO91asEU=
 github.com/octohelm/exp v0.0.0-20260224044958-a00886840aaf/go.mod h1:yewa2AcPU3LycNrHyRuTXwBF/hg4RHMmg216H9ADcfo=
-github.com/octohelm/gengo v0.0.0-20260530031402-9a2babfc1a5d h1:FrIXCi85Y27BLp5LR0ls9NuReTO6jdBk0uyJGR4F7Ac=
-github.com/octohelm/gengo v0.0.0-20260530031402-9a2babfc1a5d/go.mod h1:Nq2HlC7xfgihnmOZ0nYz34aN+3sTRR8Tr5WlZcr5BME=
+github.com/octohelm/gengo v0.0.0-20260608094149-799b7653595f h1:6eTPev+c9HC3YjKmZAhlE7qKezPibBeyrcQhqin3xM8=
+github.com/octohelm/gengo v0.0.0-20260608094149-799b7653595f/go.mod h1:z5V+aHliXoR0bw/HtQsnSkT4QYjC4sPcfjKebgl+6ws=
 github.com/octohelm/kubepkgspec v0.0.0-20260228030104-9d4426bfafab h1:JldGVB6D7LuZx19aiBTEVJbpY+rGJl1jOhM6Ube6CkM=
 github.com/octohelm/kubepkgspec v0.0.0-20260228030104-9d4426bfafab/go.mod h1:UOkdMdpdTmdomWf7Hd6sydrYuM7KgBitPtydGzYA+0I=
 github.com/octohelm/unifs v0.0.0-20260528054228-fe56b9c78e82 h1:WDW6zVbSFQRJRwWSgnc6g0fFgc3EiglUNafEOiKaJcE=

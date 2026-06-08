@@ -8,9 +8,11 @@ import (
 	"github.com/octohelm/courier/pkg/statuserror"
 )
 
+// ErrNotImplemented 操作未实现
 type ErrNotImplemented struct {
 	statuserror.NotImplemented
 
+	// Reason 未实现的原因
 	Reason error
 }
 
@@ -18,9 +20,11 @@ func (err *ErrNotImplemented) Error() string {
 	return fmt.Sprintf("not implemented: %s", err.Reason)
 }
 
+// ErrBlobUnknown Blob 不存在
 type ErrBlobUnknown struct {
 	statuserror.NotFound
 
+	// Digest Blob 摘要
 	Digest digest.Digest
 }
 
@@ -32,9 +36,11 @@ func (err *ErrBlobUnknown) Error() string {
 	return fmt.Sprintf("unknown blob digest=%s", err.Digest)
 }
 
+// ErrBlobInvalidLength Blob 长度不匹配
 type ErrBlobInvalidLength struct {
 	statuserror.RequestedRangeNotSatisfiable
 
+	// Reason 不匹配的原因
 	Reason string
 }
 
@@ -46,9 +52,11 @@ func (err *ErrBlobInvalidLength) Error() string {
 	return fmt.Sprintf("blob invalid length: %s", err.Reason)
 }
 
+// ErrRepositoryUnknown 仓库不存在
 type ErrRepositoryUnknown struct {
 	statuserror.NotFound
 
+	// Name 仓库名称
 	Name string
 }
 
@@ -60,10 +68,13 @@ func (err *ErrRepositoryUnknown) Error() string {
 	return fmt.Sprintf("unknown repository name=%s", err.Name)
 }
 
+// ErrBlobInvalidDigest Blob 摘要不匹配
 type ErrBlobInvalidDigest struct {
 	statuserror.BadRequest
 
+	// Digest 期望的摘要
 	Digest digest.Digest
+	// Reason 不匹配的原因
 	Reason error
 }
 
@@ -75,10 +86,13 @@ func (err *ErrBlobInvalidDigest) Error() string {
 	return fmt.Sprintf("invalid digest %q: %v", err.Digest, err.Reason)
 }
 
+// ErrRepositoryNameInvalid 仓库名称无效
 type ErrRepositoryNameInvalid struct {
 	statuserror.BadRequest
 
-	Name   string
+	// Name 仓库名称
+	Name string
+	// Reason 无效的原因
 	Reason error
 }
 
@@ -90,11 +104,14 @@ func (err *ErrRepositoryNameInvalid) Error() string {
 	return fmt.Sprintf("repository name %q invalid: %v", err.Name, err.Reason)
 }
 
+// ErrTagUnknown 标签不存在
 type ErrTagUnknown struct {
 	statuserror.NotFound
 
+	// Name 仓库名称
 	Name string
-	Tag  string
+	// Tag 标签名
+	Tag string
 }
 
 func (ErrTagUnknown) ErrCode() string {
@@ -105,10 +122,13 @@ func (err *ErrTagUnknown) Error() string {
 	return fmt.Sprintf("unknown manifest name=%s tag=%s", err.Name, err.Tag)
 }
 
+// ErrManifestUnknownRevision 清单修订版本不存在
 type ErrManifestUnknownRevision struct {
 	statuserror.NotFound
 
-	Name     string
+	// Name 仓库名称
+	Name string
+	// Revision 清单摘要
 	Revision digest.Digest
 }
 
@@ -120,6 +140,7 @@ func (err *ErrManifestUnknownRevision) Error() string {
 	return fmt.Sprintf("unknown manifest name=%s revision=%s", err.Name, err.Revision)
 }
 
+// ErrManifestUnverified 清单校验失败
 type ErrManifestUnverified struct {
 	statuserror.BadRequest
 }
@@ -128,10 +149,13 @@ func (ErrManifestUnverified) Error() string {
 	return "unverified manifest"
 }
 
+// ErrManifestBlobUnknown 清单引用的 Blob 不存在
 type ErrManifestBlobUnknown struct {
 	statuserror.NotFound
 
-	Name   string
+	// Name 仓库名称
+	Name string
+	// Digest Blob 摘要
 	Digest digest.Digest
 }
 
@@ -143,10 +167,13 @@ func (err *ErrManifestBlobUnknown) Error() string {
 	return fmt.Sprintf("unknown manifest name=%s digest=%s", err.Name, err.Digest)
 }
 
+// ErrManifestNameInvalid 清单名称无效
 type ErrManifestNameInvalid struct {
 	statuserror.BadRequest
 
-	Name   string
+	// Name 仓库名称
+	Name string
+	// Reason 无效的原因
 	Reason error
 }
 
@@ -158,6 +185,7 @@ func (err *ErrManifestNameInvalid) Error() string {
 	return fmt.Sprintf("manifest name %q invalid: %v", err.Name, err.Reason)
 }
 
+// ErrBlobUploadUnknown 分块上传不存在
 type ErrBlobUploadUnknown struct {
 	statuserror.NotFound
 }

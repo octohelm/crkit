@@ -18,20 +18,12 @@ func (BaseURL) ResponseContent() any {
 	return new(map[string]string)
 }
 
-func (BaseURL) ResponseData() *map[string]string {
-	return new(map[string]string)
-}
-
 func init() {
 	R.Register(courier.NewRouter(&CancelBlobUpload{}))
 }
 
 func (CancelBlobUpload) ResponseContent() any {
 	return nil
-}
-
-func (CancelBlobUpload) ResponseData() *courier.NoContent {
-	return new(courier.NoContent)
 }
 
 func init() {
@@ -82,10 +74,6 @@ func (GetBlobUpload) ResponseContent() any {
 	return nil
 }
 
-func (GetBlobUpload) ResponseData() *courier.NoContent {
-	return new(courier.NoContent)
-}
-
 func init() {
 	R.Register(courier.NewRouter(&GetManifest{}))
 }
@@ -126,20 +114,12 @@ func (PatchBlobUpload) ResponseContent() any {
 	return nil
 }
 
-func (PatchBlobUpload) ResponseData() *courier.NoContent {
-	return new(courier.NoContent)
-}
-
 func init() {
 	R.Register(courier.NewRouter(&PutBlobUpload{}))
 }
 
 func (PutBlobUpload) ResponseContent() any {
 	return nil
-}
-
-func (PutBlobUpload) ResponseData() *courier.NoContent {
-	return new(courier.NoContent)
 }
 
 func init() {

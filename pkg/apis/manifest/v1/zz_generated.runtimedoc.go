@@ -37,7 +37,9 @@ func (v *DockerManifest) RuntimeDoc(names ...string) ([]string, bool) {
 
 		return nil, false
 	}
-	return []string{}, true
+	return []string{
+		"Docker 镜像清单",
+	}, true
 }
 
 func (v *DockerManifestList) RuntimeDoc(names ...string) ([]string, bool) {
@@ -71,7 +73,9 @@ func (v *DockerManifestList) RuntimeDoc(names ...string) ([]string, bool) {
 
 		return nil, false
 	}
-	return []string{}, true
+	return []string{
+		"Docker 清单列表，用于多架构镜像分发",
+	}, true
 }
 
 func (v *OciIndex) RuntimeDoc(names ...string) ([]string, bool) {
@@ -105,7 +109,9 @@ func (v *OciIndex) RuntimeDoc(names ...string) ([]string, bool) {
 
 		return nil, false
 	}
-	return []string{}, true
+	return []string{
+		"OCI 镜像索引，用于多架构镜像分发",
+	}, true
 }
 
 func (v *OciManifest) RuntimeDoc(names ...string) ([]string, bool) {
@@ -144,7 +150,9 @@ func (v *OciManifest) RuntimeDoc(names ...string) ([]string, bool) {
 
 		return nil, false
 	}
-	return []string{}, true
+	return []string{
+		"OCI 镜像清单",
+	}, true
 }
 
 func (v *Payload) RuntimeDoc(names ...string) ([]string, bool) {
@@ -157,7 +165,9 @@ func (v *Payload) RuntimeDoc(names ...string) ([]string, bool) {
 
 		return nil, false
 	}
-	return []string{}, true
+	return []string{
+		"清单载荷，支持 OCI/Docker 四种格式的 Tagged Union",
+	}, true
 }
 
 // nolint:deadcode,unused

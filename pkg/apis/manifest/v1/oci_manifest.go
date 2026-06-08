@@ -6,8 +6,10 @@ import (
 	specv1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
+// MediaTypeImageManifest OCI 镜像清单媒体类型
 const MediaTypeImageManifest = specv1.MediaTypeImageManifest
 
+// OciManifest OCI 镜像清单
 type OciManifest specv1.Manifest
 
 var _ Manifest = OciManifest{}

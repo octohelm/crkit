@@ -7,8 +7,11 @@ import (
 	"strings"
 )
 
+// Range 字节范围，用于分块上传的 Content-Range 头
 type Range struct {
-	Start  int64
+	// Start 起始位置
+	Start int64
+	// Length 长度
 	Length int64
 }
 
@@ -35,6 +38,7 @@ func (r *Range) UnmarshalText(d []byte) error {
 
 var ErrInvalidRange = errors.New("invalid range")
 
+// ParseRange 解析 "start-end" 格式的范围字符串
 func ParseRange(s string) (*Range, error) {
 	parts := strings.SplitN(s, "-", 2)
 	if len(parts) != 2 {
