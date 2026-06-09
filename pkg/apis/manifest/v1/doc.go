@@ -1,4 +1,2 @@
-// +gengo:runtime-doc
-//
-//go:generate go tool gen .
+// +gengo:runtimedoc
 package v1

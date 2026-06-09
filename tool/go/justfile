@@ -1,3 +1,8 @@
+# 列出 Go 工具链公共入口
+[group('meta')]
+default:
+    @just --list
+
 # 整理依赖
 [group('env')]
 [no-cd]
@@ -10,11 +15,17 @@ dep:
 update:
     go get -u ./...
 
-# 运行测试
+# 运行测试（默认覆盖全部包）
 [group('test')]
 [no-cd]
 test path='./...' *args:
     go test -count=1 -failfast {{ args }} {{ path }}
+
+# 检查覆盖率（按项目调整包路径）
+[group('test')]
+[no-cd]
+cover path='./...' *args:
+    go test -cover {{ args }} {{ path }}
 
 # 格式化
 [group('fmt')]
@@ -22,19 +33,33 @@ test path='./...' *args:
 fmt path='./...':
     go tool fmt {{ path }}
 
-# 代码生成
+# 代码检查
+[group('lint')]
+[no-cd]
+lint path='./...' *args:
+    go vet {{ args }} {{ path }}
+
+# 运行指定入口
+[group('dev')]
+[no-cd]
+run pkg *args:
+    go run ./cmd/{{ pkg }} {{ args }}
+
+# 代码生成（默认全部包）
 [group('build')]
 [no-cd]
-gen path='./...':
-    go generate {{ path }}
+gen path='./...' *args:
+    go tool gen {{ path }} {{ args }}
+
+# 清理构建产物
+[group('env')]
+[no-cd]
+clean:
+    go clean
+    rm -rf bin/
 
 # 安装 agent skills
 [group('env')]
 [no-cd]
 skills-install:
     go tool skills-install
-
-# 列出所有可用命令
-[group('meta')]
-default:
-    @just --list

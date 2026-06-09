@@ -2,36 +2,30 @@ package main
 
 import (
 	"context"
-	"os"
+	"flag"
 
 	"github.com/octohelm/gengo/pkg/gengo"
 	"github.com/octohelm/x/logr"
 	"github.com/octohelm/x/logr/slog"
-)
 
-import (
 	_ "github.com/octohelm/courier/devpkg/clientgen"
+
 	_ "github.com/octohelm/courier/devpkg/injectablegen"
+
 	_ "github.com/octohelm/courier/devpkg/operatorgen"
-	_ "github.com/octohelm/enumeration/devpkg/enumgen"
+
 	_ "github.com/octohelm/gengo/devpkg/deepcopygen"
+
 	_ "github.com/octohelm/gengo/devpkg/runtimedocgen"
 )
 
 func main() {
-	cwd, err := os.Getwd()
-	if err != nil {
-		panic(err)
-	}
+	flag.Parse()
 
-	c, err := gengo.NewContext(&gengo.GeneratorArgs{
-		Entrypoint: []string{
-			cwd,
-		},
-		Globals: map[string][]string{
-			"gengo:runtimedoc": {},
-		},
+	c, err := gengo.NewExecutor(&gengo.GeneratorArgs{
+		Entrypoint:         flag.Args(),
 		OutputFileBaseName: "zz_generated",
+		Globals:            map[string][]string{},
 	})
 	if err != nil {
 		panic(err)
