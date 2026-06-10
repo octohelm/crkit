@@ -1,0 +1,20 @@
+{
+  "name": "crkit",
+  "engineVersion": "v0.21.6",
+  "sdk": {
+    "source": "go"
+  },
+  "dependencies": [
+    {
+      "name": "debian-container",
+      "source": "github.com/octohelm/daggerkit/debian-container@main",
+      "pin": "d2186fabc1ef00ebf1a57e92d837addb771c632a"
+    },
+    {
+      "name": "rev-info",
+      "source": "github.com/octohelm/daggerkit/rev-info@main",
+      "pin": "d2186fabc1ef00ebf1a57e92d837addb771c632a"
+    }
+  ],
+  "source": ".dagger"
+}

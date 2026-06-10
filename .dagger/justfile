@@ -1,0 +1,11 @@
+[group('meta')]
+default:
+    @just --list
+
+[group('build')]
+[no-cd]
+publish:
+    dagger call publish \
+        --registry "ghcr.io" \
+        --username ${GH_USERNAME} \
+        --password env:GH_PASSWORD

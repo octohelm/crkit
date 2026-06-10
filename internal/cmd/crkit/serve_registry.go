@@ -16,7 +16,7 @@ func init() {
 }
 
 type Registry struct {
-	cli.C `component:"container-registry"`
+	cli.C `component:"registry"`
 	otel.Otel
 
 	contentapi.NamespaceProvider

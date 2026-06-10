@@ -25,7 +25,6 @@ func main() {
 	c, err := gengo.NewExecutor(&gengo.GeneratorArgs{
 		Entrypoint:         flag.Args(),
 		OutputFileBaseName: "zz_generated",
-		Globals:            map[string][]string{},
 	})
 	if err != nil {
 		panic(err)

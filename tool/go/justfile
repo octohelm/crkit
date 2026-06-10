@@ -39,6 +39,11 @@ fmt path='./...':
 lint path='./...' *args:
     go vet {{ args }} {{ path }}
 
+[group("build")]
+[no-cd]
+build path='./...' *args:
+    go build {{ args }} {{ path }}
+
 # 运行指定入口
 [group('dev')]
 [no-cd]
