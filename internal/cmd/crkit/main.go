@@ -13,6 +13,7 @@ var App = cli.NewApp(
 	"crkit",
 	version.Version(),
 	cli.WithImageNamespace("ghcr.io/octohelm"),
+	cli.WithDeployPreset(true),
 )
 
 var Serve = cli.AddTo(App, &struct {

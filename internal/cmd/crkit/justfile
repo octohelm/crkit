@@ -1,12 +1,26 @@
+
+export CGO_ENABLED := "0"
+
 crkit := "go tool crkit"
+
+# 列出所有可用命令
+[group('meta')]
+default:
+    @just --list
 
 # 启动本地 registry 服务
 [group('dev')]
 [no-cd]
-serve:
+serve-registry:
     {{ crkit }} serve registry -c \
     	--log-format=text \
     	--addr=:5070
+
+# 启动本地 registry 服务
+[group('dev')]
+[no-cd]
+serve-registry-deploy-preset:
+    {{ crkit }} serve registry --deploy-preset
 
 # 垃圾回收（干运行）
 [group('dev')]
@@ -17,7 +31,7 @@ gc:
 # 代理模式启动
 [group('dev')]
 [no-cd]
-serve-proxy:
+serve-registry-with-proxy:
     {{ crkit }} serve registry -c \
     	--log-format=text \
     	--remote-endpoint=https://${CONTAINER_REGISTRY} \
@@ -25,19 +39,10 @@ serve-proxy:
     	--remote-password=${CONTAINER_REGISTRY_PASSWORD} \
     	--addr=:5070
 
-# 导出 K8s 配置
-[group('build')]
+[group('release')]
 [no-cd]
-dump-k8s:
-    {{ crkit }} serve registry --dump-k8s
-
-# 构建 & 发布镜像
-[group('build')]
-[no-cd]
-ship:
-    TTY=0 piper -p piper.cue do ship
-
-# 列出所有可用命令
-[group('meta')]
-default:
-    @just --list
+artifact $GOOS=`go env GOOS` $GOARCH=`go env GOARCH` *args='-o=target/${GOOS}-${GOARCH}/crkit':
+    go build \
+        {{ args }} \
+        -ldflags='-s -w -X github.com/octohelm/crkit/internal/version.version={{ env("VERSION", "devel") }}' \
+        {{ module_directory() }}

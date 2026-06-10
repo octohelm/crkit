@@ -4,6 +4,8 @@ mod go 'tool/go/justfile'
 # crkit 项目特有命令
 mod crkit 'internal/cmd/crkit/justfile'
 
+mod dagger '.dagger/justfile'
+
 [group('meta')]
 default:
     @just --list --list-submodules
