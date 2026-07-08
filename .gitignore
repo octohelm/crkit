@@ -5,4 +5,4 @@
 .piper/
 target/
 
-gengo.sum
+mise.*.toml

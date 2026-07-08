@@ -1,6 +1,8 @@
 package registry
 
-import "github.com/innoai-tech/infra/pkg/deploy"
+import (
+	"github.com/innoai-tech/infra/pkg/deploy"
+)
 
 // Preset 返回预设的容器部署规格。
 func Preset() *deploy.Container {

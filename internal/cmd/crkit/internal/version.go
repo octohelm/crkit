@@ -1,4 +1,4 @@
-package version
+package internal
 
 var version = "v0.0.0-devel"
 

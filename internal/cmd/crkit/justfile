@@ -1,5 +1,8 @@
 
 export CGO_ENABLED := "0"
+export CRKIT_LOG_LEVEL := "DEBUG"
+export CRKIT_LOG_FORMAT := "TEXT"
+export CRKIT_CONTENT_BACKEND := env("CRKIT_CONTENT_BACKEND", "file://./target/registry")
 
 crkit := "go tool crkit"
 
@@ -13,7 +16,6 @@ default:
 [no-cd]
 serve-registry:
     {{ crkit }} serve registry -c \
-    	--log-format=text \
     	--addr=:5070
 
 # 启动本地 registry 服务
@@ -33,10 +35,17 @@ gc:
 [no-cd]
 serve-registry-with-proxy:
     {{ crkit }} serve registry -c \
-    	--log-format=text \
     	--remote-endpoint=https://${CONTAINER_REGISTRY} \
     	--remote-username=${CONTAINER_REGISTRY_USERNAME} \
     	--remote-password=${CONTAINER_REGISTRY_PASSWORD} \
+    	--addr=:5070
+
+# 代理模式(多源)启动
+[group('dev')]
+[no-cd]
+serve-registry-with-multi-proxies:
+    {{ crkit }} serve registry -c \
+        --remote-registries-config-file=${CRKIT_REMOTE_REGISTRIES_CONFIG_FILE} \
     	--addr=:5070
 
 [group('release')]
@@ -44,5 +53,5 @@ serve-registry-with-proxy:
 artifact $GOOS=`go env GOOS` $GOARCH=`go env GOARCH` *args='-o=target/${GOOS}-${GOARCH}/crkit':
     go build \
         {{ args }} \
-        -ldflags='-s -w -X github.com/octohelm/crkit/internal/version.version={{ env("VERSION", "devel") }}' \
+        -ldflags='-s -w -X github.com/octohelm/crkit/internal/cmd/crkit/internal.version={{ env("VERSION", "devel") }}' \
         {{ module_directory() }}

@@ -37,7 +37,8 @@ func (c *Client) Init(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
-		u.Path = "/v2"
+
+		u.Path = "/v2/"
 
 		if c.Username != "" {
 			a := &authn.Authn{}

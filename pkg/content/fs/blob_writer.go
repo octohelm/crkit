@@ -10,7 +10,7 @@ import (
 	"github.com/opencontainers/go-digest"
 
 	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
-	"github.com/octohelm/crkit/pkg/content"
+	"github.com/octohelm/crkit/pkg/apis/registry/v2"
 	"github.com/octohelm/crkit/pkg/driver"
 )
 
@@ -98,13 +98,13 @@ func (bw *blobWriter) Commit(ctx context.Context, expected manifestv1.Descriptor
 	}
 
 	if expected.Size > 0 && expected.Size != desc.Size {
-		return nil, &content.ErrBlobInvalidLength{
+		return nil, &v2.ErrBlobInvalidLength{
 			Reason: fmt.Sprintf("unexpected commit size %d, expected %d", desc.Size, expected.Size),
 		}
 	}
 
 	if expected.Digest != "" && expected.Digest != desc.Digest {
-		return nil, &content.ErrBlobInvalidDigest{
+		return nil, &v2.ErrBlobInvalidDigest{
 			Digest: desc.Digest,
 			Reason: fmt.Errorf("not match %s", expected.Digest),
 		}

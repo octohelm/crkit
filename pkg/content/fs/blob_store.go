@@ -15,6 +15,7 @@ import (
 	"github.com/opencontainers/go-digest"
 
 	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
+	"github.com/octohelm/crkit/pkg/apis/registry/v2"
 	"github.com/octohelm/crkit/pkg/content"
 )
 
@@ -75,7 +76,7 @@ func (bs *blobStore) Info(ctx context.Context, dgst digest.Digest) (*manifestv1.
 	if err != nil {
 		if perr, ok := errors.AsType[*os.PathError](err); ok {
 			if os.IsNotExist(perr) {
-				return nil, &content.ErrBlobUnknown{
+				return nil, &v2.ErrBlobUnknown{
 					Digest: dgst,
 				}
 			}
@@ -94,7 +95,7 @@ func (bs *blobStore) Open(ctx context.Context, dgst digest.Digest) (io.ReadClose
 	if err != nil {
 		if perr, ok := errors.AsType[*os.PathError](err); ok {
 			if os.IsNotExist(perr) {
-				return nil, &content.ErrBlobUnknown{
+				return nil, &v2.ErrBlobUnknown{
 					Digest: dgst,
 				}
 			}
@@ -137,7 +138,7 @@ func (bs *blobStore) Resume(ctx context.Context, id string) (content.BlobWriter,
 	if err != nil {
 		if perr, ok := errors.AsType[*os.PathError](err); ok {
 			if os.IsNotExist(perr) {
-				return nil, &content.ErrBlobUploadUnknown{}
+				return nil, &v2.ErrBlobUploadUnknown{}
 			}
 		}
 		return nil, err
@@ -154,7 +155,7 @@ func (bs *blobStore) Resume(ctx context.Context, id string) (content.BlobWriter,
 	if err != nil {
 		if perr, ok := errors.AsType[*os.PathError](err); ok {
 			if os.IsNotExist(perr) {
-				return nil, &content.ErrBlobUploadUnknown{}
+				return nil, &v2.ErrBlobUploadUnknown{}
 			}
 		}
 		return nil, err

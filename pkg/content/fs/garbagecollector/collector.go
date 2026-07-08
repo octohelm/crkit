@@ -13,6 +13,7 @@ import (
 	"github.com/octohelm/x/logr"
 
 	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
+	"github.com/octohelm/crkit/pkg/apis/registry/v2"
 	"github.com/octohelm/crkit/pkg/content"
 	"github.com/octohelm/crkit/pkg/driver"
 )
@@ -29,12 +30,12 @@ func MarkAndSweepExcludeModifiedIn(
 
 	repositoryNameIterable, ok := namespace.(content.RepositoryNameIterable)
 	if !ok {
-		return &content.ErrNotImplemented{Reason: errors.New("RepositoryNameIterable of Namespace")}
+		return &v2.ErrNotImplemented{Reason: errors.New("RepositoryNameIterable of Namespace")}
 	}
 
 	blobDigestIterable, ok := namespace.(content.DigestIterable)
 	if !ok {
-		return &content.ErrNotImplemented{Reason: errors.New("DigestIterable of Namespace")}
+		return &v2.ErrNotImplemented{Reason: errors.New("DigestIterable of Namespace")}
 	}
 
 	stabled := time.Now().Add(-excludeModifiedIn)
@@ -156,12 +157,12 @@ func (c *collector) markAndSweepRepository(ctx context.Context, named reference.
 
 	manifestDigestIterable, ok := manifestService.(content.LinkedDigestIterable)
 	if !ok {
-		return &content.ErrNotImplemented{Reason: errors.New("LinkedDigestIterable of ManifestService")}
+		return &v2.ErrNotImplemented{Reason: errors.New("LinkedDigestIterable of ManifestService")}
 	}
 
 	layerDigestIterable, ok := blobStore.(content.LinkedDigestIterable)
 	if !ok {
-		return &content.ErrNotImplemented{Reason: errors.New("LinkedDigestIterable of BlobStore")}
+		return &v2.ErrNotImplemented{Reason: errors.New("LinkedDigestIterable of BlobStore")}
 	}
 
 	allTags, err := tagService.All(ctx)
@@ -245,7 +246,7 @@ func (c *collector) markManifest(ctx context.Context, named reference.Named, man
 		for d := range m.References() {
 			if err := c.markManifest(ctx, named, manifestService, d.Digest); err != nil {
 				// skip for partial cached
-				if _, ok := errors.AsType[*content.ErrManifestUnknownRevision](err); ok {
+				if _, ok := errors.AsType[*v2.ErrManifestUnknownRevision](err); ok {
 					continue
 				}
 				return err

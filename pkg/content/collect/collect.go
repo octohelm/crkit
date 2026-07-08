@@ -6,6 +6,7 @@ import (
 
 	"github.com/opencontainers/go-digest"
 
+	"github.com/octohelm/crkit/pkg/apis/registry/v2"
 	"github.com/octohelm/crkit/pkg/content"
 )
 
@@ -16,7 +17,7 @@ func Catalogs(ctx context.Context, ns content.Namespace) (catalogs []string, err
 
 	i, ok := ns.(content.RepositoryNameIterable)
 	if !ok {
-		return nil, &content.ErrNotImplemented{Reason: errors.New("RepositoryNameIterable of TagService")}
+		return nil, &v2.ErrNotImplemented{Reason: errors.New("RepositoryNameIterable of TagService")}
 	}
 
 	for n, e := range i.RepositoryNames(ctx) {
@@ -33,7 +34,7 @@ func Catalogs(ctx context.Context, ns content.Namespace) (catalogs []string, err
 func TagRevisions(ctx context.Context, tagService content.TagService, tag string) (digests []digest.Digest, err error) {
 	i, ok := tagService.(content.TagRevisionIterable)
 	if !ok {
-		return nil, &content.ErrNotImplemented{Reason: errors.New("TagRevisionIterable of TagService")}
+		return nil, &v2.ErrNotImplemented{Reason: errors.New("TagRevisionIterable of TagService")}
 	}
 
 	for d, e := range i.TagRevisions(ctx, tag) {
@@ -50,7 +51,7 @@ func TagRevisions(ctx context.Context, tagService content.TagService, tag string
 func Manifests(ctx context.Context, manifestService content.ManifestService) (digests []digest.Digest, err error) {
 	i, ok := manifestService.(content.LinkedDigestIterable)
 	if !ok {
-		return nil, &content.ErrNotImplemented{Reason: errors.New("LinkedDigestIterable of ManifestService")}
+		return nil, &v2.ErrNotImplemented{Reason: errors.New("LinkedDigestIterable of ManifestService")}
 	}
 	for linkedDigest, e := range i.LinkedDigests(ctx) {
 		if e != nil {
@@ -65,7 +66,7 @@ func Manifests(ctx context.Context, manifestService content.ManifestService) (di
 func Layers(ctx context.Context, blobStore content.BlobStore) (digests []digest.Digest, err error) {
 	i, ok := blobStore.(content.LinkedDigestIterable)
 	if !ok {
-		return nil, &content.ErrNotImplemented{Reason: errors.New("LinkedDigestIterable of BlobStore")}
+		return nil, &v2.ErrNotImplemented{Reason: errors.New("LinkedDigestIterable of BlobStore")}
 	}
 	for d, e := range i.LinkedDigests(ctx) {
 		if e != nil {
@@ -84,7 +85,7 @@ func Blobs(ctx context.Context, ns content.Namespace) (digests []digest.Digest, 
 
 	i, ok := ns.(content.DigestIterable)
 	if !ok {
-		return nil, &content.ErrNotImplemented{Reason: errors.New("DigestIterable of Namespace")}
+		return nil, &v2.ErrNotImplemented{Reason: errors.New("DigestIterable of Namespace")}
 	}
 	for dgst, e := range i.Digests(ctx) {
 		if e != nil {

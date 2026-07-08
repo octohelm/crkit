@@ -5,13 +5,12 @@ import (
 	"os"
 
 	"github.com/innoai-tech/infra/pkg/cli"
-
-	"github.com/octohelm/crkit/internal/version"
+	"github.com/octohelm/crkit/internal/cmd/crkit/internal"
 )
 
 var App = cli.NewApp(
 	"crkit",
-	version.Version(),
+	internal.Version(),
 	cli.WithImageNamespace("ghcr.io/octohelm"),
 	cli.WithDeployPreset(true),
 )

@@ -10,7 +10,7 @@ import (
 	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 
 	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
-	"github.com/octohelm/crkit/pkg/content"
+	"github.com/octohelm/crkit/pkg/apis/registry/v2"
 	"github.com/octohelm/crkit/pkg/oci"
 	"github.com/octohelm/crkit/pkg/oci/internal"
 )
@@ -99,7 +99,7 @@ func (i *index) manifest(ctx context.Context, desc ocispecv1.Descriptor) (oci.Ma
 		})
 	}
 
-	return nil, &content.ErrManifestBlobUnknown{Digest: desc.Digest}
+	return nil, &v2.ErrManifestBlobUnknown{Digest: desc.Digest}
 }
 
 func (i *index) Manifests(ctx context.Context) iter.Seq2[oci.Manifest, error] {

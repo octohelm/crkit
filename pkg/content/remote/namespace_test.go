@@ -20,6 +20,7 @@ import (
 	"github.com/octohelm/unifs/pkg/units"
 	. "github.com/octohelm/x/testing/v2"
 
+	"github.com/octohelm/crkit/pkg/apis/registry/v2"
 	"github.com/octohelm/crkit/pkg/content"
 	contentapi "github.com/octohelm/crkit/pkg/content/api"
 	contentremote "github.com/octohelm/crkit/pkg/content/remote"
@@ -158,7 +159,7 @@ func FuzzRemoteNamespace(f *testing.F) {
 				)
 
 				repository := MustValue(t, func() (content.Repository, error) {
-					return ns.Repository(ctx, content.Name("test/manifest"))
+					return ns.Repository(ctx, v2.Name("test/manifest"))
 				})
 
 				tags := MustValue(t, func() (content.TagService, error) {

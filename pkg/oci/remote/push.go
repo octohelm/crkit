@@ -15,6 +15,7 @@ import (
 	"github.com/octohelm/x/ptr"
 
 	"github.com/octohelm/crkit/internal/pkg/progress"
+	"github.com/octohelm/crkit/pkg/apis/registry/v2"
 	"github.com/octohelm/crkit/pkg/content"
 	"github.com/octohelm/crkit/pkg/oci"
 	"github.com/octohelm/crkit/pkg/oci/internal"
@@ -130,7 +131,7 @@ func (p *pusher) pushIndex(ctx context.Context, idx oci.Index) error {
 	}
 
 	if _, err := manifests.Info(ctx, d.Digest); err != nil {
-		if !errors.As(err, ptr.Ptr(&content.ErrManifestUnknownRevision{})) {
+		if !errors.As(err, ptr.Ptr(&v2.ErrManifestUnknownRevision{})) {
 			return err
 		}
 	} else {
@@ -184,7 +185,7 @@ func (p *pusher) pushImage(ctx context.Context, img oci.Image) error {
 	}
 
 	if _, err := manifests.Info(ctx, d.Digest); err != nil {
-		if !errors.As(err, ptr.Ptr(&content.ErrManifestUnknownRevision{})) {
+		if !errors.As(err, ptr.Ptr(&v2.ErrManifestUnknownRevision{})) {
 			return err
 		}
 	} else {
@@ -241,7 +242,7 @@ func (p *pusher) pushBlob(ctx context.Context, b oci.Blob) error {
 	}
 
 	if _, err := blobs.Info(ctx, d.Digest); err != nil {
-		if !errors.As(err, ptr.Ptr(&content.ErrManifestBlobUnknown{})) {
+		if !errors.As(err, ptr.Ptr(&v2.ErrManifestBlobUnknown{})) {
 			return fmt.Errorf("resolve blob failed: %s", err)
 		}
 	} else {

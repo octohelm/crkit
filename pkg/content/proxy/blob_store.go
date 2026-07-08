@@ -11,6 +11,7 @@ import (
 	"github.com/octohelm/x/ptr"
 
 	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
+	"github.com/octohelm/crkit/pkg/apis/registry/v2"
 	"github.com/octohelm/crkit/pkg/content"
 )
 
@@ -78,7 +79,7 @@ func (pbs *proxyBlobStore) Info(ctx context.Context, dgst digest.Digest) (*manif
 		return desc, err
 	}
 
-	if !errors.As(err, ptr.Ptr(&content.ErrBlobUnknown{})) && !errors.As(err, ptr.Ptr(&content.ErrManifestBlobUnknown{})) {
+	if !errors.As(err, ptr.Ptr(&v2.ErrBlobUnknown{})) && !errors.As(err, ptr.Ptr(&v2.ErrManifestBlobUnknown{})) {
 		return &manifestv1.Descriptor{}, err
 	}
 

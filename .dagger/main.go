@@ -2,10 +2,9 @@ package main
 
 import (
 	"context"
+	"dagger/crkit/internal/dagger"
 	"path"
 	"runtime"
-
-	"dagger/crkit/internal/dagger"
 )
 
 type Crkit struct{}

@@ -14,6 +14,7 @@ import (
 	"github.com/opencontainers/go-digest"
 
 	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
+	"github.com/octohelm/crkit/pkg/apis/registry/v2"
 	"github.com/octohelm/crkit/pkg/content"
 )
 
@@ -30,7 +31,7 @@ func newLinkedBlobStore(w *workspace, named reference.Named) *linkedBlobStore {
 			return w.layout.RepositoryLayersPath(named)
 		},
 		errUnknownFunc: func(dgst digest.Digest) error {
-			return &content.ErrManifestBlobUnknown{
+			return &v2.ErrManifestBlobUnknown{
 				Name:   named.Name(),
 				Digest: dgst,
 			}
@@ -49,7 +50,7 @@ func newLinkedBlobStoreForManifestService(w *workspace, named reference.Named) *
 			return w.layout.RepositoryManifestRevisionLinkPath(named, dgst)
 		},
 		errUnknownFunc: func(dgst digest.Digest) error {
-			return &content.ErrManifestUnknownRevision{
+			return &v2.ErrManifestUnknownRevision{
 				Name:     named.Name(),
 				Revision: dgst,
 			}
@@ -68,7 +69,7 @@ func newLinkedBlobStoreForTagService(w *workspace, named reference.Named, tag st
 			return w.layout.RepositoryManifestTagIndexLinkPath(named, tag, dgst)
 		},
 		errUnknownFunc: func(dgst digest.Digest) error {
-			return &content.ErrManifestUnknownRevision{
+			return &v2.ErrManifestUnknownRevision{
 				Name:     named.Name(),
 				Revision: dgst,
 			}

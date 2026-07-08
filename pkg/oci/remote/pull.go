@@ -12,6 +12,7 @@ import (
 	"github.com/octohelm/x/logr"
 
 	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
+	"github.com/octohelm/crkit/pkg/apis/registry/v2"
 	"github.com/octohelm/crkit/pkg/content"
 	"github.com/octohelm/crkit/pkg/oci"
 )
@@ -19,7 +20,7 @@ import (
 func Manifest(ctx context.Context, repo content.Repository, reference string) (oci.Manifest, error) {
 	d := ocispecv1.Descriptor{}
 
-	if dgst, err := content.Reference(reference).Digest(); err != nil {
+	if dgst, err := v2.Reference(reference).Digest(); err != nil {
 		tags, err := repo.Tags(ctx)
 		if err != nil {
 			return nil, err
@@ -81,7 +82,7 @@ func manifest(pctx context.Context, repo content.Repository, d ocispecv1.Descrip
 		})
 	}
 
-	return nil, &content.ErrManifestBlobUnknown{Digest: d.Digest}
+	return nil, &v2.ErrManifestBlobUnknown{Digest: d.Digest}
 }
 
 func asReadCloser(ctx context.Context, x manifestv1.Manifest) (io.ReadCloser, error) {

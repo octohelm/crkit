@@ -21,6 +21,7 @@ import (
 	"github.com/octohelm/unifs/pkg/units"
 
 	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
+	"github.com/octohelm/crkit/pkg/apis/registry/v2"
 	"github.com/octohelm/crkit/pkg/content"
 	contentutil "github.com/octohelm/crkit/pkg/content/util"
 	endpointsv2 "github.com/octohelm/crkit/pkg/endpoints/registry/v2"
@@ -35,15 +36,15 @@ var _ content.Provider = &blobStore{}
 
 func (bs *blobStore) Info(ctx context.Context, dgst digest.Digest) (*manifestv1.Descriptor, error) {
 	req := &endpointsv2.HeadBlob{}
-	req.Name = content.Name(bs.named.Name())
-	req.Digest = content.Digest(dgst)
+	req.Name = v2.Name(bs.named.Name())
+	req.Digest = v2.Digest(dgst)
 
 	_, meta, err := Do(ctx, bs.client, req)
 	if err != nil {
 		errd := &statuserror.Descriptor{}
 		if errors.As(err, &errd) {
 			if errd.StatusCode() == 404 {
-				return nil, &content.ErrManifestBlobUnknown{
+				return nil, &v2.ErrManifestBlobUnknown{
 					Name:   bs.named.Name(),
 					Digest: dgst,
 				}
@@ -66,8 +67,8 @@ func (bs *blobStore) Info(ctx context.Context, dgst digest.Digest) (*manifestv1.
 
 func (bs *blobStore) Open(ctx context.Context, dgst digest.Digest) (r io.ReadCloser, err error) {
 	req := &endpointsv2.GetBlob{}
-	req.Name = content.Name(bs.named.Name())
-	req.Digest = content.Digest(dgst)
+	req.Name = v2.Name(bs.named.Name())
+	req.Digest = v2.Digest(dgst)
 
 	return &blobReader{
 		GetBlob: req,
@@ -118,8 +119,8 @@ var _ content.Remover = &blobStore{}
 
 func (bs *blobStore) Remove(ctx context.Context, dgst digest.Digest) error {
 	req := &endpointsv2.DeleteBlob{}
-	req.Name = content.Name(bs.named.Name())
-	req.Digest = content.Digest(dgst)
+	req.Name = v2.Name(bs.named.Name())
+	req.Digest = v2.Digest(dgst)
 
 	_, _, err := Do(ctx, bs.client, req)
 	return err
@@ -138,7 +139,7 @@ func (bs *blobStore) Resume(ctx context.Context, id string) (content.BlobWriter,
 
 func (bs *blobStore) Writer(ctx context.Context) (content.BlobWriter, error) {
 	req := &endpointsv2.CreateBlobUpload{}
-	req.Name = content.Name(bs.named.Name())
+	req.Name = v2.Name(bs.named.Name())
 
 	_, meta, err := Do(ctx, bs.client, req)
 	if err != nil {
@@ -278,7 +279,7 @@ func (bw *blobWriter) Commit(ctx context.Context, expect manifestv1.Descriptor) 
 
 	if expect.Digest != "" {
 		if d.Digest != expect.Digest {
-			return nil, &content.ErrBlobInvalidDigest{
+			return nil, &v2.ErrBlobInvalidDigest{
 				Digest: d.Digest,
 				Reason: fmt.Errorf("not match %s", expect.Digest),
 			}
@@ -287,7 +288,7 @@ func (bw *blobWriter) Commit(ctx context.Context, expect manifestv1.Descriptor) 
 
 	if expect.Size > 0 {
 		if d.Size != expect.Size {
-			return nil, &content.ErrBlobInvalidLength{
+			return nil, &v2.ErrBlobInvalidLength{
 				Reason: fmt.Sprintf("expect %d, but got %d", expect.Size, d.Size),
 			}
 		}
@@ -298,7 +299,7 @@ func (bw *blobWriter) Commit(ctx context.Context, expect manifestv1.Descriptor) 
 
 func (bw *blobWriter) patchRequestContentLength(req *http.Request, n int64) {
 	req.Header.Set("Content-Type", "application/octet-stream")
-	req.Header.Set("Content-Range", (&contentutil.Range{Start: bw.written, Length: n}).String())
+	req.Header.Set("Content-Range", (&v2.Range{Start: bw.written, Length: n}).String())
 	req.ContentLength = n
 }
 

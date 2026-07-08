@@ -11,6 +11,7 @@ import (
 	"github.com/opencontainers/go-digest"
 
 	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
+	"github.com/octohelm/crkit/pkg/apis/registry/v2"
 	"github.com/octohelm/crkit/pkg/content"
 )
 
@@ -27,7 +28,7 @@ func (t *tagService) Get(ctx context.Context, tag string) (*manifestv1.Descripto
 	if err != nil {
 		if perr, ok := errors.AsType[*os.PathError](err); ok {
 			if os.IsNotExist(perr) {
-				return nil, &content.ErrTagUnknown{
+				return nil, &v2.ErrTagUnknown{
 					Tag: tag,
 				}
 			}
