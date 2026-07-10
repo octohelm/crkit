@@ -18,7 +18,6 @@ import (
 	"github.com/octohelm/kubepkgspec/pkg/object"
 	"github.com/octohelm/kubepkgspec/pkg/workload"
 	"github.com/octohelm/x/logr"
-	syncx "github.com/octohelm/x/sync"
 
 	"github.com/octohelm/crkit/pkg/artifact/kubepkg/renamer"
 	"github.com/octohelm/crkit/pkg/content"
@@ -45,7 +44,16 @@ type Packer struct {
 
 	Platforms []string
 
-	images syncx.Map[string, string]
+	r *Renamer
+}
+
+func (p *Packer) renamer() *Renamer {
+	if p.r == nil {
+		p.r = &Renamer{
+			Renamer: p.Renamer,
+		}
+	}
+	return p.r
 }
 
 func (p *Packer) PackAsIndex(ctx context.Context, kpkg *kubepkgv1alpha1.KubePkg) (oci.Index, error) {
@@ -178,7 +186,7 @@ func (p *Packer) PackAsIndex(ctx context.Context, kpkg *kubepkgv1alpha1.KubePkg)
 	}
 
 	if !p.ImageOnly {
-		kubePkgIndex, err = mutate.AnnotateOpenContainerImageName(kubePkgIndex, p.ImageName(named.String()), kpkg.Spec.Version)
+		kubePkgIndex, err = mutate.AnnotateOpenContainerImageName(kubePkgIndex, p.renamer().ImageName(named.String()), kpkg.Spec.Version)
 		if err != nil {
 			return nil, err
 		}
@@ -237,7 +245,7 @@ func (p *Packer) Pack(pctx context.Context, kpkg *kubepkgv1alpha1.KubePkg) (oci.
 
 		// maybe renamed
 		// if needed, always rename
-		image.Name = p.ImageName(named.String())
+		image.Name = p.renamer().ImageName(named.String())
 		// force delete for versioned resolved
 		image.Digest = ""
 
@@ -265,7 +273,7 @@ func (p *Packer) Pack(pctx context.Context, kpkg *kubepkgv1alpha1.KubePkg) (oci.
 			}
 
 			img, err = mutate.WithAnnotations(img, map[string]string{
-				AnnotationSourceBaseImageName: p.SourceImageName(image.Name),
+				AnnotationSourceBaseImageName: p.renamer().SourceImageName(image.Name),
 				AnnotationImageName:           image.FullName(),
 			})
 			if err != nil {
@@ -401,29 +409,6 @@ func resolvePlatformFromConfig(ctx context.Context, img oci.Image) (*ocispecv1.P
 }
 
 var ErrPlatformNotMatched = errors.New("platform no matched")
-
-func (p *Packer) ImageName(srcName string) (name string) {
-	defer func() {
-		p.images.Store(name, srcName)
-	}()
-
-	if p.Renamer != nil {
-		return p.Renamer.Rename(srcName)
-	}
-
-	if strings.HasPrefix(srcName, "index.docker.io/") {
-		return "docker.io/" + srcName[len("index.docker.io/"):]
-	}
-
-	return srcName
-}
-
-func (p *Packer) SourceImageName(name string) string {
-	if srcName, ok := p.images.Load(name); ok {
-		return srcName
-	}
-	return name
-}
 
 func (p *Packer) SupportedPlatforms(supportedPlatform []string) iter.Seq[ocispecv1.Platform] {
 	if len(p.Platforms) == 0 {
