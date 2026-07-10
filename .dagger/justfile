@@ -2,10 +2,20 @@
 default:
     @just --list
 
-[group('build')]
+[group('release')]
 [no-cd]
 publish:
-    dagger call publish \
-        --registry "ghcr.io" \
-        --username ${GH_USERNAME} \
-        --password env:GH_PASSWORD
+    dagger call container \
+        push \
+            --registry "ghcr.io" \
+            --username ${GH_USERNAME} \
+            --password env://GH_PASSWORD
+
+[group('dev')]
+[no-cd]
+serve:
+    dagger call service up
+
+[no-cd]
+update:
+    dagger update
