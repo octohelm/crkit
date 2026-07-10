@@ -26,7 +26,7 @@ require (
 )
 
 require (
-	github.com/containerd/containerd/v2 v2.3.2
+	github.com/containerd/containerd/v2 v2.3.3
 	github.com/containerd/platforms v1.0.0-rc.4
 	github.com/distribution/reference v0.6.0
 	github.com/go-json-experiment/json v0.0.0-20260623181947-01eb4420fa68
