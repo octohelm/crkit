@@ -9,10 +9,9 @@ import (
 
 	"github.com/containerd/platforms"
 	"github.com/distribution/reference"
-	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
-
 	"github.com/octohelm/x/logr"
 	"github.com/octohelm/x/ptr"
+	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 
 	"github.com/octohelm/crkit/internal/pkg/progress"
 	"github.com/octohelm/crkit/pkg/apis/registry/v2"

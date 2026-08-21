@@ -3,9 +3,8 @@ package v2
 import (
 	"fmt"
 
-	"github.com/opencontainers/go-digest"
-
 	"github.com/octohelm/courier/pkg/statuserror"
+	"github.com/opencontainers/go-digest"
 )
 
 // ErrNotImplemented 操作未实现
@@ -145,7 +144,7 @@ type ErrManifestUnverified struct {
 	statuserror.BadRequest
 }
 
-func (ErrManifestUnverified) Error() string {
+func (*ErrManifestUnverified) Error() string {
 	return "unverified manifest"
 }
 

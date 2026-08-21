@@ -4,9 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/opencontainers/go-digest"
-
 	"github.com/octohelm/courier/pkg/courierhttp"
+	"github.com/opencontainers/go-digest"
 
 	apiregistryv2 "github.com/octohelm/crkit/pkg/apis/registry/v2"
 	"github.com/octohelm/crkit/pkg/content"

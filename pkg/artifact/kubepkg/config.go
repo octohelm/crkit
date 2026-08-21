@@ -1,12 +1,11 @@
 package kubepkg
 
 import (
+	"encoding/json/v2"
 	"fmt"
 
-	"github.com/go-json-experiment/json"
-	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
-
 	kubepkgv1alpha1 "github.com/octohelm/kubepkgspec/pkg/apis/kubepkg/v1alpha1"
+	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 
 	"github.com/octohelm/crkit/pkg/oci"
 	"github.com/octohelm/crkit/pkg/oci/mutate"

@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/distribution/reference"
-	"github.com/go-json-experiment/json"
+	"encoding/json/v2"
 
 	"github.com/innoai-tech/infra/pkg/configuration"
 	"github.com/innoai-tech/infra/pkg/configuration/testingutil"

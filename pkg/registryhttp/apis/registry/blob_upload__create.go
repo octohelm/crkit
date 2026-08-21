@@ -6,9 +6,8 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/opencontainers/go-digest"
-
 	"github.com/octohelm/courier/pkg/courierhttp"
+	"github.com/opencontainers/go-digest"
 
 	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
 	apiregistryv2 "github.com/octohelm/crkit/pkg/apis/registry/v2"

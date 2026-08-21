@@ -7,9 +7,8 @@ import (
 
 	"github.com/containerd/containerd/v2/core/images"
 	"github.com/containerd/platforms"
-	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
-
 	"github.com/octohelm/kubepkgspec/pkg/workload"
+	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 
 	"github.com/octohelm/crkit/pkg/oci"
 	"github.com/octohelm/crkit/pkg/oci/empty"

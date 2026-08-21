@@ -3,12 +3,12 @@ package mutate
 import (
 	"cmp"
 	"context"
+	"encoding/json/v2"
 	"iter"
 	"maps"
 	"sync"
 
 	"github.com/containerd/platforms"
-	"github.com/go-json-experiment/json"
 	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 
 	"github.com/octohelm/crkit/pkg/oci"

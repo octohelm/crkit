@@ -10,10 +10,9 @@ import (
 	"strings"
 
 	"github.com/distribution/reference"
-	"github.com/opencontainers/go-digest"
-
 	"github.com/octohelm/courier/pkg/courier"
 	"github.com/octohelm/courier/pkg/statuserror"
+	"github.com/opencontainers/go-digest"
 
 	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
 	registryv2 "github.com/octohelm/crkit/pkg/apis/registry/v2"

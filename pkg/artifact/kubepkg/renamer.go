@@ -5,11 +5,12 @@ import (
 	"strings"
 
 	"github.com/distribution/reference"
-	"github.com/octohelm/crkit/pkg/artifact/kubepkg/renamer"
 	kubepkgv1alpha1 "github.com/octohelm/kubepkgspec/pkg/apis/kubepkg/v1alpha1"
 	"github.com/octohelm/kubepkgspec/pkg/object"
 	"github.com/octohelm/kubepkgspec/pkg/workload"
 	syncx "github.com/octohelm/x/sync"
+
+	"github.com/octohelm/crkit/pkg/artifact/kubepkg/renamer"
 )
 
 type Renamer struct {

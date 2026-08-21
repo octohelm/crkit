@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/go-json-experiment/json/jsontext"
+	"encoding/json/jsontext"
 	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 
 	. "github.com/octohelm/x/testing/v2"

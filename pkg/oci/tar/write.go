@@ -4,6 +4,8 @@ import (
 	"archive/tar"
 	"bytes"
 	"context"
+	"encoding/json/jsontext"
+	"encoding/json/v2"
 	"fmt"
 	"io"
 	"log/slog"
@@ -12,13 +14,10 @@ import (
 	"strings"
 
 	"github.com/containerd/containerd/v2/core/images"
-	"github.com/go-json-experiment/json"
-	"github.com/go-json-experiment/json/jsontext"
-	"github.com/opencontainers/go-digest"
-	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
-
 	"github.com/octohelm/x/logr"
 	"github.com/octohelm/x/sync"
+	"github.com/opencontainers/go-digest"
+	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 
 	"github.com/octohelm/crkit/internal/pkg/progress"
 	"github.com/octohelm/crkit/pkg/oci"

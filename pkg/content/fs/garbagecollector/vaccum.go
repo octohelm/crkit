@@ -9,9 +9,8 @@ import (
 	"path"
 
 	"github.com/distribution/reference"
-	"github.com/opencontainers/go-digest"
-
 	"github.com/octohelm/x/logr"
+	"github.com/opencontainers/go-digest"
 
 	"github.com/octohelm/crkit/pkg/content/fs/layout"
 	"github.com/octohelm/crkit/pkg/driver"

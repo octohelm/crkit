@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/distribution/reference"
-	"github.com/go-json-experiment/json"
+	"encoding/json/v2"
 	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 
 	"github.com/octohelm/exp/xiter"

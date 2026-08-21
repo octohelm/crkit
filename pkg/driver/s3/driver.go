@@ -16,11 +16,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/rhnvrm/simples3"
-
 	"github.com/octohelm/unifs/pkg/filesystem"
 	"github.com/octohelm/unifs/pkg/filesystem/fsutil"
 	"github.com/octohelm/unifs/pkg/strfmt"
+	"github.com/rhnvrm/simples3"
 
 	"github.com/octohelm/crkit/pkg/driver"
 )

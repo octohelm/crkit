@@ -7,9 +7,8 @@ import (
 	"log/slog"
 
 	"github.com/containerd/platforms"
-	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
-
 	"github.com/octohelm/x/logr"
+	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 
 	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
 	"github.com/octohelm/crkit/pkg/apis/registry/v2"

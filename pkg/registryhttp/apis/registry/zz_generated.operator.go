@@ -5,6 +5,7 @@ import (
 	io "io"
 
 	courier "github.com/octohelm/courier/pkg/courier"
+	statuserror "github.com/octohelm/courier/pkg/statuserror"
 
 	manifestv1 "github.com/octohelm/crkit/pkg/apis/manifest/v1"
 	registryv2 "github.com/octohelm/crkit/pkg/apis/registry/v2"
@@ -44,6 +45,16 @@ func (Catalog) ResponseContent() any {
 
 func (Catalog) ResponseData() *registryv2.CatalogResponse {
 	return new(registryv2.CatalogResponse)
+}
+
+func (Catalog) ResponseErrors() []error {
+	return []error{
+		&statuserror.Descriptor{
+			Code:    statuserror.ErrCodeFor[registryv2.ErrNotImplemented](),
+			Message: "not implemented: {Reason}",
+			Status:  501,
+		},
+	}
 }
 
 func init() {

@@ -3,11 +3,11 @@ package internal
 import (
 	"bytes"
 	"context"
+	"encoding/json/v2"
 	"io"
 	"iter"
 	"maps"
 
-	"github.com/go-json-experiment/json"
 	"github.com/opencontainers/go-digest"
 	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 

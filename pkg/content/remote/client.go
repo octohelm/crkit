@@ -9,12 +9,11 @@ import (
 	"net/url"
 	"time"
 
-	"go.opentelemetry.io/contrib/propagators/b3"
-	"go.opentelemetry.io/otel/propagation"
-
 	"github.com/octohelm/courier/pkg/courier"
 	"github.com/octohelm/courier/pkg/courierhttp/client"
 	"github.com/octohelm/x/logr"
+	"go.opentelemetry.io/contrib/propagators/b3"
+	"go.opentelemetry.io/otel/propagation"
 
 	"github.com/octohelm/crkit/pkg/content/remote/authn"
 )
