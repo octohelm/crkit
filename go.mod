@@ -11,7 +11,7 @@ tool (
 
 // +gengo:import:group=0_controlled
 require (
-	github.com/containerd/containerd/v2 v2.3.2
+	github.com/containerd/containerd/v2 v2.3.4
 	github.com/containerd/platforms v1.0.0-rc.5
 	github.com/distribution/reference v0.6.0
 	github.com/gobwas/glob v0.2.3
