@@ -11,17 +11,17 @@ tool (
 
 // +gengo:import:group=0_controlled
 require (
-	github.com/containerd/containerd/v2 v2.3.2
+	github.com/containerd/containerd/v2 v2.3.4
 	github.com/containerd/platforms v1.0.0-rc.5
 	github.com/distribution/reference v0.6.0
 	github.com/gobwas/glob v0.2.3
 	github.com/google/uuid v1.6.0
 	// +skill:infra-guideline
-	github.com/innoai-tech/infra v0.0.0-20260821062119-07c2f21e615d
+	github.com/innoai-tech/infra v0.0.0-20260822145626-770249ebcb82
 	github.com/johannesboyne/gofakes3 v0.0.0-20260208201424-4c385a1f6a73
 	// +skill:courier-guideline
 	github.com/octohelm/courier v0.0.0-20260821055841-599d41f49f0b
-	github.com/octohelm/exp v0.0.0-20260430025146-1a23bff9d7e4
+	github.com/octohelm/exp v0.0.0-20260729025016-720bbed53250
 	// +skill:gengo-guideline
 	github.com/octohelm/gengo v0.0.0-20260821034500-ef88841eb5e4
 	github.com/octohelm/kubepkgspec v0.0.0-20260821065019-6615529f6c5b
@@ -33,7 +33,7 @@ require (
 	github.com/rhnvrm/simples3 v0.11.1
 	go.opentelemetry.io/contrib/propagators/b3 v1.45.0
 	go.opentelemetry.io/otel v1.45.0
-	k8s.io/kube-openapi v0.0.0-20260721132016-d427ff9ee9ad
+	k8s.io/kube-openapi v0.0.0-20260821135717-be32def86098
 )
 
 require (
@@ -55,27 +55,27 @@ require (
 	github.com/go-ole/go-ole v1.3.0 // indirect
 	github.com/go-openapi/jsonpointer v1.0.0 // indirect
 	github.com/go-openapi/jsonreference v1.0.0 // indirect
-	github.com/go-openapi/swag v0.29.0 // indirect
-	github.com/go-openapi/swag/cmdutils v0.29.0 // indirect
-	github.com/go-openapi/swag/conv v0.29.0 // indirect
-	github.com/go-openapi/swag/fileutils v0.29.0 // indirect
-	github.com/go-openapi/swag/jsonutils v0.29.0 // indirect
-	github.com/go-openapi/swag/loading v0.29.0 // indirect
-	github.com/go-openapi/swag/mangling v0.29.0 // indirect
-	github.com/go-openapi/swag/netutils v0.29.0 // indirect
-	github.com/go-openapi/swag/pools v0.29.0 // indirect
-	github.com/go-openapi/swag/stringutils v0.29.0 // indirect
-	github.com/go-openapi/swag/typeutils v0.29.0 // indirect
-	github.com/go-openapi/swag/yamlutils v0.29.0 // indirect
+	github.com/go-openapi/swag v0.29.1 // indirect
+	github.com/go-openapi/swag/cmdutils v0.29.1 // indirect
+	github.com/go-openapi/swag/conv v0.29.1 // indirect
+	github.com/go-openapi/swag/fileutils v0.29.1 // indirect
+	github.com/go-openapi/swag/jsonutils v0.29.1 // indirect
+	github.com/go-openapi/swag/loading v0.29.1 // indirect
+	github.com/go-openapi/swag/mangling v0.29.1 // indirect
+	github.com/go-openapi/swag/netutils v0.29.1 // indirect
+	github.com/go-openapi/swag/pools v0.29.1 // indirect
+	github.com/go-openapi/swag/stringutils v0.29.1 // indirect
+	github.com/go-openapi/swag/typeutils v0.29.1 // indirect
+	github.com/go-openapi/swag/yamlutils v0.29.1 // indirect
 	github.com/google/gnostic-models v0.7.1 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.30.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/innoai-tech/openapi-playground v0.0.0-20260820092409-32accd873e1b // indirect
-	github.com/jlaffaye/ftp v0.2.1 // indirect
+	github.com/innoai-tech/openapi-playground v0.0.0-20260822053305-93c960030e17 // indirect
+	github.com/jlaffaye/ftp v0.2.4 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/juju/ansiterm v1.0.0 // indirect
-	github.com/klauspost/compress v1.19.0 // indirect
+	github.com/klauspost/compress v1.19.2 // indirect
 	github.com/klauspost/cpuid/v2 v2.4.0 // indirect
 	github.com/klauspost/crc32 v1.3.0 // indirect
 	github.com/lufia/plan9stats v0.0.0-20260802145828-341c2f0c90b5 // indirect
@@ -84,7 +84,7 @@ require (
 	github.com/mattn/go-isatty v0.0.24 // indirect
 	github.com/minio/crc64nvme v1.1.1 // indirect
 	github.com/minio/md5-simd v1.1.2 // indirect
-	github.com/minio/minio-go/v7 v7.2.1 // indirect
+	github.com/minio/minio-go/v7 v7.3.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.3-0.20250322232337-35a7c28c31ee // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
