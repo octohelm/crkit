@@ -7,7 +7,11 @@ import (
 	"github.com/gobwas/glob"
 )
 
-func Compile(patterns []string) (glob.Glob, error) {
+type Matcher interface {
+	Match(s string) bool
+}
+
+func Compile(patterns []string) (Matcher, error) {
 	rr := rules{}
 
 	for _, p := range patterns {
@@ -44,7 +48,7 @@ func (rr rules) Match(s string) bool {
 }
 
 type rule struct {
-	glob glob.Glob
+	glob Matcher
 	omit bool
 }
 
